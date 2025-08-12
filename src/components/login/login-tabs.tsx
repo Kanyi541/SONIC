@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, getDocs } from "firebase/firestore";
 
 
 import { Button } from "@/components/ui/button";
@@ -137,10 +137,12 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   const onSubmit = async (data: ClientLoginFormValues) => {
     setIsLoading(true);
     try {
-      const q = query(collection(db, "clients"), where("name", "==", data.name));
+      const q = query(collection(db, "clients"));
       const querySnapshot = await getDocs(q);
+      
+      const clientDoc = querySnapshot.docs.find(doc => doc.data().name.trim().toLowerCase() === data.name.trim().toLowerCase());
 
-      if (querySnapshot.empty) {
+      if (!clientDoc) {
         toast({
           variant: "destructive",
           title: "Login Failed",
@@ -150,7 +152,6 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         return;
       }
 
-      const clientDoc = querySnapshot.docs[0];
       const clientData = clientDoc.data();
 
       if (clientData.password !== data.password) {
