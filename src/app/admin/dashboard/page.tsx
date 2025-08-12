@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, LayoutDashboard, User, PlusCircle } from 'lucide-react';
-import { signOut } from 'firebase/auth';
+import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, query, onSnapshot } from "firebase/firestore"; 
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +38,7 @@ interface Client {
   email: string;
   phone: string;
   active: boolean;
+  uid?: string;
 }
 
 function AdminDashboard() {
@@ -83,11 +84,14 @@ function AdminDashboard() {
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     
     try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
       await addDoc(collection(db, "clients"), {
+        uid: user.uid,
         name,
         email,
         phone,
-        password,
         active: isClientActive,
       });
 
@@ -97,10 +101,16 @@ function AdminDashboard() {
       toast({ title: "Client Added", description: `${name} has been successfully added.`});
     } catch (error: any) {
        console.error("Error adding client: ", error);
+       let errorMessage = "An error occurred while adding the client.";
+       if (error.code === 'auth/email-already-in-use') {
+         errorMessage = "This email address is already in use by another account.";
+       } else if (error.code === 'auth/weak-password') {
+         errorMessage = "The password is too weak. Please choose a stronger password.";
+       }
        toast({
          variant: "destructive",
          title: "Failed to Add Client",
-         description: "An error occurred while adding the client.",
+         description: errorMessage,
        });
     }
   };
