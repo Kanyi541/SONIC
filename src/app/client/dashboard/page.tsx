@@ -1,279 +1,96 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
-import { Car, FilePlus, Hourglass, CheckCircle, PlusCircle, User, Book, DollarSign, LifeBuoy, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import React, { useState } from "react";
+import UnifiedDashboardLayout from "@/components/dashboard/unified-dashboard-layout";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, onSnapshot } from "firebase/firestore";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
-
-interface Customer {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-}
 
 export default function ClientDashboardPage() {
-    const { toast } = useToast();
-    const [isAddCustomerOpen, setAddCustomerOpen] = useState(false);
-    const [customers, setCustomers] = useState<Customer[]>([]);
-    const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState("overview");
 
-    const stats = {
-        allCars: 12,
-        newRequests: 2,
-        pendingValuation: 3,
-        pendingApproval: 1,
-    };
+  return (
+    <UnifiedDashboardLayout
+        title="Client Dashboard"
+        userRole="Client"
+        userEmail="client@example.com"
+        menuItems={[
+            { name: 'Overview', view: 'overview' },
+            { name: 'Bookings', view: 'bookings' },
+            { name: 'Invoices', view: 'invoices' },
+            { name: 'Support', view: 'support' },
+        ]}
+    >
+      {(activeView) => (
+        <Tabs value={activeView} onValueChange={setActiveTab} className="w-full">
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            <Card>
+              <CardHeader>
+                <CardTitle>Welcome Back!</CardTitle>
+                <CardDescription>
+                  Here’s what’s happening with your account today.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Your dashboard overview will appear here.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-    useEffect(() => {
-        const unsubscribe = onSnapshot(collection(db, "customers"), (querySnapshot) => {
-            const customersData: Customer[] = [];
-            querySnapshot.forEach((doc) => {
-                customersData.push({ id: doc.id, ...doc.data() } as Customer);
-            });
-            setCustomers(customersData);
-        });
-        return () => unsubscribe();
-    }, []);
+          {/* Bookings Tab */}
+          <TabsContent value="bookings">
+            <Card>
+              <CardHeader>
+                  <div className="flex justify-between items-center">
+                      <div>
+                          <CardTitle>Bookings</CardTitle>
+                          <CardDescription>Manage your customer bookings.</CardDescription>
+                      </div>
+                      <Button>Make a Booking</Button>
+                  </div>
+              </CardHeader>
+              <CardContent>
+                  <div className="mb-4">
+                      <Input
+                          placeholder="Search by name, email, or phone..."
+                      />
+                  </div>
+                  <p className="text-muted-foreground">No bookings found.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-    const handleAddCustomer = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const name = (form.elements.namedItem('name') as HTMLInputElement).value;
-        const email = (form.elements.namedItem('email') as HTMLInputElement).value;
-        const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
-        const password = (form.elements.namedItem('password') as HTMLInputElement).value;
+          {/* Invoices Tab */}
+          <TabsContent value="invoices">
+            <Card>
+              <CardHeader>
+                <CardTitle>Invoices</CardTitle>
+                <CardDescription>Your billing and payment history.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">No invoices found.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        try {
-            await addDoc(collection(db, "customers"), {
-                name,
-                email,
-                phone,
-                password,
-            });
-
-            setAddCustomerOpen(false);
-            form.reset();
-            toast({ title: "Customer Added", description: `${name} has been successfully added.` });
-        } catch (error: any) {
-            console.error("Error adding customer: ", error);
-            toast({
-                variant: "destructive",
-                title: "Failed to Add Customer",
-                description: "An error occurred while adding the customer.",
-            });
-        }
-    };
-    
-    const filteredCustomers = useMemo(() => {
-        return customers.filter(customer =>
-            customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            customer.phone.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [customers, searchTerm]);
-
-    return (
-        <UnifiedDashboardLayout
-            title="Client Dashboard"
-            userRole="Client"
-            userEmail="client@example.com"
-            menuItems={[
-                { name: 'Dashboard', view: 'dashboard' },
-                { name: 'Bookings', view: 'bookings', icon: <Book /> },
-                { name: 'Invoices', view: 'invoices', icon: <DollarSign /> },
-                { name: 'Support', view: 'support', icon: <LifeBuoy /> },
-            ]}
-        >
-            {(activeView) => (
-                <>
-                    {activeView === 'dashboard' && (
-                        <div>
-                             <div className="flex items-center justify-between mb-8">
-                                <div>
-                                    <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-                                    <p className="text-muted-foreground">Overview of your vehicle assessments.</p>
-                                </div>
-                                <Dialog open={isAddCustomerOpen} onOpenChange={setAddCustomerOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button>
-                                            <PlusCircle className="mr-2" />
-                                            Add New Customer
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="sm:max-w-[425px]">
-                                        <DialogHeader>
-                                            <DialogTitle>Add New Customer</DialogTitle>
-                                            <DialogDescription>
-                                                Fill in the details below to create a new customer account.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <form onSubmit={handleAddCustomer} className="grid gap-4 py-4">
-                                            <div className="grid grid-cols-4 items-center gap-4">
-                                                <Label htmlFor="name" className="text-right">Name</Label>
-                                                <Input id="name" name="name" className="col-span-3" required />
-                                            </div>
-                                            <div className="grid grid-cols-4 items-center gap-4">
-                                                <Label htmlFor="email" className="text-right">Email</Label>
-                                                <Input id="email" name="email" type="email" className="col-span-3" required />
-                                            </div>
-                                            <div className="grid grid-cols-4 items-center gap-4">
-                                                <Label htmlFor="phone" className="text-right">Phone</Label>
-                                                <Input id="phone" name="phone" className="col-span-3" />
-                                            </div>
-                                            <div className="grid grid-cols-4 items-center gap-4">
-                                                <Label htmlFor="password" className="text-right">Password</Label>
-                                                <Input id="password" name="password" type="password" className="col-span-3" required />
-                                            </div>
-                                            <DialogFooter>
-                                                <Button type="submit">Create Customer</Button>
-                                            </DialogFooter>
-                                        </form>
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                <Card className="shadow-lg">
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">All Cars</CardTitle>
-                                        <Car className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{stats.allCars}</div>
-                                        <p className="text-xs text-muted-foreground">Total cars registered</p>
-                                    </CardContent>
-                                </Card>
-                                <Card className="shadow-lg">
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">New Requests</CardTitle>
-                                        <FilePlus className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">+{stats.newRequests}</div>
-                                        <p className="text-xs text-muted-foreground">Awaiting processing</p>
-                                    </CardContent>
-                                </Card>
-                                <Card className="shadow-lg">
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
-                                        <Hourglass className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{stats.pendingValuation}</div>
-                                        <p className="text-xs text-muted-foreground">In valuation queue</p>
-                                    </CardContent>
-                                </Card>
-                                <Card className="shadow-lg">
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
-                                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{stats.pendingApproval}</div>
-                                        <p className="text-xs text-muted-foreground">Awaiting your approval</p>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </div>
-                    )}
-                    {activeView === 'bookings' && (
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                                <div>
-                                    <CardTitle>Bookings</CardTitle>
-                                    <CardDescription>All your customer bookings.</CardDescription>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                     <div className="relative">
-                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            type="search"
-                                            placeholder="Search customers..."
-                                            className="pl-8 sm:w-[300px]"
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                        />
-                                    </div>
-                                    <Button>
-                                        <PlusCircle className="mr-2" />
-                                        Make a booking
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                 <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Customer Name</TableHead>
-                                            <TableHead>Email</TableHead>
-                                            <TableHead>Phone</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {filteredCustomers.map(customer => (
-                                            <TableRow key={customer.id}>
-                                                <TableCell className="font-medium flex items-center gap-3">
-                                                    <div className="p-2 bg-muted rounded-full">
-                                                        <User className="h-5 w-5 text-primary" />
-                                                    </div>
-                                                    {customer.name}
-                                                </TableCell>
-                                                <TableCell>{customer.email}</TableCell>
-                                                <TableCell>{customer.phone}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                    )}
-                    {activeView === 'invoices' && (
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Invoices</CardTitle>
-                                <CardDescription>Your billing and payment history.</CardDescription>
-                            </Header>
-                            <CardContent>
-                                <p className="text-muted-foreground">No invoices found.</p>
-                            </Content>
-                        </Card>
-                    )}
-                    {activeView === 'support' && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Support Tickets</CardTitle>
-                                <CardDescription>Create and manage your support requests.</CardDescription>
-                            </Header>
-                            <CardContent>
-                                <p className="text-muted-foreground">No support tickets.</p>
-                            </Content>
-                        </Card>
-                    )}
-                </>
-            )}
-        </UnifiedDashboardLayout>
-    );
+          {/* Support Tab */}
+          <TabsContent value="support">
+            <Card>
+              <CardHeader>
+                <CardTitle>Support</CardTitle>
+                <CardDescription>Contact our team for assistance.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button>Open Support Ticket</Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
+    </UnifiedDashboardLayout>
+  );
 }
