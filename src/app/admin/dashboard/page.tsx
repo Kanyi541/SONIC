@@ -72,6 +72,12 @@ function AdminDashboard() {
     toast({ title: "Client Added", description: `${newClient.name} has been successfully added.`});
   };
 
+  const toggleClientStatus = (clientId: number) => {
+    setClients(clients.map(client => 
+      client.id === clientId ? { ...client, active: !client.active } : client
+    ));
+  };
+
 
   return (
     <SidebarProvider>
@@ -193,8 +199,7 @@ function AdminDashboard() {
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Phone</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead className="text-right">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -208,13 +213,17 @@ function AdminDashboard() {
                           </TableCell>
                           <TableCell>{client.email}</TableCell>
                           <TableCell>{client.phone}</TableCell>
-                          <TableCell>
-                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${client.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                              {client.active ? 'Active' : 'Inactive'}
-                            </span>
-                          </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="outline" size="sm">Manage</Button>
+                             <div className="flex items-center justify-end gap-2">
+                                <span className={`text-sm ${client.active ? 'text-green-600' : 'text-red-600'}`}>
+                                  {client.active ? 'Active' : 'Inactive'}
+                                </span>
+                                <Switch
+                                  checked={client.active}
+                                  onCheckedChange={() => toggleClientStatus(client.id)}
+                                  aria-label={`Toggle status for ${client.name}`}
+                                />
+                              </div>
                           </TableCell>
                         </TableRow>
                       ))}
