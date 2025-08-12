@@ -137,7 +137,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
     setIsLoading(true);
     try {
       const q = query(
-        collection(db, "clients"), 
+        collection(db, "clients"),
         where("name", "==", data.name)
       );
       const querySnapshot = await getDocs(q);
@@ -148,30 +148,33 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
           title: "Login Failed",
           description: "Invalid credentials.",
         });
+        setIsLoading(false);
         return;
       }
-      
+
       const clientDoc = querySnapshot.docs[0];
       const clientData = clientDoc.data();
 
       if (clientData.password !== data.password) {
-         toast({
+        toast({
           variant: "destructive",
           title: "Login Failed",
           description: "Invalid credentials.",
         });
+        setIsLoading(false);
         return;
       }
-      
+
       if (!clientData.active) {
         toast({
           variant: "destructive",
           title: "Login Failed",
           description: "Your account is inactive. Please contact admin to activate it.",
         });
+        setIsLoading(false);
         return;
       }
-      
+
       router.push('/client/dashboard');
       toast({ title: `Client Login Successful`, description: `Welcome, ${clientData.name}!` });
 
