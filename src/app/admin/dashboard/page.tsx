@@ -47,6 +47,7 @@ function AdminDashboard() {
   const [activeView, setActiveView] = useState('dashboard');
   const [clients, setClients] = useState<Client[]>([]);
   const [isAddClientOpen, setAddClientOpen] = useState(false);
+  const [isClientActive, setClientActive] = useState(true);
 
   useEffect(() => {
     if (activeView === 'clients') {
@@ -80,19 +81,19 @@ function AdminDashboard() {
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
     const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
-    const active = (form.elements.namedItem('active') as HTMLInputElement).checked;
-
+    
     try {
       await addDoc(collection(db, "clients"), {
         name,
         email,
         phone,
-        password, // Storing password directly as requested
-        active, // This should now correctly be a boolean
+        password,
+        active: isClientActive,
       });
 
       setAddClientOpen(false);
       form.reset();
+      setClientActive(true); // Reset for next time
       toast({ title: "Client Added", description: `${name} has been successfully added.`});
     } catch (error: any) {
        console.error("Error adding client: ", error);
@@ -221,7 +222,7 @@ function AdminDashboard() {
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="active" className="text-right">Active</Label>
                            <div className="col-span-3 flex items-center">
-                            <Switch id="active" name="active" defaultChecked={true} />
+                            <Switch id="active" name="active" checked={isClientActive} onCheckedChange={setClientActive} />
                             <span className="ml-3 text-sm text-muted-foreground">Is account active?</span>
                           </div>
                         </div>
