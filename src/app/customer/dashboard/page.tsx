@@ -1,10 +1,11 @@
+"use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import DashboardLayout from '@/components/dashboard/unified-dashboard-layout';
+import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
 
 export default function CustomerDashboardPage() {
     return (
-        <DashboardLayout
+        <UnifiedDashboardLayout
             title="Customer Dashboard"
             userRole="Customer"
             userEmail="customer@example.com"
@@ -53,6 +54,6 @@ export default function CustomerDashboardPage() {
                     )}
                 </>
             )}
-        </DashboardLayout>
+        </UnifiedDashboardLayout>
     );
 }

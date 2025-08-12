@@ -1,10 +1,11 @@
+"use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import DashboardLayout from '@/components/dashboard/unified-dashboard-layout';
+import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
 
 export default function ValuerDashboardPage() {
     return (
-        <DashboardLayout
+        <UnifiedDashboardLayout
             title="Valuer Dashboard"
             userRole="Valuer"
             userEmail="valuer@example.com"
@@ -41,6 +42,6 @@ export default function ValuerDashboardPage() {
                     )}
                 </>
             )}
-        </DashboardLayout>
+        </UnifiedDashboardLayout>
     );
 }
