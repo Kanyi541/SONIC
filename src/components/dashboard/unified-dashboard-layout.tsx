@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,11 @@ export default function UnifiedDashboardLayout({
     const { toast } = useToast();
     const router = useRouter();
     const [activeView, setActiveView] = useState(menuItems[0]?.view || 'dashboard');
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const getInitials = (email?: string | null) => {
         return email ? email.charAt(0).toUpperCase() : '?';
@@ -48,7 +53,9 @@ export default function UnifiedDashboardLayout({
 
     const handleLogout = async () => {
         try {
-            // For non-firebase auth, just redirect
+            if (isClient) {
+                sessionStorage.removeItem('loggedInUser');
+            }
             router.push('/');
             toast({ title: "Logged Out", description: "You have been successfully signed out." });
         } catch (error) {

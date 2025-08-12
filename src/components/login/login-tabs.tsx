@@ -179,8 +179,8 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         setIsLoading(false);
         return;
       }
-
-      // If all checks pass
+      
+      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: clientData.name, email: clientData.email, role: 'Client' }));
       router.push('/client/dashboard');
       toast({ title: "Client Login Successful", description: `Welcome back, ${clientData.name}!` });
 
@@ -283,7 +283,7 @@ const CustomerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) 
         return;
       }
 
-      // If all checks pass
+      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: customerData.name, email: customerData.email, role: 'Customer' }));
       router.push('/customer/dashboard');
       toast({ title: "Login Successful", description: `Welcome back, ${customerData.name}!` });
 
@@ -362,6 +362,8 @@ const MockLoginForm = ({ role, setIsLoading }: { role: Role; setIsLoading: (load
     try {
         await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
         if (data.email && data.password) {
+          const user = { name: 'Mock User', email: data.email, role };
+          sessionStorage.setItem('loggedInUser', JSON.stringify(user));
           router.push(`/${role.toLowerCase()}/dashboard`);
           toast({ title: `${role} Login Successful`, description: "Welcome!" });
         } else {
@@ -467,5 +469,3 @@ export default function LoginTabs() {
     </Tabs>
   );
 }
-
-    
