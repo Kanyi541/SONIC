@@ -43,6 +43,14 @@ import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 
+interface Customer {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    createdAt: any;
+    hasBooking?: boolean;
+}
 
 interface Booking {
   id: string;
@@ -80,11 +88,14 @@ type BookingFormValues = z.infer<typeof bookingSchema>;
 
 export default function ClientDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [customersLoading, setCustomersLoading] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
   const { toast } = useToast();
   const [stats, setStats] = useState<Stats>({ totalBookings: 0, newRequests: 0, pendingValuation: 0, pendingApproval: 0 });
   const [statsLoading, setStatsLoading] = useState(true);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
@@ -108,6 +119,7 @@ export default function ClientDashboardPage() {
     control,
     reset,
     watch,
+    setValue,
     formState: { isSubmitting },
   } = form;
 
@@ -115,18 +127,49 @@ export default function ClientDashboardPage() {
   const carModels = selectedCarMake ? carData.find(make => make.brand === selectedCarMake)?.models || [] : [];
 
   useEffect(() => {
-    const fetchBookings = () => {
+    const fetchBookingsAndCustomers = () => {
         setLoading(true);
-        const q = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        setCustomersLoading(true);
+
+        const bookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
+        const customersQuery = query(collection(db, "customers"), orderBy("createdAt", "desc"));
+
+        const unsubBookings = onSnapshot(bookingsQuery, (bookingsSnapshot) => {
             const bookingsData: Booking[] = [];
-            querySnapshot.forEach((doc) => {
+            bookingsSnapshot.forEach((doc) => {
                 bookingsData.push({ id: doc.id, ...doc.data() } as Booking);
             });
             setBookings(bookingsData);
             setLoading(false);
+
+            // After bookings are fetched, update customers
+            setCustomers(prevCustomers => {
+                const bookedEmails = new Set(bookingsData.map(b => b.customerEmail));
+                return prevCustomers.map(c => ({
+                    ...c,
+                    hasBooking: bookedEmails.has(c.email)
+                }));
+            });
         });
-        return unsubscribe;
+
+        const unsubCustomers = onSnapshot(customersQuery, (customersSnapshot) => {
+             const customersData: Customer[] = [];
+             const bookedEmails = new Set(bookings.map(b => b.customerEmail));
+             customersSnapshot.forEach((doc) => {
+                 const customer = { id: doc.id, ...doc.data() } as Customer;
+                 customersData.push({
+                     ...customer,
+                     hasBooking: bookedEmails.has(customer.email)
+                 });
+             });
+             setCustomers(customersData);
+             setCustomersLoading(false);
+        });
+
+        return () => {
+            unsubBookings();
+            unsubCustomers();
+        };
     };
 
     const fetchStats = async () => {
@@ -156,7 +199,7 @@ export default function ClientDashboardPage() {
         setStatsLoading(false);
     };
 
-    const unsubBookings = fetchBookings();
+    const unsub = fetchBookingsAndCustomers();
     fetchStats();
     
     const unsubStats = onSnapshot(collection(db, "bookings"), () => {
@@ -164,25 +207,27 @@ export default function ClientDashboardPage() {
     });
 
     return () => {
-        unsubBookings();
+        unsub();
         unsubStats();
     };
-  }, []);
+  }, []); // Re-run when bookings change to update hasBooking status
+
+  useEffect(() => {
+    if (selectedCustomer) {
+        setValue("customerName", selectedCustomer.name);
+        setValue("customerEmail", selectedCustomer.email);
+        setValue("customerPhone", selectedCustomer.phone);
+    } else {
+        reset({
+            customerName: "", customerEmail: "", customerPhone: "",
+            plateNumber: "", policyNumber: "", carMake: "", carModel: "",
+            branch: "", maxValuationDays: "", authorisedBy: "", comments: ""
+        });
+    }
+  }, [selectedCustomer, setValue, reset]);
   
-  const handleOpenBookingDialog = () => {
-    reset({
-      customerName: "",
-      customerEmail: "",
-      customerPhone: "",
-      plateNumber: "",
-      policyNumber: "",
-      carMake: "",
-      carModel: "",
-      branch: "",
-      maxValuationDays: "",
-      authorisedBy: "",
-      comments: "",
-    });
+  const handleOpenBookingDialog = (customer: Customer) => {
+    setSelectedCustomer(customer);
     setBookingDialogOpen(true);
   };
   
@@ -200,6 +245,7 @@ export default function ClientDashboardPage() {
         description: `Booking #${bookingNumber} for ${data.customerName} has been saved.`,
       });
       setBookingDialogOpen(false);
+      setSelectedCustomer(null);
     } catch (error) {
       console.error("Error creating booking: ", error);
       toast({
@@ -241,48 +287,63 @@ export default function ClientDashboardPage() {
       {(activeView) => (
           <Tabs value={activeView} className="w-full">
             <TabsContent value="overview">
-               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                            <Car className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            {statsLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.totalBookings}</div>}
-                            <p className="text-xs text-muted-foreground">All time vehicle bookings</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">New Requests</CardTitle>
-                            <FilePlus className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                             {statsLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.newRequests}</div>}
-                            <p className="text-xs text-muted-foreground">Newly created bookings</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
-                            <Hourglass className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                             {statsLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.pendingValuation}</div>}
-                            <p className="text-xs text-muted-foreground">Bookings awaiting valuation</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
-                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                             {statsLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.pendingApproval}</div>}
-                           <p className="text-xs text-muted-foreground">Valuations awaiting approval</p>
-                        </CardContent>
-                    </Card>
-                </div>
+               <Card>
+                <CardHeader>
+                  <CardTitle>Customers</CardTitle>
+                  <CardDescription>Select a customer to make a new booking.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Customer Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {customersLoading ? (
+                        Array.from({ length: 5 }).map((_, index) => (
+                          <TableRow key={index}>
+                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                            <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
+                          </TableRow>
+                        ))
+                      ) : customers.length > 0 ? (
+                        customers.map((customer) => (
+                          <TableRow key={customer.id}>
+                            <TableCell className="font-medium">{customer.name}</TableCell>
+                            <TableCell>{customer.email}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                onClick={() => handleOpenBookingDialog(customer)}
+                                disabled={customer.hasBooking}
+                                size="sm"
+                              >
+                                {customer.hasBooking ? (
+                                  <>
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Booked
+                                  </>
+                                ) : (
+                                  'Make Booking'
+                                )}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center h-24">
+                            No customers found.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="bookings">
@@ -293,10 +354,6 @@ export default function ClientDashboardPage() {
                       <CardTitle>All Bookings</CardTitle>
                       <CardDescription>View and manage all vehicle bookings.</CardDescription>
                     </div>
-                     <Button onClick={handleOpenBookingDialog}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        New Booking
-                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -370,12 +427,17 @@ export default function ClientDashboardPage() {
               </Card>
             </TabsContent>
 
-             <Dialog open={isBookingDialogOpen} onOpenChange={setBookingDialogOpen}>
+             <Dialog open={isBookingDialogOpen} onOpenChange={(isOpen) => {
+                 setBookingDialogOpen(isOpen);
+                 if (!isOpen) {
+                     setSelectedCustomer(null);
+                 }
+             }}>
                 <DialogContent className="sm:max-w-4xl">
                   <DialogHeader>
                     <DialogTitle>Make a New Booking</DialogTitle>
                     <DialogDescription>
-                      Fill out the form below to create a new booking.
+                      Fill out the form below to create a new booking for {selectedCustomer?.name}.
                     </DialogDescription>
                   </DialogHeader>
                   <Form {...form}>
@@ -388,7 +450,7 @@ export default function ClientDashboardPage() {
                                     <FormItem>
                                     <FormLabel>Customer Name</FormLabel>
                                     <FormControl>
-                                        <Input {...field} placeholder="e.g. Jane Doe" />
+                                        <Input {...field} placeholder="e.g. Jane Doe" readOnly disabled />
                                     </FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -401,7 +463,7 @@ export default function ClientDashboardPage() {
                                     <FormItem>
                                     <FormLabel>Customer Email</FormLabel>
                                     <FormControl>
-                                        <Input {...field} placeholder="e.g. jane@example.com" type="email" />
+                                        <Input {...field} placeholder="e.g. jane@example.com" type="email" readOnly disabled />
                                     </FormControl>
                                      <FormMessage />
                                     </FormItem>
@@ -414,7 +476,7 @@ export default function ClientDashboardPage() {
                                     <FormItem>
                                     <FormLabel>Customer Phone</FormLabel>
                                     <FormControl>
-                                        <Input {...field} placeholder="e.g. 0712345678" />
+                                        <Input {...field} placeholder="e.g. 0712345678" readOnly disabled />
                                     </FormControl>
                                      <FormMessage />
                                     </FormItem>
@@ -579,3 +641,4 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
