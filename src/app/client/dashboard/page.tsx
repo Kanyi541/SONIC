@@ -41,6 +41,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookMarked, Loader2 } from "lucide-react";
 import { carData } from "@/lib/car-data";
+import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
+
 
 interface Customer {
   id: string;
@@ -51,7 +53,7 @@ interface Customer {
 
 const bookingSchema = z.object({
   customerName: z.string(),
-  customerEmail: z.string(),
+  customerEmail: z.string().email(),
   customerPhone: z.string(),
   plateNumber: z.string().min(1, "Plate number is required"),
   policyNumber: z.string().min(1, "Policy number is required"),
@@ -74,15 +76,30 @@ export default function ClientDashboardPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
 
+  const form = useForm<BookingFormValues>({
+    resolver: zodResolver(bookingSchema),
+    defaultValues: {
+        customerName: "",
+        customerEmail: "",
+        customerPhone: "",
+        plateNumber: "",
+        policyNumber: "",
+        carMake: "",
+        carModel: "",
+        branch: "",
+        maxValuationDays: "",
+        authorisedBy: "",
+        comments: "",
+    }
+  });
+
   const {
     handleSubmit,
     control,
     reset,
     watch,
     formState: { isSubmitting },
-  } = useForm<BookingFormValues>({
-    resolver: zodResolver(bookingSchema),
-  });
+  } = form;
 
   const selectedCarMake = watch("carMake");
   const carModels = selectedCarMake ? carData.find(make => make.brand === selectedCarMake)?.models || [] : [];
@@ -232,7 +249,7 @@ export default function ClientDashboardPage() {
                             <TableCell>{customer.phone}</TableCell>
                             <TableCell className="text-right">
                               <Button size="sm" onClick={() => handleOpenBookingDialog(customer)}>
-                                <BookMarked className="mr-2" />
+                                <BookMarked className="mr-2 h-4 w-4" />
                                 Make a Booking
                               </Button>
                             </TableCell>
@@ -274,6 +291,208 @@ export default function ClientDashboardPage() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+             <Dialog open={isBookingDialogOpen} onOpenChange={setBookingDialogOpen}>
+                <DialogContent className="sm:max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Make a New Booking</DialogTitle>
+                    <DialogDescription>
+                      Fill out the form below to create a booking for {selectedCustomer?.name}.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...form}>
+                    <form onSubmit={handleSubmit(handleSaveBooking)} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField
+                                control={control}
+                                name="customerName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Customer Name</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} disabled />
+                                    </FormControl>
+                                    </FormItem>
+                                )}
+                                />
+                            <FormField
+                                control={control}
+                                name="customerEmail"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Customer Email</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} disabled />
+                                    </FormControl>
+                                    </FormItem>
+                                )}
+                                />
+                            <FormField
+                                control={control}
+                                name="customerPhone"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Customer Phone</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} disabled />
+                                    </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                             <FormField
+                                control={control}
+                                name="plateNumber"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Plate Number</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g. KDA 123B" />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={control}
+                                name="policyNumber"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Policy Number</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} placeholder="Enter policy number" />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={control}
+                                name="branch"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Branch</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g. Nairobi Central" />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                                control={control}
+                                name="carMake"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Car Make</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a car make" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {carData.map((make) => (
+                                                    <SelectItem key={make.brand} value={make.brand}>
+                                                        {make.brand}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={control}
+                                name="carModel"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Car Model</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedCarMake}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a car model" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {carModels.map((model) => (
+                                                    <SelectItem key={model} value={model}>
+                                                        {model}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <FormField
+                                control={control}
+                                name="maxValuationDays"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Maximum Valuation Days</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" {...field} placeholder="e.g. 3" />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={control}
+                                name="authorisedBy"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Authorised By</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} placeholder="Enter name of authoriser" />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                         <FormField
+                            control={control}
+                            name="comments"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Comments</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                        placeholder="Add any additional comments here..."
+                                        className="resize-none"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setBookingDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Booking
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+            </Dialog>
           </Tabs>
         );
       }}
