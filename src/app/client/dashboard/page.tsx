@@ -71,17 +71,6 @@ export default function ClientDashboardPage() {
                                     </CardContent>
                                 </Card>
                             </div>
-                            <Card className="shadow-lg">
-                                <CardHeader>
-                                    <CardTitle className="font-headline text-3xl">Welcome, Client!</CardTitle>
-                                    <CardDescription>Here is an overview of your account.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="font-body">
-                                        This is your dedicated dashboard for vehicle assessments. Here you can monitor the status of your vehicle valuations, from new requests to final approvals.
-                                    </p>
-                                </CardContent>
-                            </Card>
                         </div>
                     )}
                     {activeView === 'projects' && (
