@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where, getDocs, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookMarked, Loader2, Car, FilePlus, Hourglass, CheckCircle } from "lucide-react";
@@ -48,6 +48,7 @@ interface Customer {
   name: string;
   email: string;
   phone: string;
+  createdAt: any;
 }
 
 interface Booking {
@@ -56,7 +57,7 @@ interface Booking {
 }
 
 interface Stats {
-    totalCustomers: number;
+    totalBookings: number;
     newRequests: number;
     pendingValuation: number;
     pendingApproval: number;
@@ -85,7 +86,7 @@ export default function ClientDashboardPage() {
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
-  const [stats, setStats] = useState<Stats>({ totalCustomers: 0, newRequests: 0, pendingValuation: 0, pendingApproval: 0 });
+  const [stats, setStats] = useState<Stats>({ totalBookings: 0, newRequests: 0, pendingValuation: 0, pendingApproval: 0 });
   const [statsLoading, setStatsLoading] = useState(true);
 
   const form = useForm<BookingFormValues>({
@@ -119,7 +120,8 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     const fetchCustomers = () => {
         setLoading(true);
-        const unsubscribe = onSnapshot(collection(db, "customers"), (querySnapshot) => {
+        const q = query(collection(db, "customers"), orderBy("createdAt", "desc"));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const customersData: Customer[] = [];
             querySnapshot.forEach((doc) => {
             customersData.push({ id: doc.id, ...doc.data() } as Customer);
@@ -132,11 +134,10 @@ export default function ClientDashboardPage() {
 
     const fetchStats = async () => {
         setStatsLoading(true);
-        const customersCollection = collection(db, "customers");
         const bookingsCollection = collection(db, "bookings");
 
-        const customersSnapshot = await getDocs(customersCollection);
-        const totalCustomers = customersSnapshot.size;
+        const bookingsSnapshot = await getDocs(bookingsCollection);
+        const totalBookings = bookingsSnapshot.size;
 
         const newRequestsQuery = query(bookingsCollection, where("status", "==", "Pending"));
         const pendingValuationQuery = query(bookingsCollection, where("status", "==", "Pending Valuation"));
@@ -149,7 +150,7 @@ export default function ClientDashboardPage() {
         ]);
 
         setStats({
-            totalCustomers,
+            totalBookings,
             newRequests: newRequestsSnapshot.size,
             pendingValuation: pendingValuationSnapshot.size,
             pendingApproval: pendingApprovalSnapshot.size,
@@ -240,12 +241,12 @@ export default function ClientDashboardPage() {
                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+                            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
                             <Car className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            {statsLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.totalCustomers}</div>}
-                            <p className="text-xs text-muted-foreground">All registered customers</p>
+                            {statsLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.totalBookings}</div>}
+                            <p className="text-xs text-muted-foreground">All time vehicle bookings</p>
                         </CardContent>
                     </Card>
                     <Card>
