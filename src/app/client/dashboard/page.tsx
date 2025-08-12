@@ -55,6 +55,12 @@ interface Customer {
     hasBooking?: boolean;
 }
 
+interface LoggedInUser {
+    name: string;
+    email: string;
+    role: string;
+}
+
 interface Booking {
   id: string;
   bookingNumber: string;
@@ -93,6 +99,7 @@ export default function ClientDashboardPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isAddCustomerDialogOpen, setAddCustomerDialogOpen] = useState(false);
   const router = useRouter();
+  const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
 
 
   const form = useForm<BookingFormValues>({
@@ -123,6 +130,13 @@ export default function ClientDashboardPage() {
 
   const selectedCarMake = watch("carMake");
   const carModels = selectedCarMake ? carData.find(make => make.brand === selectedCarMake)?.models || [] : [];
+
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem('loggedInUser');
+    if (storedUser) {
+        setLoggedInUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   useEffect(() => {
     setCustomersLoading(true);
@@ -285,8 +299,8 @@ export default function ClientDashboardPage() {
   return (
     <UnifiedDashboardLayout
       title="Client Dashboard"
-      userRole="Client"
-      userEmail="client@example.com"
+      userRole={loggedInUser?.name || "Client"}
+      userEmail={loggedInUser?.email || ""}
       menuItems={[
         { name: "Overview", view: "overview" },
         { name: "Bookings", view: "bookings" },
