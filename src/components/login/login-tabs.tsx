@@ -144,22 +144,25 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
       }
 
       let clientData: any = null;
+      let docFound = false;
       querySnapshot.forEach((doc) => {
-        if (doc.data().password === data.password) {
-          clientData = doc.data();
+        const docData = doc.data();
+        if (docData.password === data.password) {
+          clientData = docData;
+          docFound = true;
         }
       });
 
-      if (!clientData) {
+      if (!docFound) {
         throw new Error("Invalid username or password.");
       }
 
       if (!clientData.active) {
-        throw new Error("Please Activate your account");
+        throw new Error("Your account is inactive. Please contact admin to activate it.");
       }
       
       router.push('/client/dashboard');
-      toast({ title: `Client Login Successful`, description: "Welcome!" });
+      toast({ title: `Client Login Successful`, description: `Welcome, ${clientData.name}!` });
 
     } catch (error: any) {
       toast({
