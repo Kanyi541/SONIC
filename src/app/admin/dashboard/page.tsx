@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, LayoutDashboard, User, PlusCircle } from 'lucide-react';
-import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, query, onSnapshot } from "firebase/firestore"; 
 import { useToast } from '@/hooks/use-toast';
@@ -83,16 +83,12 @@ function AdminDashboard() {
     const active = (form.elements.namedItem('active') as HTMLInputElement).checked;
 
     try {
-      // Use Firebase Auth to create the user, which is the secure way.
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Now, save the client's details in Firestore.
       await addDoc(collection(db, "clients"), {
-        uid: userCredential.user.uid, // Store the auth UID to link records
         name,
         email,
         phone,
-        active: active,
+        password, // Storing password directly as requested
+        active, // This should now correctly be a boolean
       });
 
       setAddClientOpen(false);
@@ -100,17 +96,10 @@ function AdminDashboard() {
       toast({ title: "Client Added", description: `${name} has been successfully added.`});
     } catch (error: any) {
        console.error("Error adding client: ", error);
-       let errorMessage = "An error occurred while adding the client.";
-       if (error.code === 'auth/email-already-in-use') {
-         errorMessage = "This email is already registered. Please use a different email.";
-       } else if (error.code === 'auth/weak-password') {
-         errorMessage = "The password is too weak. Please choose a stronger password.";
-       }
-       
        toast({
          variant: "destructive",
          title: "Failed to Add Client",
-         description: errorMessage,
+         description: "An error occurred while adding the client.",
        });
     }
   };
