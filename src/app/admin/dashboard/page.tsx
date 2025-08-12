@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc } from "firebase/firestore";
@@ -40,6 +41,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Client {
   id: string;
@@ -50,12 +53,26 @@ interface Client {
   uid?: string;
 }
 
+interface Booking {
+  id: string;
+  bookingNumber: string;
+  customerName: string;
+  customerEmail: string;
+  plateNumber: string;
+  carMake: string;
+  carModel: string;
+  createdAt: any;
+  status: string;
+}
+
 function AdminDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [activeView, setActiveView] = useState('dashboard');
   const [clients, setClients] = useState<Client[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isAddClientOpen, setAddClientOpen] = useState(false);
   const [isClientActive, setClientActive] = useState(true);
 
@@ -71,6 +88,19 @@ function AdminDashboard() {
           clientsData.push({ id: doc.id, ...doc.data() } as Client);
         });
         setClients(clientsData);
+      });
+      return () => unsubscribe();
+    }
+    
+    if(activeView === 'bookings') {
+      setLoading(true);
+      const unsubscribe = onSnapshot(collection(db, "bookings"), (snapshot) => {
+          const bookingsData: Booking[] = [];
+          snapshot.forEach((doc) => {
+              bookingsData.push({ id: doc.id, ...doc.data() } as Booking);
+          });
+          setBookings(bookingsData);
+          setLoading(false);
       });
       return () => unsubscribe();
     }
@@ -132,6 +162,21 @@ function AdminDashboard() {
     }
   };
 
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case "Pending":
+        return "secondary";
+      case "Pending Valuation":
+        return "outline";
+      case "Pending Approval":
+        return "destructive";
+      case "Completed":
+        return "default";
+      default:
+        return "default";
+    }
+  };
+
   return (
     <SidebarProvider>
       <Sidebar variant="inset" side="left">
@@ -155,6 +200,12 @@ function AdminDashboard() {
               <SidebarMenuButton onClick={() => setActiveView('clients')} isActive={activeView === 'clients'} tooltip="Manage Clients">
                 <Users />
                 Manage Clients
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setActiveView('bookings')} isActive={activeView === 'bookings'} tooltip="All Bookings">
+                <FileText />
+                Bookings
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -308,6 +359,70 @@ function AdminDashboard() {
                 </CardContent>
               </Card>
             )}
+             {activeView === 'bookings' && (
+               <Card className="shadow-lg border-primary/20">
+                <CardHeader>
+                  <CardTitle className="font-headline text-3xl text-primary">All Bookings</CardTitle>
+                  <CardDescription>View and manage all vehicle bookings reports.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Booking ID</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Vehicle</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        Array.from({ length: 5 }).map((_, index) => (
+                          <TableRow key={index}>
+                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                            <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
+                          </TableRow>
+                        ))
+                      ) : bookings.length > 0 ? (
+                        bookings.map((booking) => (
+                          <TableRow key={booking.id}>
+                            <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
+                            <TableCell className="font-medium">{booking.customerName}</TableCell>
+                            <TableCell>{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
+                            <TableCell>{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                               <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                            </TableCell>
+                             <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
+                                >
+                                  <Printer className="mr-2 h-4 w-4" />
+                                  View Report
+                                </Button>
+                              </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center h-24">
+                            No bookings found.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+             )}
         </main>
         <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
             <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
@@ -328,3 +443,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   )
 }
+
+    

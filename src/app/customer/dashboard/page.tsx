@@ -9,6 +9,9 @@ import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface LoggedInUser {
     name: string;
@@ -30,6 +33,7 @@ export default function CustomerDashboardPage() {
     const [user, setUser] = useState<LoggedInUser | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem('loggedInUser');
@@ -92,6 +96,7 @@ export default function CustomerDashboardPage() {
                                             <TableHead>Vehicle</TableHead>
                                             <TableHead>Date</TableHead>
                                             <TableHead>Status</TableHead>
+                                            <TableHead className="text-right">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -102,6 +107,7 @@ export default function CustomerDashboardPage() {
                                                     <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                                                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                                                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                                    <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                                                 </TableRow>
                                             ))
                                         ) : bookings.length > 0 ? (
@@ -113,11 +119,21 @@ export default function CustomerDashboardPage() {
                                                     <TableCell>
                                                         <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                                     </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
+                                                        >
+                                                        <Printer className="mr-2 h-4 w-4" />
+                                                        View Report
+                                                        </Button>
+                                                    </TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={4} className="h-24 text-center">
+                                                <TableCell colSpan={5} className="h-24 text-center">
                                                     You have no bookings yet.
                                                 </TableCell>
                                             </TableRow>
@@ -143,3 +159,5 @@ export default function CustomerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    
