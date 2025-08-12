@@ -5,7 +5,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,18 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 
 function AdminDashboard() {
@@ -25,6 +37,13 @@ function AdminDashboard() {
   const { toast } = useToast();
   const router = useRouter();
   const [activeView, setActiveView] = useState('dashboard');
+  const [clients, setClients] = useState([
+    { id: 1, name: 'Client A', email: 'client.a@example.com', phone: '555-0101', active: true },
+    { id: 2, name: 'Client B', email: 'client.b@example.com', phone: '555-0102', active: false },
+    { id: 3, name: 'Client C', email: 'client.c@example.com', phone: '555-0103', active: true },
+    { id: 4, name: 'Client D', email: 'client.d@example.com', phone: '555-0104', active: true },
+  ]);
+  const [isAddClientOpen, setAddClientOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -36,13 +55,23 @@ function AdminDashboard() {
       toast({ variant: "destructive", title: "Logout Failed", description: "An error occurred while signing out." });
     }
   };
+  
+  const handleAddClient = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const newClient = {
+      id: clients.length + 1,
+      name: (form.elements.namedItem('name') as HTMLInputElement).value,
+      email: (form.elements.namedItem('email') as HTMLInputElement).value,
+      phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
+      active: (form.elements.namedItem('active') as HTMLInputElement).checked,
+    };
+    // In a real app, you'd also handle the password and save to a database.
+    setClients([...clients, newClient]);
+    setAddClientOpen(false);
+    toast({ title: "Client Added", description: `${newClient.name} has been successfully added.`});
+  };
 
-  const clients = [
-    { id: 1, name: 'Client A', email: 'client.a@example.com', phone: '555-0101' },
-    { id: 2, name: 'Client B', email: 'client.b@example.com', phone: '555-0102' },
-    { id: 3, name: 'Client C', email: 'client.c@example.com', phone: '555-0103' },
-    { id: 4, name: 'Client D', email: 'client.d@example.com', phone: '555-0104' },
-  ];
 
   return (
     <SidebarProvider>
@@ -107,9 +136,55 @@ function AdminDashboard() {
             )}
             {activeView === 'clients' && (
               <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="font-headline text-3xl">Manage Clients</CardTitle>
-                  <CardDescription>View and manage all registered clients.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="font-headline text-3xl">Manage Clients</CardTitle>
+                    <CardDescription>View and manage all registered clients.</CardDescription>
+                  </div>
+                  <Dialog open={isAddClientOpen} onOpenChange={setAddClientOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <PlusCircle className="mr-2" />
+                        Add Client
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Add New Client</DialogTitle>
+                        <DialogDescription>
+                          Fill in the details below to create a new client account.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleAddClient} className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="name" className="text-right">Name</Label>
+                          <Input id="name" name="name" className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="email" className="text-right">Email</Label>
+                          <Input id="email" name="email" type="email" className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="phone" className="text-right">Phone</Label>
+                          <Input id="phone" name="phone" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="password" className="text-right">Password</Label>
+                          <Input id="password" name="password" type="password" className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="active" className="text-right">Active</Label>
+                           <div className="col-span-3 flex items-center">
+                            <Switch id="active" name="active" defaultChecked />
+                            <span className="ml-3 text-sm text-muted-foreground">Is account active?</span>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button type="submit">Create Client</Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -118,6 +193,7 @@ function AdminDashboard() {
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Phone</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -132,6 +208,11 @@ function AdminDashboard() {
                           </TableCell>
                           <TableCell>{client.email}</TableCell>
                           <TableCell>{client.phone}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${client.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              {client.active ? 'Active' : 'Inactive'}
+                            </span>
+                          </TableCell>
                           <TableCell className="text-right">
                             <Button variant="outline" size="sm">Manage</Button>
                           </TableCell>
