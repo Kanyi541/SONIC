@@ -48,7 +48,7 @@ interface Customer {
     name: string;
     email: string;
     phone: string;
-    createdAt: Timestamp;
+    createdAt?: Timestamp;
     hasBooking?: boolean;
 }
 
@@ -120,7 +120,7 @@ export default function ClientDashboardPage() {
 
   useEffect(() => {
     setCustomersLoading(true);
-    const customersQuery = query(collection(db, "customers"), orderBy("createdAt", "desc"));
+    const customersQuery = query(collection(db, "customers"));
 
     const unsubCustomers = onSnapshot(customersQuery, (customersSnapshot) => {
         const customersData: Customer[] = [];
@@ -141,7 +141,7 @@ export default function ClientDashboardPage() {
             const updatedCustomers = customersData.map(c => ({
                 ...c,
                 hasBooking: bookedEmails.has(c.email)
-            }));
+            })).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
             setCustomers(updatedCustomers);
             setCustomersLoading(false);
         });
@@ -238,6 +238,7 @@ export default function ClientDashboardPage() {
                       <TableRow>
                         <TableHead>Customer Name</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -247,6 +248,7 @@ export default function ClientDashboardPage() {
                           <TableRow key={index}>
                             <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                             <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                             <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                           </TableRow>
                         ))
@@ -255,6 +257,7 @@ export default function ClientDashboardPage() {
                           <TableRow key={customer.id}>
                             <TableCell className="font-medium">{customer.name}</TableCell>
                             <TableCell>{customer.email}</TableCell>
+                            <TableCell>{customer.phone}</TableCell>
                             <TableCell className="text-right">
                               <Button
                                 onClick={() => handleOpenBookingDialog(customer)}
@@ -275,7 +278,7 @@ export default function ClientDashboardPage() {
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={3} className="text-center h-24">
+                          <TableCell colSpan={4} className="text-center h-24">
                             No customers found.
                           </TableCell>
                         </TableRow>
