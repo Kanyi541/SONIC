@@ -78,7 +78,7 @@ export default function ClientDashboardPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <p className="font-body">
-                                        This is your dedicated dashboard. View your project status, invoices, and support tickets here.
+                                        This is your dedicated dashboard for vehicle assessments. Here you can monitor the status of your vehicle valuations, from new requests to final approvals.
                                     </p>
                                 </CardContent>
                             </Card>
