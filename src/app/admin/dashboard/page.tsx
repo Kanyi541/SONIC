@@ -187,7 +187,7 @@ function AdminDashboard() {
             <div className="bg-primary text-primary-foreground rounded-lg p-2 flex items-center justify-center">
               <Settings className="h-6 w-6" />
             </div>
-            <h2 className="text-xl font-semibold text-primary">Admin Panel</h2>
+            <h2 className="text-xl font-semibold text-primary">CASA DASH</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>

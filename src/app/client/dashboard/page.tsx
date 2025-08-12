@@ -301,8 +301,13 @@ export default function ClientDashboardPage() {
   return (
     <UnifiedDashboardLayout
       title="CASA DASH"
+<<<<<<< HEAD
       userRole={loggedInUser?.name || "Client"}
       userEmail={loggedInUser?.email || ""}
+=======
+      userRole="Client"
+      userEmail="client@example.com"
+>>>>>>> d2f545d52705e65cb58119b2c300ae01cd8d1d98
       menuItems={[
         { name: "Overview", view: "overview" },
         { name: "Bookings", view: "bookings" },

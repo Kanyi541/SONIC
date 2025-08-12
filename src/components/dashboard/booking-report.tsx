@@ -2,11 +2,11 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Loader2, Printer } from 'lucide-react';
+import { Loader2, Printer, ArrowLeft } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import Image from 'next/image';
 
@@ -28,6 +28,7 @@ interface BookingData {
 
 export default function BookingReport() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const bookingId = searchParams.get('id');
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +73,11 @@ export default function BookingReport() {
   return (
     <div className="bg-gray-200 min-h-screen p-4 sm:p-8 font-sans">
        <div className="max-w-5xl mx-auto">
-        <div className="flex justify-end mb-6">
+        <div className="flex justify-end mb-6 gap-4">
+            <Button onClick={() => router.back()} variant="outline" className="text-blue-900 border-blue-900 hover:bg-blue-900 hover:text-white">
+                <ArrowLeft className="mr-2 h-5 w-5" />
+                Go Back
+            </Button>
             <Button onClick={handlePrint} className="bg-blue-900 hover:bg-blue-800 text-white">
                 <Printer className="mr-2 h-5 w-5" />
                 Print / Save PDF
