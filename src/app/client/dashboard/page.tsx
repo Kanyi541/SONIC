@@ -1,9 +1,10 @@
+
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
-import { Car, FilePlus, Hourglass, CheckCircle, PlusCircle, User, Book, DollarSign, LifeBuoy } from 'lucide-react';
+import { Car, FilePlus, Hourglass, CheckCircle, PlusCircle, User, Book, DollarSign, LifeBuoy, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -39,6 +40,7 @@ export default function ClientDashboardPage() {
     const { toast } = useToast();
     const [isAddCustomerOpen, setAddCustomerOpen] = useState(false);
     const [customers, setCustomers] = useState<Customer[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const stats = {
         allCars: 12,
@@ -86,6 +88,14 @@ export default function ClientDashboardPage() {
             });
         }
     };
+    
+    const filteredCustomers = useMemo(() => {
+        return customers.filter(customer =>
+            customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            customer.phone.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [customers, searchTerm]);
 
     return (
         <UnifiedDashboardLayout
@@ -192,9 +202,27 @@ export default function ClientDashboardPage() {
                     )}
                     {activeView === 'bookings' && (
                         <Card>
-                            <CardHeader>
-                                <CardTitle>Bookings</CardTitle>
-                                <CardDescription>All your customer bookings.</CardDescription>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                                <div>
+                                    <CardTitle>Bookings</CardTitle>
+                                    <CardDescription>All your customer bookings.</CardDescription>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                     <div className="relative">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            type="search"
+                                            placeholder="Search customers..."
+                                            className="pl-8 sm:w-[300px]"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
+                                    <Button>
+                                        <PlusCircle className="mr-2" />
+                                        Make a booking
+                                    </Button>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                  <Table>
@@ -206,7 +234,7 @@ export default function ClientDashboardPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {customers.map(customer => (
+                                        {filteredCustomers.map(customer => (
                                             <TableRow key={customer.id}>
                                                 <TableCell className="font-medium flex items-center gap-3">
                                                     <div className="p-2 bg-muted rounded-full">
@@ -228,7 +256,7 @@ export default function ClientDashboardPage() {
                             <CardHeader>
                                 <CardTitle>Invoices</CardTitle>
                                 <CardDescription>Your billing and payment history.</CardDescription>
-                            </CardHeader>
+                            </Header>
                             <CardContent>
                                 <p className="text-muted-foreground">No invoices found.</p>
                             </CardContent>
@@ -239,7 +267,7 @@ export default function ClientDashboardPage() {
                             <CardHeader>
                                 <CardTitle>Support Tickets</CardTitle>
                                 <CardDescription>Create and manage your support requests.</CardDescription>
-                            </CardHeader>
+                            </Header>
                             <CardContent>
                                 <p className="text-muted-foreground">No support tickets.</p>
                             </CardContent>
