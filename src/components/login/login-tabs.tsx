@@ -136,22 +136,40 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   const onSubmit = async (data: ClientLoginFormValues) => {
     setIsLoading(true);
     try {
-      const q = query(collection(db, "clients"), where("name", "==", data.name));
+      const q = query(
+        collection(db, "clients"), 
+        where("name", "==", data.name)
+      );
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        throw new Error("Invalid credentials.");
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: "Invalid credentials.",
+        });
+        return;
       }
-
+      
       const clientDoc = querySnapshot.docs[0];
       const clientData = clientDoc.data();
 
       if (clientData.password !== data.password) {
-        throw new Error("Invalid credentials.");
+         toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: "Invalid credentials.",
+        });
+        return;
       }
       
       if (!clientData.active) {
-        throw new Error("Your account is inactive. Please contact admin to activate it.");
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: "Your account is inactive. Please contact admin to activate it.",
+        });
+        return;
       }
       
       router.push('/client/dashboard');
@@ -161,7 +179,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message,
+        description: "An unexpected error occurred. Please try again.",
       });
     } finally {
       setIsLoading(false);
