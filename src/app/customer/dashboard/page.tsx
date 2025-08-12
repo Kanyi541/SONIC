@@ -72,7 +72,7 @@ export default function CustomerDashboardPage() {
 
     return (
         <UnifiedDashboardLayout
-            title="Customer Dashboard"
+            title="CASA DASH"
             userRole={user?.role || "Customer"}
             userEmail={user?.email || ""}
             menuItems={[
@@ -93,8 +93,8 @@ export default function CustomerDashboardPage() {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Booking ID</TableHead>
-                                            <TableHead>Vehicle</TableHead>
-                                            <TableHead>Date</TableHead>
+                                            <TableHead className="hidden sm:table-cell">Vehicle</TableHead>
+                                            <TableHead className="hidden md:table-cell">Date</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead className="text-right">Action</TableHead>
                                         </TableRow>
@@ -104,8 +104,8 @@ export default function CustomerDashboardPage() {
                                              Array.from({ length: 3 }).map((_, index) => (
                                                 <TableRow key={index}>
                                                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+                                                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                                                     <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                                                 </TableRow>
@@ -113,9 +113,9 @@ export default function CustomerDashboardPage() {
                                         ) : bookings.length > 0 ? (
                                             bookings.map((booking) => (
                                                 <TableRow key={booking.id}>
-                                                    <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
-                                                    <TableCell>{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
-                                                    <TableCell>{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                                                    <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
+                                                    <TableCell className="hidden sm:table-cell">{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
+                                                    <TableCell className="hidden md:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
                                                     <TableCell>
                                                         <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                                     </TableCell>
@@ -126,7 +126,7 @@ export default function CustomerDashboardPage() {
                                                         onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
                                                         >
                                                         <Printer className="mr-2 h-4 w-4" />
-                                                        View Report
+                                                        <span className="hidden sm:inline">View Report</span>
                                                         </Button>
                                                     </TableCell>
                                                 </TableRow>
@@ -159,5 +159,3 @@ export default function CustomerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
-    

@@ -39,7 +39,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, getDocs, where, doc, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle, Loader2, PlusCircle, Printer } from "lucide-react";
+import { CheckCircle, Loader2, PlusCircle, Printer, Eye, EyeOff } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -100,6 +100,7 @@ export default function ClientDashboardPage() {
   const [isAddCustomerDialogOpen, setAddCustomerDialogOpen] = useState(false);
   const router = useRouter();
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
 
   const form = useForm<BookingFormValues>({
@@ -269,6 +270,7 @@ export default function ClientDashboardPage() {
 
       setAddCustomerDialogOpen(false);
       form.reset();
+      setShowPassword(false);
       toast({ title: "Customer Added", description: `${name} has been successfully added.`});
     } catch (error: any) {
        console.error("Error adding customer: ", error);
@@ -298,7 +300,7 @@ export default function ClientDashboardPage() {
 
   return (
     <UnifiedDashboardLayout
-      title="Client Dashboard"
+      title="CASA DASH"
       userRole={loggedInUser?.name || "Client"}
       userEmail={loggedInUser?.email || ""}
       menuItems={[
@@ -310,7 +312,7 @@ export default function ClientDashboardPage() {
           <Tabs value={activeView} className="w-full">
             <TabsContent value="overview">
                <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <CardTitle>Customers</CardTitle>
                     <CardDescription>Select a customer to make a new booking.</CardDescription>
@@ -344,7 +346,12 @@ export default function ClientDashboardPage() {
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="password" className="text-right">Password</Label>
-                          <Input id="password" name="password" type="password" className="col-span-3" required />
+                           <div className="col-span-3 relative">
+                            <Input id="password" name="password" type={showPassword ? "text" : "password"} className="pr-10" required />
+                            <Button type="button" variant="ghost" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground" onClick={() => setShowPassword(!showPassword)}>
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </Button>
+                          </div>
                         </div>
                         <DialogFooter>
                           <Button type="submit">Create Customer</Button>
@@ -358,8 +365,8 @@ export default function ClientDashboardPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Customer Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
+                        <TableHead className="hidden sm:table-cell">Email</TableHead>
+                        <TableHead className="hidden md:table-cell">Phone</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -368,8 +375,8 @@ export default function ClientDashboardPage() {
                         Array.from({ length: 5 }).map((_, index) => (
                           <TableRow key={index}>
                             <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+                            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                             <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                           </TableRow>
                         ))
@@ -377,8 +384,8 @@ export default function ClientDashboardPage() {
                         customers.map((customer) => (
                           <TableRow key={customer.id}>
                             <TableCell className="font-medium">{customer.name}</TableCell>
-                            <TableCell>{customer.email}</TableCell>
-                            <TableCell>{customer.phone}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{customer.email}</TableCell>
+                            <TableCell className="hidden md:table-cell">{customer.phone}</TableCell>
                             <TableCell className="text-right">
                               <Button
                                 onClick={() => handleOpenBookingDialog(customer)}
@@ -425,9 +432,9 @@ export default function ClientDashboardPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Booking ID</TableHead>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Vehicle</TableHead>
-                        <TableHead>Date</TableHead>
+                        <TableHead className="hidden sm:table-cell">Customer</TableHead>
+                        <TableHead className="hidden md:table-cell">Vehicle</TableHead>
+                        <TableHead className="hidden sm:table-cell">Date</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
@@ -437,9 +444,9 @@ export default function ClientDashboardPage() {
                         Array.from({ length: 5 }).map((_, index) => (
                           <TableRow key={index}>
                             <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                             <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                           </TableRow>
@@ -447,10 +454,10 @@ export default function ClientDashboardPage() {
                       ) : bookings.length > 0 ? (
                         bookings.map((booking) => (
                           <TableRow key={booking.id}>
-                            <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
-                            <TableCell className="font-medium">{booking.customerName}</TableCell>
-                            <TableCell>{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
-                            <TableCell>{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                            <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
+                            <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
+                            <TableCell className="hidden md:table-cell">{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
                             <TableCell>
                                <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                             </TableCell>
@@ -461,7 +468,7 @@ export default function ClientDashboardPage() {
                                   onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
                                 >
                                   <Printer className="mr-2 h-4 w-4" />
-                                  View Report
+                                  <span className="hidden sm:inline">View Report</span>
                                 </Button>
                               </TableCell>
                           </TableRow>

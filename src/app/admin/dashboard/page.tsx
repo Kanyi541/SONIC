@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc } from "firebase/firestore";
@@ -75,6 +75,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [isAddClientOpen, setAddClientOpen] = useState(false);
   const [isClientActive, setClientActive] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -137,6 +138,7 @@ function AdminDashboard() {
       setAddClientOpen(false);
       form.reset();
       setClientActive(true);
+      setShowPassword(false);
       toast({ title: "Client Added", description: `${name} has been successfully added.`});
     } catch (error: any) {
        console.error("Error adding client: ", error);
@@ -222,7 +224,7 @@ function AdminDashboard() {
             <div className="container flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
                     <SidebarTrigger />
-                    <h1 className="text-2xl font-headline font-bold text-primary">Admin Dashboard</h1>
+                    <h1 className="text-2xl font-headline font-bold text-primary">CASA DASH</h1>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -269,7 +271,7 @@ function AdminDashboard() {
             )}
             {activeView === 'clients' && (
               <Card className="shadow-lg border-primary/20">
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <CardTitle className="font-headline text-3xl text-primary">Manage Clients</CardTitle>
                     <CardDescription>View and manage all registered clients.</CardDescription>
@@ -303,7 +305,12 @@ function AdminDashboard() {
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="password" className="text-right">Password</Label>
-                          <Input id="password" name="password" type="password" className="col-span-3" required />
+                           <div className="col-span-3 relative">
+                            <Input id="password" name="password" type={showPassword ? "text" : "password"} className="pr-10" required />
+                            <Button type="button" variant="ghost" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground" onClick={() => setShowPassword(!showPassword)}>
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </Button>
+                          </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="active" className="text-right">Active</Label>
@@ -324,8 +331,8 @@ function AdminDashboard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
+                        <TableHead className="hidden sm:table-cell">Email</TableHead>
+                        <TableHead className="hidden md:table-cell">Phone</TableHead>
                         <TableHead className="text-right">Status</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -333,13 +340,13 @@ function AdminDashboard() {
                       {clients.map(client => (
                         <TableRow key={client.id}>
                           <TableCell className="font-medium flex items-center gap-3">
-                            <div className="p-2 bg-muted rounded-full">
+                            <div className="p-2 bg-muted rounded-full hidden sm:flex">
                               <User className="h-5 w-5 text-primary" />
                             </div>
                             {client.name}
                           </TableCell>
-                          <TableCell>{client.email}</TableCell>
-                          <TableCell>{client.phone}</TableCell>
+                          <TableCell className="hidden sm:table-cell">{client.email}</TableCell>
+                          <TableCell className="hidden md:table-cell">{client.phone}</TableCell>
                           <TableCell className="text-right">
                              <div className="flex items-center justify-end gap-2">
                                 <span className={`text-sm font-medium ${client.active ? 'text-green-500' : 'text-red-500'}`}>
@@ -370,9 +377,9 @@ function AdminDashboard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Booking ID</TableHead>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Vehicle</TableHead>
-                        <TableHead>Date</TableHead>
+                        <TableHead className="hidden sm:table-cell">Customer</TableHead>
+                        <TableHead className="hidden md:table-cell">Vehicle</TableHead>
+                        <TableHead className="hidden sm:table-cell">Date</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
@@ -382,9 +389,9 @@ function AdminDashboard() {
                         Array.from({ length: 5 }).map((_, index) => (
                           <TableRow key={index}>
                             <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                             <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                           </TableRow>
@@ -392,10 +399,10 @@ function AdminDashboard() {
                       ) : bookings.length > 0 ? (
                         bookings.map((booking) => (
                           <TableRow key={booking.id}>
-                            <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
-                            <TableCell className="font-medium">{booking.customerName}</TableCell>
-                            <TableCell>{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
-                            <TableCell>{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                            <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
+                            <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
+                            <TableCell className="hidden md:table-cell">{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
                             <TableCell>
                                <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                             </TableCell>
@@ -406,7 +413,7 @@ function AdminDashboard() {
                                   onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
                                 >
                                   <Printer className="mr-2 h-4 w-4" />
-                                  View Report
+                                  <span className="hidden sm:inline">View Report</span>
                                 </Button>
                               </TableCell>
                           </TableRow>
@@ -427,7 +434,7 @@ function AdminDashboard() {
         <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
             <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
                 <p className="text-sm text-center text-muted-foreground">
-                    © {new Date().getFullYear()} Dashboard Central. All rights reserved.
+                    © {new Date().getFullYear()} CASA DASH. All rights reserved.
                 </p>
             </div>
         </footer>
@@ -443,5 +450,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   )
 }
-
-    

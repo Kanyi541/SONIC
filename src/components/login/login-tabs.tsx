@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -52,6 +52,28 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 type ClientLoginFormValues = z.infer<typeof clientLoginSchema>;
 type CustomerLoginFormValues = z.infer<typeof customerLoginSchema>;
 type Role = "Admin" | "Client" | "Customer" | "Valuer";
+
+const PasswordInput = ({ field, ...props }: { field: any, [key: string]: any }) => {
+    const [showPassword, setShowPassword] = useState(false);
+    return (
+        <div className="relative">
+            <Input 
+                type={showPassword ? "text" : "password"} 
+                {...field}
+                {...props}
+            />
+            <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                onClick={() => setShowPassword(!showPassword)}
+            >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </Button>
+        </div>
+    );
+};
 
 const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
   const router = useRouter();
@@ -113,7 +135,7 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <PasswordInput field={field} placeholder="••••••••" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -227,7 +249,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <PasswordInput field={field} placeholder="••••••••" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -330,7 +352,7 @@ const CustomerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) 
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <PasswordInput field={field} placeholder="••••••••" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -411,7 +433,7 @@ const MockLoginForm = ({ role, setIsLoading }: { role: Role; setIsLoading: (load
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <PasswordInput field={field} placeholder="••••••••" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
