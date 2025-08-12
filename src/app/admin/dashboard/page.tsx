@@ -87,14 +87,16 @@ function AdminDashboard() {
       // without a proper admin SDK setup, but for this case we will do it.
       // In a real-world scenario, you would typically send an invitation link
       // or use a server-side admin SDK to manage users.
-      const tempAuth = auth; // This is not ideal.
-      await createUserWithEmailAndPassword(tempAuth, email, password);
+      
+      // Creating a temporary user in auth. This is not ideal for production.
+      // A more secure approach would use Firebase Admin SDK on a server.
+      await createUserWithEmailAndPassword(auth, email, password);
 
       await addDoc(collection(db, "clients"), {
         name,
         email,
         phone,
-        active,
+        active: active, // Explicitly pass the boolean
       });
 
       setAddClientOpen(false);
@@ -226,7 +228,7 @@ function AdminDashboard() {
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="active" className="text-right">Active</Label>
                            <div className="col-span-3 flex items-center">
-                            <Switch id="active" name="active" defaultChecked />
+                            <Switch id="active" name="active" defaultChecked={true} />
                             <span className="ml-3 text-sm text-muted-foreground">Is account active?</span>
                           </div>
                         </div>
@@ -297,3 +299,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   )
 }
+
+    
