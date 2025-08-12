@@ -140,23 +140,16 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        throw new Error("Invalid username or password.");
+        throw new Error("Invalid credentials.");
       }
 
-      let clientData: any = null;
-      let docFound = false;
-      querySnapshot.forEach((doc) => {
-        const docData = doc.data();
-        if (docData.password === data.password) {
-          clientData = docData;
-          docFound = true;
-        }
-      });
+      const clientDoc = querySnapshot.docs[0];
+      const clientData = clientDoc.data();
 
-      if (!docFound) {
-        throw new Error("Invalid username or password.");
+      if (clientData.password !== data.password) {
+        throw new Error("Invalid credentials.");
       }
-
+      
       if (!clientData.active) {
         throw new Error("Your account is inactive. Please contact admin to activate it.");
       }
