@@ -138,7 +138,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
     try {
       const q = query(
         collection(db, "clients"),
-        where("name", "==", data.name.trim())
+        where("name", "==", data.name)
       );
       const querySnapshot = await getDocs(q);
 
