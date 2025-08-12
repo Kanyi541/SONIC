@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, getDocs, orderBy, where } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, getDocs, orderBy, where, Timestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookMarked, Loader2, Car, FilePlus, Hourglass, CheckCircle, PlusCircle } from "lucide-react";
@@ -48,7 +48,7 @@ interface Customer {
     name: string;
     email: string;
     phone: string;
-    createdAt: any;
+    createdAt: Timestamp;
     hasBooking?: boolean;
 }
 
@@ -56,18 +56,12 @@ interface Booking {
   id: string;
   bookingNumber: string;
   customerName: string;
+  customerEmail: string;
   plateNumber: string;
   carMake: string;
   carModel: string;
   createdAt: any;
   status: string;
-}
-
-interface Stats {
-    totalBookings: number;
-    newRequests: number;
-    pendingValuation: number;
-    pendingApproval: number;
 }
 
 const bookingSchema = z.object({
@@ -93,8 +87,6 @@ export default function ClientDashboardPage() {
   const [customersLoading, setCustomersLoading] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
   const { toast } = useToast();
-  const [stats, setStats] = useState<Stats>({ totalBookings: 0, newRequests: 0, pendingValuation: 0, pendingApproval: 0 });
-  const [statsLoading, setStatsLoading] = useState(true);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const form = useForm<BookingFormValues>({
@@ -127,14 +119,17 @@ export default function ClientDashboardPage() {
   const carModels = selectedCarMake ? carData.find(make => make.brand === selectedCarMake)?.models || [] : [];
 
   useEffect(() => {
-    const fetchBookingsAndCustomers = () => {
-        setLoading(true);
-        setCustomersLoading(true);
+    setCustomersLoading(true);
+    const customersQuery = query(collection(db, "customers"), orderBy("createdAt", "desc"));
 
-        const bookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
-        const customersQuery = query(collection(db, "customers"), orderBy("createdAt", "desc"));
-
-        const unsubBookings = onSnapshot(bookingsQuery, (bookingsSnapshot) => {
+    const unsubCustomers = onSnapshot(customersQuery, (customersSnapshot) => {
+        const customersData: Customer[] = [];
+        customersSnapshot.forEach((doc) => {
+            customersData.push({ id: doc.id, ...doc.data() } as Customer);
+        });
+        
+        const bookingsQuery = query(collection(db, "bookings"));
+        onSnapshot(bookingsQuery, (bookingsSnapshot) => {
             const bookingsData: Booking[] = [];
             bookingsSnapshot.forEach((doc) => {
                 bookingsData.push({ id: doc.id, ...doc.data() } as Booking);
@@ -142,75 +137,21 @@ export default function ClientDashboardPage() {
             setBookings(bookingsData);
             setLoading(false);
 
-            // After bookings are fetched, update customers
-            setCustomers(prevCustomers => {
-                const bookedEmails = new Set(bookingsData.map(b => b.customerEmail));
-                return prevCustomers.map(c => ({
-                    ...c,
-                    hasBooking: bookedEmails.has(c.email)
-                }));
-            });
+            const bookedEmails = new Set(bookingsData.map(b => b.customerEmail));
+            const updatedCustomers = customersData.map(c => ({
+                ...c,
+                hasBooking: bookedEmails.has(c.email)
+            }));
+            setCustomers(updatedCustomers);
+            setCustomersLoading(false);
         });
-
-        const unsubCustomers = onSnapshot(customersQuery, (customersSnapshot) => {
-             const customersData: Customer[] = [];
-             const bookedEmails = new Set(bookings.map(b => b.customerEmail));
-             customersSnapshot.forEach((doc) => {
-                 const customer = { id: doc.id, ...doc.data() } as Customer;
-                 customersData.push({
-                     ...customer,
-                     hasBooking: bookedEmails.has(customer.email)
-                 });
-             });
-             setCustomers(customersData);
-             setCustomersLoading(false);
-        });
-
-        return () => {
-            unsubBookings();
-            unsubCustomers();
-        };
-    };
-
-    const fetchStats = async () => {
-        setStatsLoading(true);
-        const bookingsCollection = collection(db, "bookings");
-
-        const bookingsSnapshot = await getDocs(bookingsCollection);
-        const totalBookings = bookingsSnapshot.size;
-
-        const newRequestsQuery = query(bookingsCollection, where("status", "==", "Pending"));
-        const pendingValuationQuery = query(bookingsCollection, where("status", "==", "Pending Valuation"));
-        const pendingApprovalQuery = query(bookingsCollection, where("status", "==", "Pending Approval"));
-
-        const [newRequestsSnapshot, pendingValuationSnapshot, pendingApprovalSnapshot] = await Promise.all([
-            getDocs(newRequestsQuery),
-            getDocs(pendingValuationQuery),
-            getDocs(pendingApprovalQuery),
-        ]);
-
-        setStats({
-            totalBookings,
-            newRequests: newRequestsSnapshot.size,
-            pendingValuation: pendingValuationSnapshot.size,
-            pendingApproval: pendingApprovalSnapshot.size,
-        });
-
-        setStatsLoading(false);
-    };
-
-    const unsub = fetchBookingsAndCustomers();
-    fetchStats();
-    
-    const unsubStats = onSnapshot(collection(db, "bookings"), () => {
-        fetchStats(); 
     });
 
     return () => {
-        unsub();
-        unsubStats();
+        unsubCustomers();
     };
-  }, []); // Re-run when bookings change to update hasBooking status
+}, []);
+
 
   useEffect(() => {
     if (selectedCustomer) {
@@ -270,7 +211,6 @@ export default function ClientDashboardPage() {
         return "default";
     }
   };
-
 
   return (
     <UnifiedDashboardLayout
@@ -641,4 +581,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
