@@ -478,7 +478,7 @@ export default function LoginTabs() {
 
   return (
     <Tabs defaultValue="Admin" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-4 h-auto sm:h-10">
         {roles.map((role) => (
           <TabsTrigger key={role} value={role}>{role}</TabsTrigger>
         ))}
@@ -491,3 +491,5 @@ export default function LoginTabs() {
     </Tabs>
   );
 }
+
+    
