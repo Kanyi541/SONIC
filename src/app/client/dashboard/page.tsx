@@ -36,21 +36,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, getDocs, orderBy, where, Timestamp } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, getDocs, where, doc, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookMarked, Loader2, Car, FilePlus, Hourglass, CheckCircle, PlusCircle } from "lucide-react";
+import { CheckCircle, Loader2, PlusCircle, Printer } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
+
 
 interface Customer {
     id: string;
     name: string;
     email: string;
     phone: string;
-    createdAt?: Timestamp;
     hasBooking?: boolean;
 }
 
@@ -91,6 +92,8 @@ export default function ClientDashboardPage() {
   const { toast } = useToast();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isAddCustomerDialogOpen, setAddCustomerDialogOpen] = useState(false);
+  const router = useRouter();
+
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
@@ -123,7 +126,7 @@ export default function ClientDashboardPage() {
 
   useEffect(() => {
     setCustomersLoading(true);
-    const customersQuery = query(collection(db, "customers"), orderBy("createdAt", "desc"));
+    const customersQuery = query(collection(db, "customers"));
 
     const unsubCustomers = onSnapshot(customersQuery, (customersSnapshot) => {
         const customersData: Customer[] = [];
@@ -248,7 +251,6 @@ export default function ClientDashboardPage() {
         email,
         phone,
         password,
-        createdAt: new Date(),
       });
 
       setAddCustomerDialogOpen(false);
@@ -412,7 +414,8 @@ export default function ClientDashboardPage() {
                         <TableHead>Customer</TableHead>
                         <TableHead>Vehicle</TableHead>
                         <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Status</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -423,7 +426,8 @@ export default function ClientDashboardPage() {
                             <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                             <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                             <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                            <TableCell className="text-right"><Skeleton className="h-6 w-20 ml-auto" /></TableCell>
+                            <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                            <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                           </TableRow>
                         ))
                       ) : bookings.length > 0 ? (
@@ -433,14 +437,24 @@ export default function ClientDashboardPage() {
                             <TableCell className="font-medium">{booking.customerName}</TableCell>
                             <TableCell>{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
                             <TableCell>{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
-                            <TableCell className="text-right">
+                            <TableCell>
                                <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                             </TableCell>
+                             <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
+                                >
+                                  <Printer className="mr-2 h-4 w-4" />
+                                  View Report
+                                </Button>
+                              </TableCell>
                           </TableRow>
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center h-24">
+                          <TableCell colSpan={6} className="text-center h-24">
                             No bookings found.
                           </TableCell>
                         </TableRow>
@@ -539,9 +553,9 @@ export default function ClientDashboardPage() {
                                 name="branch"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Branch</FormLabel>
+                                    <FormLabel>Broker</FormLabel>
                                     <FormControl>
-                                        <Input {...field} placeholder="e.g. Nairobi Central" />
+                                        <Input {...field} placeholder="e.g. Resource Ins Agency" />
                                     </FormControl>
                                     <FormMessage />
                                     </FormItem>
