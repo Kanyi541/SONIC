@@ -5,10 +5,10 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, query, onSnapshot } from "firebase/firestore"; 
+import { collection, addDoc, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -31,6 +31,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Client {
   id: string;
@@ -50,10 +59,13 @@ function AdminDashboard() {
   const [isAddClientOpen, setAddClientOpen] = useState(false);
   const [isClientActive, setClientActive] = useState(true);
 
+  const getInitials = (email?: string | null) => {
+    return email ? email.charAt(0).toUpperCase() : '?';
+  };
+
   useEffect(() => {
     if (activeView === 'clients') {
-      const q = query(collection(db, "clients"));
-      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const unsubscribe = onSnapshot(collection(db, "clients"), (querySnapshot) => {
         const clientsData: Client[] = [];
         querySnapshot.forEach((doc) => {
           clientsData.push({ id: doc.id, ...doc.data() } as Client);
@@ -88,13 +100,13 @@ function AdminDashboard() {
         name,
         email,
         phone,
-        password, // Storing password directly in Firestore
+        password,
         active: isClientActive,
       });
 
       setAddClientOpen(false);
       form.reset();
-      setClientActive(true); // Reset for next time
+      setClientActive(true);
       toast({ title: "Client Added", description: `${name} has been successfully added.`});
     } catch (error: any) {
        console.error("Error adding client: ", error);
@@ -120,73 +132,95 @@ function AdminDashboard() {
     }
   };
 
-
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar variant="inset" side="left">
         <SidebarHeader>
-          <div className="flex items-center gap-2">
-            <div className="bg-primary text-primary-foreground rounded-lg p-2">
-              <Users className="h-6 w-6" />
+          <div className="flex items-center gap-2 p-2">
+            <div className="bg-primary text-primary-foreground rounded-lg p-2 flex items-center justify-center">
+              <Settings className="h-6 w-6" />
             </div>
-            <h2 className="text-lg font-semibold text-primary">Admin Panel</h2>
+            <h2 className="text-xl font-semibold text-primary">Admin Panel</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('dashboard')} isActive={activeView === 'dashboard'}>
+              <SidebarMenuButton onClick={() => setActiveView('dashboard')} isActive={activeView === 'dashboard'} tooltip="Dashboard">
                 <LayoutDashboard />
                 Dashboard
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('clients')} isActive={activeView === 'clients'}>
+              <SidebarMenuButton onClick={() => setActiveView('clients')} isActive={activeView === 'clients'} tooltip="Manage Clients">
                 <Users />
                 Manage Clients
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
-        <div className="mt-auto p-2">
-          <Button variant="outline" onClick={handleLogout} className="w-full justify-start">
+        <SidebarFooter>
+          <Button variant="ghost" onClick={handleLogout} className="w-full justify-start">
               <LogOut className="mr-2 h-4 w-4" />
               Logout
           </Button>
-        </div>
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-40 w-full border-b bg-card">
+        <header className="sticky top-0 z-40 w-full border-b bg-card shadow-sm">
             <div className="container flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
                     <SidebarTrigger />
                     <h1 className="text-2xl font-headline font-bold text-primary">Admin Dashboard</h1>
                 </div>
-                 <p className="text-sm text-muted-foreground hidden md:block">
-                  Logged in as: <span className="font-semibold text-primary">{user?.email}</span>
-                </p>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-secondary text-secondary-foreground">{getInitials(user?.email)}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">Admin</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </header>
         <main className="flex-1 container py-8">
             {activeView === 'dashboard' && (
-              <Card className="shadow-lg">
-                  <CardHeader>
-                      <CardTitle className="font-headline text-3xl">Welcome, Admin!</CardTitle>
-                      <CardDescription>This is your secure control panel.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                      <div className="p-4 bg-muted rounded-lg">
-                          <h3 className="font-headline text-lg font-semibold mb-2">Admin Panel</h3>
-                          <p className="text-muted-foreground">Here you can manage users, view analytics, and configure system settings. Use the navigation to explore different sections.</p>
-                      </div>
-                  </CardContent>
-              </Card>
+              <div className="grid gap-8">
+                <Card className="shadow-lg border-primary/20">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-3xl text-primary">Welcome, Admin!</CardTitle>
+                        <CardDescription>This is your secure control panel.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="p-4 bg-muted rounded-lg">
+                            <h3 className="font-headline text-lg font-semibold mb-2">Admin Panel</h3>
+                            <p className="text-muted-foreground">Here you can manage users, view analytics, and configure system settings. Use the navigation to explore different sections.</p>
+                        </div>
+                    </CardContent>
+                </Card>
+              </div>
             )}
             {activeView === 'clients' && (
-              <Card className="shadow-lg">
+              <Card className="shadow-lg border-primary/20">
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle className="font-headline text-3xl">Manage Clients</CardTitle>
+                    <CardTitle className="font-headline text-3xl text-primary">Manage Clients</CardTitle>
                     <CardDescription>View and manage all registered clients.</CardDescription>
                   </div>
                   <Dialog open={isAddClientOpen} onOpenChange={setAddClientOpen}>
@@ -257,7 +291,7 @@ function AdminDashboard() {
                           <TableCell>{client.phone}</TableCell>
                           <TableCell className="text-right">
                              <div className="flex items-center justify-end gap-2">
-                                <span className={`text-sm ${client.active ? 'text-green-600' : 'text-red-600'}`}>
+                                <span className={`text-sm font-medium ${client.active ? 'text-green-500' : 'text-red-500'}`}>
                                   {client.active ? 'Active' : 'Inactive'}
                                 </span>
                                 <Switch
@@ -275,7 +309,7 @@ function AdminDashboard() {
               </Card>
             )}
         </main>
-        <footer className="py-6 md:px-8 md:py-0 border-t bg-card">
+        <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
             <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
                 <p className="text-sm text-center text-muted-foreground">
                     © {new Date().getFullYear()} Dashboard Central. All rights reserved.
