@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Dashboard Central',
+  title: 'CASA DASH',
   description: 'Multi-role dashboard application',
 };
 

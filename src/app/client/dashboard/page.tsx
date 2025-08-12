@@ -284,7 +284,7 @@ export default function ClientDashboardPage() {
 
   return (
     <UnifiedDashboardLayout
-      title="Client Dashboard"
+      title="CASA DASH"
       userRole="Client"
       userEmail="client@example.com"
       menuItems={[

@@ -72,7 +72,7 @@ export default function CustomerDashboardPage() {
 
     return (
         <UnifiedDashboardLayout
-            title="Customer Dashboard"
+            title="CASA DASH"
             userRole={user?.role || "Customer"}
             userEmail={user?.email || ""}
             menuItems={[

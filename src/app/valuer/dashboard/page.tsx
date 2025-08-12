@@ -6,7 +6,7 @@ import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-lay
 export default function ValuerDashboardPage() {
     return (
         <UnifiedDashboardLayout
-            title="Valuer Dashboard"
+            title="CASA DASH"
             userRole="Valuer"
             userEmail="valuer@example.com"
             menuItems={[
