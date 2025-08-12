@@ -38,7 +38,7 @@ const loginSchema = z.object({
 });
 
 const clientLoginSchema = z.object({
-  name: z.string().trim().min(1, { message: "Name is required." }),
+  name: z.string().min(1, { message: "Name is required." }),
   password: z.string().min(1, { message: "Password is required." }),
 });
 
@@ -137,7 +137,8 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   const onSubmit = async (data: ClientLoginFormValues) => {
     setIsLoading(true);
     try {
-      const q = query(collection(db, "clients"), where("name", "==", data.name));
+      const clientsRef = collection(db, "clients");
+      const q = query(clientsRef, where("name", "==", data.name));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
@@ -150,11 +151,9 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         return;
       }
 
-      // Since name should be unique, we can safely take the first result.
       const clientDoc = querySnapshot.docs[0];
       const clientData = clientDoc.data();
 
-      // Check password
       if (clientData.password !== data.password) {
         toast({
           variant: "destructive",
@@ -165,22 +164,21 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         return;
       }
 
-      // Check if account is active
       if (!clientData.active) {
         toast({
           variant: "destructive",
           title: "Account Inactive",
-          description: "Your account is inactive. Please contact the administrator to activate it.",
+          description: "Your account is inactive. Please contact the administrator.",
         });
         setIsLoading(false);
         return;
       }
 
-      // If all checks pass, redirect to dashboard
+      // If all checks pass
       router.push('/client/dashboard');
-      toast({ title: `Client Login Successful`, description: `Welcome, ${clientData.name}!` });
+      toast({ title: "Client Login Successful", description: `Welcome back, ${clientData.name}!` });
 
-    } catch (error: any) {
+    } catch (error) {
       console.error("Client login error:", error);
       toast({
         variant: "destructive",
