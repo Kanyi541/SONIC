@@ -210,7 +210,7 @@ export default function ClientDashboardPage() {
     }
   };
 
-  const getStatusVariant = (status: string) => {
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "Pending":
         return "secondary";
@@ -494,7 +494,7 @@ export default function ClientDashboardPage() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Car Model</FormLabel>
-                                        <Select onValuechange={field.onChange} defaultValue={field.value} disabled={!selectedCarMake}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedCarMake}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select a car model" />
@@ -579,5 +579,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
