@@ -288,8 +288,6 @@ export default function ClientDashboardPage() {
       menuItems={[
         { name: "Overview", view: "overview" },
         { name: "Bookings", view: "bookings" },
-        { name: "Invoices", view: "invoices" },
-        { name: "Support", view: "support" },
       ]}
     >
       {(activeView) => (
@@ -449,30 +447,6 @@ export default function ClientDashboardPage() {
                       )}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="invoices">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Invoices</CardTitle>
-                  <CardDescription>Your billing and payment history.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">No invoices found.</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="support">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Support</CardTitle>
-                  <CardDescription>Contact our team for assistance.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button>Open Support Ticket</Button>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -691,5 +665,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
