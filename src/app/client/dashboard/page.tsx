@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import UnifiedDashboardLayout from "@/components/dashboard/unified-dashboard-layout";
@@ -11,7 +11,6 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableHeader,
@@ -36,10 +35,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookMarked, Loader2 } from "lucide-react";
+import { BookMarked, Loader2, Car, FilePlus, Hourglass, CheckCircle } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 
@@ -49,6 +48,18 @@ interface Customer {
   name: string;
   email: string;
   phone: string;
+}
+
+interface Booking {
+    id: string;
+    status: string;
+}
+
+interface Stats {
+    totalCustomers: number;
+    newRequests: number;
+    pendingValuation: number;
+    pendingApproval: number;
 }
 
 const bookingSchema = z.object({
@@ -71,10 +82,11 @@ export default function ClientDashboardPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentView, setCurrentView] = useState("overview");
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
+  const [stats, setStats] = useState<Stats>({ totalCustomers: 0, newRequests: 0, pendingValuation: 0, pendingApproval: 0 });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
@@ -105,19 +117,60 @@ export default function ClientDashboardPage() {
   const carModels = selectedCarMake ? carData.find(make => make.brand === selectedCarMake)?.models || [] : [];
 
   useEffect(() => {
-    if (currentView === "bookings") {
-      setLoading(true);
-      const unsubscribe = onSnapshot(collection(db, "customers"), (querySnapshot) => {
-        const customersData: Customer[] = [];
-        querySnapshot.forEach((doc) => {
-          customersData.push({ id: doc.id, ...doc.data() } as Customer);
+    const fetchCustomers = () => {
+        setLoading(true);
+        const unsubscribe = onSnapshot(collection(db, "customers"), (querySnapshot) => {
+            const customersData: Customer[] = [];
+            querySnapshot.forEach((doc) => {
+            customersData.push({ id: doc.id, ...doc.data() } as Customer);
+            });
+            setCustomers(customersData);
+            setLoading(false);
         });
-        setCustomers(customersData);
-        setLoading(false);
-      });
-      return () => unsubscribe();
-    }
-  }, [currentView]);
+        return unsubscribe;
+    };
+
+    const fetchStats = async () => {
+        setStatsLoading(true);
+        const customersCollection = collection(db, "customers");
+        const bookingsCollection = collection(db, "bookings");
+
+        const customersSnapshot = await getDocs(customersCollection);
+        const totalCustomers = customersSnapshot.size;
+
+        const newRequestsQuery = query(bookingsCollection, where("status", "==", "Pending"));
+        const pendingValuationQuery = query(bookingsCollection, where("status", "==", "Pending Valuation"));
+        const pendingApprovalQuery = query(bookingsCollection, where("status", "==", "Pending Approval"));
+
+        const [newRequestsSnapshot, pendingValuationSnapshot, pendingApprovalSnapshot] = await Promise.all([
+            getDocs(newRequestsQuery),
+            getDocs(pendingValuationQuery),
+            getDocs(pendingApprovalQuery),
+        ]);
+
+        setStats({
+            totalCustomers,
+            newRequests: newRequestsSnapshot.size,
+            pendingValuation: pendingValuationSnapshot.size,
+            pendingApproval: pendingApprovalSnapshot.size,
+        });
+
+        setStatsLoading(false);
+    };
+
+    const unsubCustomers = fetchCustomers();
+    fetchStats();
+    
+    // Set up a listener for real-time stat updates on bookings
+    const unsubBookings = onSnapshot(collection(db, "bookings"), () => {
+        fetchStats(); 
+    });
+
+    return () => {
+        unsubCustomers();
+        unsubBookings();
+    };
+  }, []);
   
   const handleOpenBookingDialog = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -181,27 +234,51 @@ export default function ClientDashboardPage() {
         { name: "Support", view: "support" },
       ]}
     >
-      {(activeView) => {
-        useEffect(() => {
-          setCurrentView(activeView);
-        }, [activeView]);
-
-        return (
+      {(activeView) => (
           <Tabs value={activeView} className="w-full">
             <TabsContent value="overview">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Welcome Back!</CardTitle>
-                  <CardDescription>
-                    Here’s what’s happening with your account today.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Your dashboard overview will appear here.
-                  </p>
-                </CardContent>
-              </Card>
+               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+                            <Car className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            {statsLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.totalCustomers}</div>}
+                            <p className="text-xs text-muted-foreground">All registered customers</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">New Requests</CardTitle>
+                            <FilePlus className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                             {statsLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.newRequests}</div>}
+                            <p className="text-xs text-muted-foreground">Newly created bookings</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
+                            <Hourglass className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                             {statsLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.pendingValuation}</div>}
+                            <p className="text-xs text-muted-foreground">Bookings awaiting valuation</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                             {statsLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.pendingApproval}</div>}
+                           <p className="text-xs text-muted-foreground">Valuations awaiting approval</p>
+                        </CardContent>
+                    </Card>
+                </div>
             </TabsContent>
 
             <TabsContent value="bookings">
@@ -494,8 +571,7 @@ export default function ClientDashboardPage() {
                 </DialogContent>
             </Dialog>
           </Tabs>
-        );
-      }}
+      )}
     </UnifiedDashboardLayout>
   );
 }
