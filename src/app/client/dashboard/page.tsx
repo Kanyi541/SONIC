@@ -239,7 +239,7 @@ export default function ClientDashboardPage() {
                             <CardHeader>
                                 <CardTitle>Support Tickets</CardTitle>
                                 <CardDescription>Create and manage your support requests.</CardDescription>
-                            </Header>
+                            </CardHeader>
                             <CardContent>
                                 <p className="text-muted-foreground">No support tickets.</p>
                             </CardContent>
