@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
-import { Car, FilePlus, Hourglass, CheckCircle, PlusCircle, User } from 'lucide-react';
+import { Car, FilePlus, Hourglass, CheckCircle, PlusCircle, User, Book, DollarSign, LifeBuoy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -40,7 +40,6 @@ export default function ClientDashboardPage() {
     const [isAddCustomerOpen, setAddCustomerOpen] = useState(false);
     const [customers, setCustomers] = useState<Customer[]>([]);
     
-    // Mock data for display purposes
     const stats = {
         allCars: 12,
         newRequests: 2,
@@ -96,9 +95,9 @@ export default function ClientDashboardPage() {
             userEmail="client@example.com"
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
-                { name: 'Bookings', view: 'bookings' },
-                { name: 'Invoices', view: 'invoices' },
-                { name: 'Support', view: 'support' },
+                { name: 'Bookings', view: 'bookings', icon: <Book /> },
+                { name: 'Invoices', view: 'invoices', icon: <DollarSign /> },
+                { name: 'Support', view: 'support', icon: <LifeBuoy /> },
             ]}
         >
             {(activeView) => (
@@ -230,7 +229,7 @@ export default function ClientDashboardPage() {
                             <CardHeader>
                                 <CardTitle>Invoices</CardTitle>
                                 <CardDescription>Your billing and payment history.</CardDescription>
-                            </CardHeader>
+                            </Header>
                             <CardContent>
                                 <p className="text-muted-foreground">No invoices found.</p>
                             </CardContent>
@@ -241,7 +240,7 @@ export default function ClientDashboardPage() {
                             <CardHeader>
                                 <CardTitle>Support Tickets</CardTitle>
                                 <CardDescription>Create and manage your support requests.</CardDescription>
-                            </CardHeader>
+                            </Header>
                             <CardContent>
                                 <p className="text-muted-foreground">No support tickets.</p>
                             </CardContent>
