@@ -28,14 +28,14 @@ interface Customer {
 }
 
 export default function ClientDashboardPage() {
-  const [activeTab, setActiveTab] = useState("overview");
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentView, setCurrentView] = useState("overview");
 
   useEffect(() => {
     // Only fetch customers when the bookings tab is active
-    if (activeTab === "bookings") {
+    if (currentView === "bookings") {
       setLoading(true);
       const unsubscribe = onSnapshot(collection(db, "customers"), (querySnapshot) => {
         const customersData: Customer[] = [];
@@ -49,7 +49,7 @@ export default function ClientDashboardPage() {
       // Cleanup subscription on component unmount or when tab changes
       return () => unsubscribe();
     }
-  }, [activeTab]);
+  }, [currentView]);
 
   const filteredCustomers = customers.filter(
     (customer) =>
@@ -72,12 +72,13 @@ export default function ClientDashboardPage() {
         ]}
     >
       {(activeView) => {
-        // This keeps the outer state in sync with the layout's active view
-        if (activeView !== activeTab) {
-          setActiveTab(activeView);
-        }
+         // Use effect to sync state from parent to avoid render-time setState calls.
+        useEffect(() => {
+          setCurrentView(activeView);
+        }, [activeView]);
+
         return (
-          <Tabs value={activeView} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeView} className="w-full">
             {/* Overview Tab */}
             <TabsContent value="overview">
               <Card>
