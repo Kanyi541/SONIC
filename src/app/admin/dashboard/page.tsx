@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, LayoutDashboard, User, PlusCircle } from 'lucide-react';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { collection, addDoc, getDocs, doc, updateDoc, query, onSnapshot } from "firebase/firestore"; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -31,19 +32,35 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  active: boolean;
+}
 
 function AdminDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [activeView, setActiveView] = useState('dashboard');
-  const [clients, setClients] = useState([
-    { id: 1, name: 'Client A', email: 'client.a@example.com', phone: '555-0101', active: true },
-    { id: 2, name: 'Client B', email: 'client.b@example.com', phone: '555-0102', active: false },
-    { id: 3, name: 'Client C', email: 'client.c@example.com', phone: '555-0103', active: true },
-    { id: 4, name: 'Client D', email: 'client.d@example.com', phone: '555-0104', active: true },
-  ]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [isAddClientOpen, setAddClientOpen] = useState(false);
+
+  useEffect(() => {
+    if (activeView === 'clients') {
+      const q = query(collection(db, "clients"));
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const clientsData: Client[] = [];
+        querySnapshot.forEach((doc) => {
+          clientsData.push({ id: doc.id, ...doc.data() } as Client);
+        });
+        setClients(clientsData);
+      });
+      return () => unsubscribe();
+    }
+  }, [activeView]);
 
   const handleLogout = async () => {
     try {
@@ -56,26 +73,54 @@ function AdminDashboard() {
     }
   };
   
-  const handleAddClient = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleAddClient = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
-    const newClient = {
-      id: clients.length + 1,
-      name: (form.elements.namedItem('name') as HTMLInputElement).value,
-      email: (form.elements.namedItem('email') as HTMLInputElement).value,
-      phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
-      active: (form.elements.namedItem('active') as HTMLInputElement).checked,
-    };
-    // In a real app, you'd also handle the password and save to a database.
-    setClients([...clients, newClient]);
-    setAddClientOpen(false);
-    toast({ title: "Client Added", description: `${newClient.name} has been successfully added.`});
+    const name = (form.elements.namedItem('name') as HTMLInputElement).value;
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+    const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
+    const active = (form.elements.namedItem('active') as HTMLInputElement).checked;
+
+    try {
+      // It's not recommended to create users with password from admin side this way
+      // without a proper admin SDK setup, but for this case we will do it.
+      // In a real-world scenario, you would typically send an invitation link
+      // or use a server-side admin SDK to manage users.
+      const tempAuth = auth; // This is not ideal.
+      await createUserWithEmailAndPassword(tempAuth, email, password);
+
+      await addDoc(collection(db, "clients"), {
+        name,
+        email,
+        phone,
+        active,
+      });
+
+      setAddClientOpen(false);
+      toast({ title: "Client Added", description: `${name} has been successfully added.`});
+    } catch (error: any) {
+       console.error("Error adding client: ", error);
+       toast({
+         variant: "destructive",
+         title: "Failed to Add Client",
+         description: error.message || "An error occurred while adding the client.",
+       });
+    }
   };
 
-  const toggleClientStatus = (clientId: number) => {
-    setClients(clients.map(client => 
-      client.id === clientId ? { ...client, active: !client.active } : client
-    ));
+  const toggleClientStatus = async (clientId: string) => {
+    const clientRef = doc(db, "clients", clientId);
+    const client = clients.find(c => c.id === clientId);
+    if (client) {
+      try {
+        await updateDoc(clientRef, { active: !client.active });
+        toast({ title: "Status Updated", description: `Status for ${client.name} has been updated.`});
+      } catch (error) {
+        console.error("Error updating status: ", error);
+        toast({ variant: "destructive", title: "Update Failed", description: "Could not update client status."});
+      }
+    }
   };
 
 
