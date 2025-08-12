@@ -10,6 +10,15 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+
 
 function AdminDashboard() {
   const { user } = useAuth();
@@ -29,10 +38,10 @@ function AdminDashboard() {
   };
 
   const clients = [
-    { id: 1, name: 'Client A', email: 'client.a@example.com' },
-    { id: 2, name: 'Client B', email: 'client.b@example.com' },
-    { id: 3, name: 'Client C', email: 'client.c@example.com' },
-    { id: 4, name: 'Client D', email: 'client.d@example.com' },
+    { id: 1, name: 'Client A', email: 'client.a@example.com', phone: '555-0101' },
+    { id: 2, name: 'Client B', email: 'client.b@example.com', phone: '555-0102' },
+    { id: 3, name: 'Client C', email: 'client.c@example.com', phone: '555-0103' },
+    { id: 4, name: 'Client D', email: 'client.d@example.com', phone: '555-0104' },
   ];
 
   return (
@@ -103,22 +112,33 @@ function AdminDashboard() {
                   <CardDescription>View and manage all registered clients.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-col gap-4">
-                    {clients.map(client => (
-                      <Card key={client.id} className="flex items-center p-4">
-                        <div className="flex-shrink-0 mr-4">
-                           <div className="p-2 bg-muted rounded-full">
-                            <User className="h-6 w-6 text-primary" />
-                           </div>
-                        </div>
-                        <div className="flex-grow">
-                          <p className="font-semibold text-lg">{client.name}</p>
-                          <p className="text-sm text-muted-foreground">{client.email}</p>
-                        </div>
-                        <Button variant="outline" size="sm">Manage</Button>
-                      </Card>
-                    ))}
-                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clients.map(client => (
+                        <TableRow key={client.id}>
+                          <TableCell className="font-medium flex items-center gap-3">
+                            <div className="p-2 bg-muted rounded-full">
+                              <User className="h-5 w-5 text-primary" />
+                            </div>
+                            {client.name}
+                          </TableCell>
+                          <TableCell>{client.email}</TableCell>
+                          <TableCell>{client.phone}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="outline" size="sm">Manage</Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
             )}
