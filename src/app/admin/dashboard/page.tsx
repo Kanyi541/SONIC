@@ -82,10 +82,8 @@ function AdminDashboard() {
     const active = (form.elements.namedItem('active') as HTMLInputElement).checked;
 
     try {
-      // The `createUserWithEmailAndPassword` was removed to prevent conflicts
-      // with existing users. User account creation should be a separate process.
       // This function now only adds the client details to the Firestore database.
-
+      // User account creation should be a separate process to avoid auth errors.
       await addDoc(collection(db, "clients"), {
         name,
         email,
