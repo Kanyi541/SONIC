@@ -137,14 +137,10 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   const onSubmit = async (data: ClientLoginFormValues) => {
     setIsLoading(true);
     try {
-      const q = query(collection(db, "clients"));
+      const q = query(collection(db, "clients"), where("name", "==", data.name));
       const querySnapshot = await getDocs(q);
-      
-      const clients = querySnapshot.docs.map(doc => doc.data());
-      
-      const foundClient = clients.find(client => client.name.trim().toLowerCase() === data.name.trim().toLowerCase());
 
-      if (!foundClient) {
+      if (querySnapshot.empty) {
         toast({
           variant: "destructive",
           title: "Login Failed",
@@ -154,7 +150,10 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         return;
       }
 
-      if (foundClient.password !== data.password) {
+      const clientDoc = querySnapshot.docs[0];
+      const clientData = clientDoc.data();
+
+      if (clientData.password !== data.password) {
         toast({
           variant: "destructive",
           title: "Login Failed",
@@ -164,7 +163,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         return;
       }
 
-      if (!foundClient.active) {
+      if (!clientData.active) {
         toast({
           variant: "destructive",
           title: "Account Inactive",
@@ -175,7 +174,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
       }
 
       router.push('/client/dashboard');
-      toast({ title: `Client Login Successful`, description: `Welcome, ${foundClient.name}!` });
+      toast({ title: `Client Login Successful`, description: `Welcome, ${clientData.name}!` });
 
     } catch (error: any) {
       console.error("Client login error:", error);
