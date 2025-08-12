@@ -35,25 +35,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, getDocs, orderBy, where } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookMarked, Loader2, Car, FilePlus, Hourglass, CheckCircle } from "lucide-react";
+import { BookMarked, Loader2, Car, FilePlus, Hourglass, CheckCircle, PlusCircle } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
+import { Badge } from "@/components/ui/badge";
 
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  createdAt: any;
-}
 
 interface Booking {
-    id: string;
-    status: string;
+  id: string;
+  bookingNumber: string;
+  customerName: string;
+  plateNumber: string;
+  carMake: string;
+  carModel: string;
+  createdAt: any;
+  status: string;
 }
 
 interface Stats {
@@ -64,9 +63,9 @@ interface Stats {
 }
 
 const bookingSchema = z.object({
-  customerName: z.string(),
-  customerEmail: z.string().email(),
-  customerPhone: z.string(),
+  customerName: z.string().min(1, "Customer name is required"),
+  customerEmail: z.string().email("Invalid email address"),
+  customerPhone: z.string().min(1, "Customer phone is required"),
   plateNumber: z.string().min(1, "Plate number is required"),
   policyNumber: z.string().min(1, "Policy number is required"),
   carMake: z.string().min(1, "Car make is required"),
@@ -80,11 +79,9 @@ const bookingSchema = z.object({
 type BookingFormValues = z.infer<typeof bookingSchema>;
 
 export default function ClientDashboardPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
   const [stats, setStats] = useState<Stats>({ totalBookings: 0, newRequests: 0, pendingValuation: 0, pendingApproval: 0 });
   const [statsLoading, setStatsLoading] = useState(true);
@@ -118,15 +115,15 @@ export default function ClientDashboardPage() {
   const carModels = selectedCarMake ? carData.find(make => make.brand === selectedCarMake)?.models || [] : [];
 
   useEffect(() => {
-    const fetchCustomers = () => {
+    const fetchBookings = () => {
         setLoading(true);
-        const q = query(collection(db, "customers"), orderBy("createdAt", "desc"));
+        const q = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const customersData: Customer[] = [];
+            const bookingsData: Booking[] = [];
             querySnapshot.forEach((doc) => {
-            customersData.push({ id: doc.id, ...doc.data() } as Customer);
+                bookingsData.push({ id: doc.id, ...doc.data() } as Booking);
             });
-            setCustomers(customersData);
+            setBookings(bookingsData);
             setLoading(false);
         });
         return unsubscribe;
@@ -159,26 +156,24 @@ export default function ClientDashboardPage() {
         setStatsLoading(false);
     };
 
-    const unsubCustomers = fetchCustomers();
+    const unsubBookings = fetchBookings();
     fetchStats();
     
-    // Set up a listener for real-time stat updates on bookings
-    const unsubBookings = onSnapshot(collection(db, "bookings"), () => {
+    const unsubStats = onSnapshot(collection(db, "bookings"), () => {
         fetchStats(); 
     });
 
     return () => {
-        unsubCustomers();
         unsubBookings();
+        unsubStats();
     };
   }, []);
   
-  const handleOpenBookingDialog = (customer: Customer) => {
-    setSelectedCustomer(customer);
+  const handleOpenBookingDialog = () => {
     reset({
-      customerName: customer.name,
-      customerEmail: customer.email,
-      customerPhone: customer.phone,
+      customerName: "",
+      customerEmail: "",
+      customerPhone: "",
       plateNumber: "",
       policyNumber: "",
       carMake: "",
@@ -215,13 +210,21 @@ export default function ClientDashboardPage() {
     }
   };
 
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "Pending":
+        return "secondary";
+      case "Pending Valuation":
+        return "outline";
+      case "Pending Approval":
+        return "destructive";
+      case "Completed":
+        return "default";
+      default:
+        return "default";
+    }
+  };
 
-  const filteredCustomers = customers.filter(
-    (customer) =>
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <UnifiedDashboardLayout
@@ -287,56 +290,53 @@ export default function ClientDashboardPage() {
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <div>
-                      <CardTitle>Bookings</CardTitle>
-                      <CardDescription>Manage your customer bookings.</CardDescription>
+                      <CardTitle>All Bookings</CardTitle>
+                      <CardDescription>View and manage all vehicle bookings.</CardDescription>
                     </div>
+                     <Button onClick={handleOpenBookingDialog}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        New Booking
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-4">
-                    <Input
-                      placeholder="Search by name, email, or phone..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead>Booking ID</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Vehicle</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {loading ? (
-                        Array.from({ length: 3 }).map((_, index) => (
+                        Array.from({ length: 5 }).map((_, index) => (
                           <TableRow key={index}>
-                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-48" /></TableCell>
                             <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                            <TableCell className="text-right"><Skeleton className="h-8 w-32 ml-auto" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell className="text-right"><Skeleton className="h-6 w-20 ml-auto" /></TableCell>
                           </TableRow>
                         ))
-                      ) : filteredCustomers.length > 0 ? (
-                        filteredCustomers.map((customer) => (
-                          <TableRow key={customer.id}>
-                            <TableCell className="font-medium">{customer.name}</TableCell>
-                            <TableCell>{customer.email}</TableCell>
-                            <TableCell>{customer.phone}</TableCell>
+                      ) : bookings.length > 0 ? (
+                        bookings.map((booking) => (
+                          <TableRow key={booking.id}>
+                            <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
+                            <TableCell className="font-medium">{booking.customerName}</TableCell>
+                            <TableCell>{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
+                            <TableCell>{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
                             <TableCell className="text-right">
-                              <Button size="sm" onClick={() => handleOpenBookingDialog(customer)}>
-                                <BookMarked className="mr-2 h-4 w-4" />
-                                Make a Booking
-                              </Button>
+                               <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                             </TableCell>
                           </TableRow>
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center h-24">
-                            No customers found.
+                          <TableCell colSpan={5} className="text-center h-24">
+                            No bookings found.
                           </TableCell>
                         </TableRow>
                       )}
@@ -375,7 +375,7 @@ export default function ClientDashboardPage() {
                   <DialogHeader>
                     <DialogTitle>Make a New Booking</DialogTitle>
                     <DialogDescription>
-                      Fill out the form below to create a booking for {selectedCustomer?.name}.
+                      Fill out the form below to create a new booking.
                     </DialogDescription>
                   </DialogHeader>
                   <Form {...form}>
@@ -388,8 +388,9 @@ export default function ClientDashboardPage() {
                                     <FormItem>
                                     <FormLabel>Customer Name</FormLabel>
                                     <FormControl>
-                                        <Input {...field} disabled />
+                                        <Input {...field} placeholder="e.g. Jane Doe" />
                                     </FormControl>
+                                    <FormMessage />
                                     </FormItem>
                                 )}
                                 />
@@ -400,8 +401,9 @@ export default function ClientDashboardPage() {
                                     <FormItem>
                                     <FormLabel>Customer Email</FormLabel>
                                     <FormControl>
-                                        <Input {...field} disabled />
+                                        <Input {...field} placeholder="e.g. jane@example.com" type="email" />
                                     </FormControl>
+                                     <FormMessage />
                                     </FormItem>
                                 )}
                                 />
@@ -412,8 +414,9 @@ export default function ClientDashboardPage() {
                                     <FormItem>
                                     <FormLabel>Customer Phone</FormLabel>
                                     <FormControl>
-                                        <Input {...field} disabled />
+                                        <Input {...field} placeholder="e.g. 0712345678" />
                                     </FormControl>
+                                     <FormMessage />
                                     </FormItem>
                                 )}
                             />
@@ -491,7 +494,7 @@ export default function ClientDashboardPage() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Car Model</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedCarMake}>
+                                        <Select onValuechange={field.onChange} defaultValue={field.value} disabled={!selectedCarMake}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select a car model" />
@@ -576,3 +579,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
