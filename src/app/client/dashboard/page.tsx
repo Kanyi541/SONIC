@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -259,7 +258,7 @@ export default function ClientDashboardPage() {
                             </Header>
                             <CardContent>
                                 <p className="text-muted-foreground">No invoices found.</p>
-                            </CardContent>
+                            </Content>
                         </Card>
                     )}
                     {activeView === 'support' && (
@@ -270,7 +269,7 @@ export default function ClientDashboardPage() {
                             </Header>
                             <CardContent>
                                 <p className="text-muted-foreground">No support tickets.</p>
-                            </CardContent>
+                            </Content>
                         </Card>
                     )}
                 </>
