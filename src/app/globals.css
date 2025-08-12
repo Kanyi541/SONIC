@@ -10,7 +10,6 @@
     --card-foreground: 220 10% 20%;
     --popover: 220 20% 100%;
     --popover-foreground: 220 10% 20%;
-<<<<<<< HEAD
     --primary: 221 83% 40%; /* Navy Blue */
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96.1%;
@@ -35,32 +34,6 @@
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 221 83% 30%;
     --sidebar-ring: 0 0% 100%;
-=======
-    --primary: 221 83% 53%; /* Navy Blue */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 53%; /* Navy Blue */
-    --radius: 0.75rem;
-
-    /* Sidebar specific theme */
-    --sidebar-background: 221 83% 45%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 221 83% 25%;
-    --sidebar-accent: 221 83% 53%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 221 83% 40%;
-    --sidebar-ring: 210 40% 98%;
->>>>>>> d2f545d52705e65cb58119b2c300ae01cd8d1d98
   }
 
   .dark {
@@ -83,26 +56,16 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 217.2 91.2% 59.8%;
-<<<<<<< HEAD
 
     /* Dark Sidebar specific theme */
     --sidebar-background: 222.2 84% 4.9%;
-=======
-    
-    /* Dark Sidebar specific theme */
-    --sidebar-background: 222.2 84% 6.9%;
->>>>>>> d2f545d52705e65cb58119b2c300ae01cd8d1d98
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 210 40% 98%;
     --sidebar-primary-foreground: 222.2 47.4% 11.2%;
     --sidebar-accent: 217.2 32.6% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217.2 32.6% 17.5%;
-<<<<<<< HEAD
     --sidebar-ring: 217.2 32.6% 17.5%;
-=======
-    --sidebar-ring: 217.2 91.2% 59.8%;
->>>>>>> d2f545d52705e65cb58119b2c300ae01cd8d1d98
   }
 }
  
