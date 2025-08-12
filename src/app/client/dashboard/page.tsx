@@ -228,7 +228,7 @@ export default function ClientDashboardPage() {
                             <CardHeader>
                                 <CardTitle>Invoices</CardTitle>
                                 <CardDescription>Your billing and payment history.</CardDescription>
-                            </Header>
+                            </CardHeader>
                             <CardContent>
                                 <p className="text-muted-foreground">No invoices found.</p>
                             </CardContent>
