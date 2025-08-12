@@ -26,6 +26,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -42,6 +43,7 @@ import { BookMarked, Loader2, Car, FilePlus, Hourglass, CheckCircle, PlusCircle 
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
 interface Customer {
     id: string;
@@ -88,6 +90,7 @@ export default function ClientDashboardPage() {
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
   const { toast } = useToast();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isAddCustomerDialogOpen, setAddCustomerDialogOpen] = useState(false);
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
@@ -197,6 +200,34 @@ export default function ClientDashboardPage() {
     }
   };
 
+  const handleAddCustomer = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const name = (form.elements.namedItem('name') as HTMLInputElement).value;
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+    const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
+    
+    try {
+      await addDoc(collection(db, "customers"), {
+        name,
+        email,
+        phone,
+        createdAt: new Date(),
+      });
+
+      setAddCustomerDialogOpen(false);
+      form.reset();
+      toast({ title: "Customer Added", description: `${name} has been successfully added.`});
+    } catch (error: any) {
+       console.error("Error adding customer: ", error);
+       toast({
+         variant: "destructive",
+         title: "Failed to Add Customer",
+         description: "An error occurred while adding the customer.",
+       });
+    }
+  };
+
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "Pending":
@@ -228,9 +259,44 @@ export default function ClientDashboardPage() {
           <Tabs value={activeView} className="w-full">
             <TabsContent value="overview">
                <Card>
-                <CardHeader>
-                  <CardTitle>Customers</CardTitle>
-                  <CardDescription>Select a customer to make a new booking.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Customers</CardTitle>
+                    <CardDescription>Select a customer to make a new booking.</CardDescription>
+                  </div>
+                  <Dialog open={isAddCustomerDialogOpen} onOpenChange={setAddCustomerDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <PlusCircle className="mr-2" />
+                        Add Customer
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Add New Customer</DialogTitle>
+                        <DialogDescription>
+                          Fill in the details below to create a new customer.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleAddCustomer} className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="name" className="text-right">Name</Label>
+                          <Input id="name" name="name" className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="email" className="text-right">Email</Label>
+                          <Input id="email" name="email" type="email" className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="phone" className="text-right">Phone</Label>
+                          <Input id="phone" name="phone" className="col-span-3" />
+                        </div>
+                        <DialogFooter>
+                          <Button type="submit">Create Customer</Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -584,3 +650,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
