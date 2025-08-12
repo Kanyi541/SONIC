@@ -206,12 +206,14 @@ export default function ClientDashboardPage() {
     const name = (form.elements.namedItem('name') as HTMLInputElement).value;
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
     const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     
     try {
       await addDoc(collection(db, "customers"), {
         name,
         email,
         phone,
+        password,
         createdAt: new Date(),
       });
 
@@ -290,6 +292,10 @@ export default function ClientDashboardPage() {
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="phone" className="text-right">Phone</Label>
                           <Input id="phone" name="phone" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="password" className="text-right">Password</Label>
+                          <Input id="password" name="password" type="password" className="col-span-3" required />
                         </div>
                         <DialogFooter>
                           <Button type="submit">Create Customer</Button>
