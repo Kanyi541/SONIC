@@ -123,7 +123,7 @@ export default function ClientDashboardPage() {
 
   useEffect(() => {
     setCustomersLoading(true);
-    const customersQuery = query(collection(db, "customers"));
+    const customersQuery = query(collection(db, "customers"), orderBy("createdAt", "desc"));
 
     const unsubCustomers = onSnapshot(customersQuery, (customersSnapshot) => {
         const customersData: Customer[] = [];
@@ -144,7 +144,7 @@ export default function ClientDashboardPage() {
             const updatedCustomers = customersData.map(c => ({
                 ...c,
                 hasBooking: bookedEmails.has(c.email)
-            })).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+            }));
             setCustomers(updatedCustomers);
             setCustomersLoading(false);
         });
@@ -205,10 +205,44 @@ export default function ClientDashboardPage() {
     const form = event.currentTarget;
     const name = (form.elements.namedItem('name') as HTMLInputElement).value;
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
-    const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
+    const phoneInput = (form.elements.namedItem('phone') as HTMLInputElement);
+    const phone = phoneInput.value;
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     
+    if (phone.length > 10 || !/^\d+$/.test(phone)) {
+        toast({
+            variant: "destructive",
+            title: "Invalid Phone Number",
+            description: "Phone number must be 10 digits and contain only numbers.",
+        });
+        return;
+    }
+
     try {
+      const nameQuery = query(collection(db, "customers"), where("name", "==", name));
+      const emailQuery = query(collection(db, "customers"), where("email", "==", email));
+
+      const nameSnapshot = await getDocs(nameQuery);
+      const emailSnapshot = await getDocs(emailQuery);
+
+      if (!nameSnapshot.empty) {
+        toast({
+          variant: "destructive",
+          title: "Customer Exists",
+          description: `A customer with the name "${name}" already exists.`,
+        });
+        return;
+      }
+      
+      if (!emailSnapshot.empty) {
+        toast({
+          variant: "destructive",
+          title: "Customer Exists",
+          description: `A customer with the email "${email}" already exists.`,
+        });
+        return;
+      }
+
       await addDoc(collection(db, "customers"), {
         name,
         email,
@@ -229,6 +263,7 @@ export default function ClientDashboardPage() {
        });
     }
   };
+
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
@@ -291,7 +326,7 @@ export default function ClientDashboardPage() {
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="phone" className="text-right">Phone</Label>
-                          <Input id="phone" name="phone" className="col-span-3" />
+                          <Input id="phone" name="phone" className="col-span-3" type="tel" maxLength={10} required/>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="password" className="text-right">Password</Label>
