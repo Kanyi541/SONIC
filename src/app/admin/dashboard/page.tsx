@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, LayoutDashboard, User, PlusCircle } from 'lucide-react';
-import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, query, onSnapshot } from "firebase/firestore"; 
 import { useToast } from '@/hooks/use-toast';
@@ -79,27 +79,22 @@ function AdminDashboard() {
     const name = (form.elements.namedItem('name') as HTMLInputElement).value;
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
     const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
-    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     const active = (form.elements.namedItem('active') as HTMLInputElement).checked;
 
     try {
-      // It's not recommended to create users with password from admin side this way
-      // without a proper admin SDK setup, but for this case we will do it.
-      // In a real-world scenario, you would typically send an invitation link
-      // or use a server-side admin SDK to manage users.
-      
-      // Creating a temporary user in auth. This is not ideal for production.
-      // A more secure approach would use Firebase Admin SDK on a server.
-      await createUserWithEmailAndPassword(auth, email, password);
+      // The `createUserWithEmailAndPassword` was removed to prevent conflicts
+      // with existing users. User account creation should be a separate process.
+      // This function now only adds the client details to the Firestore database.
 
       await addDoc(collection(db, "clients"), {
         name,
         email,
         phone,
-        active: active, // Explicitly pass the boolean
+        active: active,
       });
 
       setAddClientOpen(false);
+      form.reset();
       toast({ title: "Client Added", description: `${name} has been successfully added.`});
     } catch (error: any) {
        console.error("Error adding client: ", error);
@@ -222,10 +217,6 @@ function AdminDashboard() {
                           <Input id="phone" name="phone" className="col-span-3" />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="password" className="text-right">Password</Label>
-                          <Input id="password" name="password" type="password" className="col-span-3" required />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="active" className="text-right">Active</Label>
                            <div className="col-span-3 flex items-center">
                             <Switch id="active" name="active" defaultChecked={true} />
@@ -299,5 +290,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   )
 }
-
-    
