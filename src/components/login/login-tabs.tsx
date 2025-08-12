@@ -138,7 +138,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
     try {
       const q = query(
         collection(db, "clients"),
-        where("name", "==", data.name)
+        where("name", "==", data.name.trim())
       );
       const querySnapshot = await getDocs(q);
 
@@ -168,8 +168,8 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
       if (!clientData.active) {
         toast({
           variant: "destructive",
-          title: "Login Failed",
-          description: "Your account is inactive. Please contact admin to activate it.",
+          title: "Account Inactive",
+          description: "Your account is inactive. Please contact admin.",
         });
         setIsLoading(false);
         return;
@@ -179,6 +179,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
       toast({ title: `Client Login Successful`, description: `Welcome, ${clientData.name}!` });
 
     } catch (error: any) {
+      console.error("Client login error:", error);
       toast({
         variant: "destructive",
         title: "Login Failed",
