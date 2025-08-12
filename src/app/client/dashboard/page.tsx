@@ -87,7 +87,6 @@ export default function ClientDashboardPage() {
         }
     };
 
-
     return (
         <UnifiedDashboardLayout
             title="Client Dashboard"
