@@ -150,9 +150,11 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         return;
       }
 
+      // Since name should be unique, we can safely take the first result.
       const clientDoc = querySnapshot.docs[0];
       const clientData = clientDoc.data();
 
+      // Check password
       if (clientData.password !== data.password) {
         toast({
           variant: "destructive",
@@ -163,16 +165,18 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         return;
       }
 
+      // Check if account is active
       if (!clientData.active) {
         toast({
           variant: "destructive",
           title: "Account Inactive",
-          description: "Your account is inactive. Please contact admin.",
+          description: "Your account is inactive. Please contact the administrator to activate it.",
         });
         setIsLoading(false);
         return;
       }
 
+      // If all checks pass, redirect to dashboard
       router.push('/client/dashboard');
       toast({ title: `Client Login Successful`, description: `Welcome, ${clientData.name}!` });
 
