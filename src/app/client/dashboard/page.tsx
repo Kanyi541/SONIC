@@ -39,14 +39,14 @@ export default function ClientDashboardPage() {
     const { toast } = useToast();
     const [isAddCustomerOpen, setAddCustomerOpen] = useState(false);
     const [customers, setCustomers] = useState<Customer[]>([]);
-    
+
     const stats = {
         allCars: 12,
         newRequests: 2,
         pendingValuation: 3,
         pendingApproval: 1,
     };
-    
+
     useEffect(() => {
         const unsubscribe = onSnapshot(collection(db, "customers"), (querySnapshot) => {
             const customersData: Customer[] = [];
@@ -57,7 +57,7 @@ export default function ClientDashboardPage() {
         });
         return () => unsubscribe();
     }, []);
-    
+
     const handleAddCustomer = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const form = event.currentTarget;
