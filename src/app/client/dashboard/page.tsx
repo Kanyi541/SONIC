@@ -438,9 +438,9 @@ export default function InsurerDashboardPage() {
                                             name="branch"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                <FormLabel>Broker</FormLabel>
+                                                <FormLabel>Branch</FormLabel>
                                                 <FormControl>
-                                                    <Input {...field} placeholder="e.g. Resource Ins Agency" />
+                                                    <Input {...field} placeholder="e.g. Nairobi" />
                                                 </FormControl>
                                                 <FormMessage />
                                                 </FormItem>
@@ -743,5 +743,7 @@ export default function InsurerDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
 
     
