@@ -310,14 +310,6 @@ export default function ValuerDashboardPage() {
                                                     <FilePen className="mr-2 h-4 w-4" />
                                                     <span className="hidden sm:inline">Valuate</span>
                                                 </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
-                                                >
-                                                    <Printer className="mr-2 h-4 w-4" />
-                                                    <span className="hidden sm:inline">Valuated</span>
-                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                         ))
@@ -496,5 +488,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
-    
