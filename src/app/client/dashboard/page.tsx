@@ -45,10 +45,10 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, where, doc, getDoc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -223,31 +223,43 @@ export default function InsurerDashboardPage() {
         toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to create a booking." });
         return;
     }
-    
+
     try {
-      const { customerId, ...bookingData } = data;
-      const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-      await addDoc(collection(db, "bookings"), {
-        ...bookingData,
-        bookingNumber,
-        createdAt: new Date(),
-        status: "Pending", // Initial status
-        insurerId: loggedInUser.username, 
-        branch: loggedInUser.name,
-      });
-      toast({
-        title: "Booking Created",
-        description: `Booking #${bookingNumber} for ${data.customerName} has been saved.`,
-      });
-      setBookingDialogOpen(false);
-      resetBookingForm();
+        const plateNumberQuery = query(collection(db, "bookings"), where("plateNumber", "==", data.plateNumber));
+        const querySnapshot = await getDocs(plateNumberQuery);
+        if (!querySnapshot.empty) {
+            toast({
+                variant: "destructive",
+                title: "Duplicate Booking",
+                description: `A booking with plate number ${data.plateNumber} already exists.`,
+            });
+            return;
+        }
+
+        const { customerId, ...bookingData } = data;
+        const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+        await addDoc(collection(db, "bookings"), {
+            ...bookingData,
+            bookingNumber,
+            createdAt: new Date(),
+            status: "Pending",
+            insurerId: loggedInUser.username,
+        });
+
+        toast({
+            title: "Booking Created",
+            description: `Booking #${bookingNumber} for ${data.customerName} has been saved.`,
+        });
+        setBookingDialogOpen(false);
+        resetBookingForm();
     } catch (error) {
-      console.error("Error creating booking: ", error);
-      toast({
-        variant: "destructive",
-        title: "Booking Failed",
-        description: "An error occurred while creating the booking.",
-      });
+        console.error("Error creating booking: ", error);
+        toast({
+            variant: "destructive",
+            title: "Booking Failed",
+            description: "An error occurred while creating the booking.",
+        });
     }
   };
 
@@ -293,7 +305,7 @@ export default function InsurerDashboardPage() {
                             Add Booking
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-2xl grid-rows-[auto_1fr_auto] max-h-[90vh]">
+                        <DialogContent className="sm:max-w-3xl grid-rows-[auto_1fr_auto] max-h-[90vh]">
                           <DialogHeader>
                             <DialogTitle>Make a New Booking</DialogTitle>
                             <DialogDescription>
@@ -743,6 +755,8 @@ export default function InsurerDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
 
     
 
