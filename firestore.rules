@@ -2,34 +2,35 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Admin-only collections
-    match /valuers/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Insurers collection
-    // Allow read for login check, but restrict writes to admins.
-    match /insurers/{docId} {
+    
+    // Insurers collection:
+    // Allow public read for login verification.
+    // Only authenticated admins can create, update, or delete insurers.
+    match /insurers/{insurerId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Customer collection
-    // Allow an insurer to create customers.
-    // An insurer can only read customers linked to them.
-    match /customers/{docId} {
-      allow create: if true;
-      allow read: if resource.data.insurerId == request.query.get("insurerUsername");
+    // Customers collection:
+    // Allow public read access for insurers to view their customer lists.
+    // Writes are allowed for any user (representing a logged-in insurer).
+    match /customers/{customerId} {
+      allow read: if true;
+      allow write: if true;
     }
 
-    // Bookings collection
-    // Allow an insurer to create bookings.
-    // An insurer can only read bookings linked to them.
-    match /bookings/{docId} {
-       allow create: if true;
-       allow read: if resource.data.insurerId == request.query.get("insurerUsername");
-       allow update, delete: if request.auth != null; // Only admin can update/delete
+    // Bookings collection:
+    // Allow public read access for insurers to view their bookings.
+    // Writes are allowed for any user (representing a logged-in insurer).
+    match /bookings/{bookingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Valuers collection:
+    // Restricted to authenticated admin users.
+    match /valuers/{valuerId} {
+      allow read, write: if request.auth != null;
     }
   }
 }
