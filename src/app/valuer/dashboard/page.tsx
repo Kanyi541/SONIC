@@ -5,12 +5,11 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
 import { collection, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -64,9 +63,8 @@ export default function ValuerDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [isValuationDialogOpen, setValuationDialogOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-    const [imageFiles, setImageFiles] = useState<File[]>([]);
-    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-    const [isUploading, setIsUploading] = useState(false);
+    const [imageDataUrls, setImageDataUrls] = useState<string[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     const { toast } = useToast();
@@ -103,47 +101,38 @@ export default function ValuerDashboardPage() {
             setLoading(false);
         }
     }, [loggedInUser]);
-
+    
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             const files = Array.from(event.target.files);
-            const newFiles = [...imageFiles, ...files];
-            setImageFiles(newFiles);
-
-            const newPreviews = files.map(file => URL.createObjectURL(file));
-            const allPreviews = [...imagePreviews, ...newPreviews];
-            setImagePreviews(allPreviews);
-            form.setValue('images', allPreviews);
+            
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const dataUrl = e.target?.result as string;
+                    setImageDataUrls(prevUrls => {
+                        const newUrls = [...prevUrls, dataUrl];
+                        form.setValue('images', newUrls);
+                        return newUrls;
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
         }
     };
-
+    
     const removeImage = (index: number) => {
-        const newImageFiles = imageFiles.filter((_, i) => i !== index);
-        setImageFiles(newImageFiles);
-
-        const newImagePreviews = imagePreviews.filter((_, i) => i !== index);
-        setImagePreviews(newImagePreviews);
-        form.setValue('images', newImagePreviews);
-        
-        URL.revokeObjectURL(imagePreviews[index]);
+        const newImageDataUrls = imageDataUrls.filter((_, i) => i !== index);
+        setImageDataUrls(newImageDataUrls);
+        form.setValue('images', newImageDataUrls, { shouldValidate: true });
     };
-
+    
     const handleValuationSubmit = async (data: ValuationFormValues) => {
         if (!selectedBooking || !loggedInUser) return;
-
-        setIsUploading(true);
-
+    
+        setIsSubmitting(true);
+    
         try {
-            const storage = getStorage();
-            const imageUrls: string[] = [];
-
-            for (const file of imageFiles) {
-                const storageRef = ref(storage, `valuations/${selectedBooking.id}/${Date.now()}_${file.name}`);
-                await uploadBytes(storageRef, file);
-                const url = await getDownloadURL(storageRef);
-                imageUrls.push(url);
-            }
-            
             await addDoc(collection(db, "valuations"), {
                 bookingId: selectedBooking.id,
                 bookingNumber: selectedBooking.bookingNumber,
@@ -156,16 +145,16 @@ export default function ValuerDashboardPage() {
                 assessmentValue: data.assessmentValue,
                 forcedValue: data.forcedValue,
                 salvageValue: data.salvageValue,
-                imageUrls,
+                imageUrls: imageDataUrls, // Save data URLs directly
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
             });
-
+    
             const bookingDocRef = doc(db, "bookings", selectedBooking.id);
             await updateDoc(bookingDocRef, {
                 status: "Pending Approval"
             });
-
+    
             toast({
                 title: "Valuation Submitted",
                 description: `Report for ${selectedBooking.bookingNumber} has been submitted for approval.`,
@@ -173,9 +162,8 @@ export default function ValuerDashboardPage() {
             
             setValuationDialogOpen(false);
             form.reset();
-            setImageFiles([]);
-            setImagePreviews([]);
-
+            setImageDataUrls([]);
+    
         } catch (error) {
             console.error("Error submitting valuation:", error);
             toast({
@@ -184,15 +172,14 @@ export default function ValuerDashboardPage() {
                 description: "An error occurred while submitting the valuation.",
             });
         } finally {
-            setIsUploading(false);
+            setIsSubmitting(false);
         }
     };
     
 
     const openValuationDialog = (booking: Booking) => {
         form.reset();
-        setImageFiles([]);
-        setImagePreviews([]);
+        setImageDataUrls([]);
         setSelectedBooking(booking);
         setValuationDialogOpen(true);
     };
@@ -460,9 +447,9 @@ export default function ValuerDashboardPage() {
                                             name="images"
                                             render={() => (
                                                 <FormItem>
-                                                    {imagePreviews.length > 0 && (
+                                                    {imageDataUrls.length > 0 && (
                                                         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                                            {imagePreviews.map((preview, index) => (
+                                                            {imageDataUrls.map((preview, index) => (
                                                             <div key={index} className="relative group">
                                                                 <Image src={preview} alt={`preview ${index}`} width={150} height={150} className="w-full h-auto object-cover rounded-md" />
                                                                 <Button
@@ -485,8 +472,15 @@ export default function ValuerDashboardPage() {
                                     </div>
                                     <DialogFooter className="pt-4 !mt-8">
                                         <Button type="button" variant="outline" onClick={() => setValuationDialogOpen(false)}>Cancel</Button>
-                                        <Button type="submit" disabled={isUploading}>
-                                            {isUploading ? "Submitting..." : "Valuate & Submit"}
+                                        <Button type="submit" disabled={isSubmitting}>
+                                            {isSubmitting ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Submitting...
+                                                </>
+                                            ) : (
+                                                "Valuate & Submit"
+                                            )}
                                         </Button>
                                     </DialogFooter>
                                 </form>
@@ -499,3 +493,5 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    
