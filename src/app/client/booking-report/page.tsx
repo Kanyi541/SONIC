@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -27,7 +27,7 @@ interface BookingData {
   insurerName?: string;
 }
 
-export default function BookingReport() {
+function BookingReport() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const bookingId = searchParams.get('id');
@@ -184,5 +184,18 @@ export default function BookingReport() {
     </div>
   );
 }
+
+export default function BookingReportPage() {
+  return (
+    <Suspense fallback={
+        <div className="flex justify-center items-center h-screen bg-gray-100">
+            <Loader2 className="h-10 w-10 animate-spin text-blue-900" />
+        </div>
+    }>
+      <BookingReport />
+    </Suspense>
+  );
+}
+    
 
     
