@@ -30,7 +30,7 @@ import {
   DialogTrigger,
   DialogClose
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input';
+import { Input } from '@/components/ui/input';
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -443,7 +443,7 @@ function AdminDashboard() {
       </DialogContent>
     </Dialog>
   );
-}
+};
 
  const filteredBookings = bookings.filter(booking => {
     const searchTermLower = bookingSearchTerm.toLowerCase();
@@ -710,7 +710,7 @@ function AdminDashboard() {
                                 </div>
                                 {selectedValuation.comments && (
                                      <div className="pt-4">
-                                        <h4 className="font-semibold text-lg mb-2">Valuer&apos;s Comments</h4>
+                                        <h4 className="font-semibold text-lg mb-2">Valuer's Comments</h4>
                                         <p className="text-sm p-4 bg-muted rounded-md border">{selectedValuation.comments}</p>
                                     </div>
                                 )}
@@ -750,7 +750,5 @@ export default function AdminDashboardPage() {
     <AuthGuard>
       <AdminDashboard />
     </AuthGuard>
-  )
+  );
 }
-
-    
