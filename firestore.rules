@@ -1,43 +1,40 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Default to denying all access
+
+    // Helper function to check for admin role
+    function isAdmin() {
+      return request.auth.token.role == 'admin';
+    }
+
+    // Insurers collection
+    match /insurers/{insurerId} {
+      // Admins can manage all insurers
+      // Authenticated users can read insurer data (for login)
+      allow read: if isAdmin() || request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Customers collection
+    match /customers/{customerId} {
+      // Admins can manage all customers
+      // Authenticated users can manage customers linked to their insurerId
+      allow read, create: if isAdmin() || (request.auth != null && request.resource.data.insurerId == request.auth.token.name);
+      allow update, delete: if isAdmin() || (request.auth != null && resource.data.insurerId == request.auth.token.name);
+    }
+
+    // Bookings collection
+    match /bookings/{bookingId} {
+      // Admins can manage all bookings
+      // Authenticated users can manage bookings linked to their insurerId
+      allow read, create: if isAdmin() || (request.auth != null && request.resource.data.insurerId == request.auth.token.name);
+      allow update, delete: if isAdmin() || (request.auth != null && resource.data.insurerId == request.auth.token.name);
+    }
+
+    // Default deny all other access
     match /{document=**} {
       allow read, write: if false;
     }
-    
-    // Allow admins full access to their data
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Insurers can manage their own customers
-    match /customers/{customerId} {
-      allow read, create, update: if request.auth != null && request.resource.data.insurerId == request.auth.token.name;
-    }
-    
-    // Insurers can manage their own bookings
-    match /bookings/{bookingId} {
-      allow read, create, update: if request.auth != null && request.resource.data.insurerId == request.auth.token.name;
-    }
-    
-    // Anyone can read insurer data for login purposes, but only admins can modify
-    match /insurers/{insurerId} {
-      allow read: if true;
-      allow write: if get(/databases/$(database)/documents/admins/$(request.auth.uid)).exists == true;
-    }
-
-    // Admins have full access to all data
-    match /admins/{adminId} {
-      allow read, write: if request.auth != null && request.auth.uid == adminId;
-    }
-    
-    // Valuers can read their assigned valuations
-    match /valuations/{valuationId} {
-       allow read, update: if request.auth != null && request.resource.data.valuerId == request.auth.uid;
-    }
   }
 }
-
-    
