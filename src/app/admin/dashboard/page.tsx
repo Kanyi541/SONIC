@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs } from "firebase/firestore";
@@ -88,6 +88,7 @@ function AdminDashboard() {
   const [isAddValuerOpen, setAddValuerOpen] = useState(false);
   const [isControlActive, setControlActive] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [bookingSearchTerm, setBookingSearchTerm] = useState('');
 
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -100,9 +101,9 @@ function AdminDashboard() {
     const subscribeToCollection = (
         collectionName: string, 
         setter: React.Dispatch<React.SetStateAction<any[]>>, 
-        activeViews: string[]
+        requiredViews: string[]
     ) => {
-        if (activeViews.includes(activeView)) {
+        if (requiredViews.includes(activeView)) {
             const unsubscribe = onSnapshot(collection(db, collectionName), (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setter(data);
@@ -114,9 +115,9 @@ function AdminDashboard() {
     
     subscribeToCollection("insurers", setInsurers, ["insurers"]);
     subscribeToCollection("valuers", setValuers, ["valuers"]);
-    subscribeToCollection("bookings", setBookings, ["bookings"]);
+    subscribeToCollection("bookings", setBookings, ["bookings", "pending-approval"]);
 
-    if (!['insurers', 'valuers', 'bookings'].includes(activeView)) {
+    if (!['insurers', 'valuers', 'bookings', 'pending-approval'].includes(activeView)) {
         setLoading(false);
     }
     
@@ -146,7 +147,6 @@ function AdminDashboard() {
     const collectionName = userType === 'insurer' ? 'insurers' : 'valuers';
     
     try {
-      // Check for existing user
       if (userType === 'valuer') {
         const usernameQuery = query(collection(db, 'valuers'), where("username", "==", username));
         const emailQuery = query(collection(db, 'valuers'), where("email", "==", email));
@@ -242,10 +242,10 @@ function AdminDashboard() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold">Name</TableHead>
-              <TableHead className="hidden sm:table-cell font-semibold">Username</TableHead>
-              <TableHead className="hidden sm:table-cell font-semibold">Email</TableHead>
-              <TableHead className="hidden md:table-cell font-semibold">Phone</TableHead>
+              <TableHead className="font-semibold text-left">Name</TableHead>
+              <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
+              <TableHead className="hidden sm:table-cell font-semibold text-left">Email</TableHead>
+              <TableHead className="hidden md:table-cell font-semibold text-left">Phone</TableHead>
               <TableHead className="text-right font-semibold">Status</TableHead>
             </TableRow>
           </TableHeader>
@@ -338,6 +338,107 @@ function AdminDashboard() {
   );
 }
 
+ const filteredBookings = bookings.filter(booking => {
+    const searchTermLower = bookingSearchTerm.toLowerCase();
+    return (
+      booking.bookingNumber.toLowerCase().includes(searchTermLower) ||
+      booking.customerName.toLowerCase().includes(searchTermLower) ||
+      `${booking.carMake} ${booking.carModel}`.toLowerCase().includes(searchTermLower) ||
+      booking.plateNumber.toLowerCase().includes(searchTermLower)
+    );
+  });
+
+  const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
+  
+  const renderBookingsTable = (
+    bookingsData: Booking[],
+    title: string,
+    description: string
+  ) => (
+     <Card className="shadow-lg border-primary/20">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
+              <CardDescription>{description}</CardDescription>
+            </div>
+            <div className="relative w-full max-w-sm">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Search bookings..."
+                    className="w-full rounded-lg bg-background pl-8"
+                    value={bookingSearchTerm}
+                    onChange={(e) => setBookingSearchTerm(e.target.value)}
+                />
+            </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="font-semibold text-left">Booking ID</TableHead>
+              <TableHead className="hidden sm:table-cell font-semibold text-left">Customer</TableHead>
+              <TableHead className="hidden md:table-cell font-semibold text-left">Vehicle</TableHead>
+              <TableHead className="hidden sm:table-cell font-semibold text-left">Date</TableHead>
+              <TableHead className="font-semibold text-left">Status</TableHead>
+              <TableHead className="text-right font-semibold">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : bookingsData.length > 0 ? (
+              bookingsData.map((booking) => (
+                <TableRow key={booking.id}>
+                  <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
+                  <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
+                  <TableCell className="hidden md:table-cell">{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                     <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                  </TableCell>
+                   <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
+                      >
+                        <Printer className="mr-2 h-4 w-4" />
+                        <span className="hidden sm:inline">Instruction</span>
+                      </Button>
+                      {booking.status === 'Pending Approval' && (
+                         <Button variant="default" size="sm" onClick={() => {}}>
+                           <CheckCircle className="mr-2 h-4 w-4" />
+                           <span className="hidden sm:inline">View Report</span>
+                         </Button>
+                      )}
+                    </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center h-24">
+                  No bookings found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <SidebarProvider>
       <Sidebar variant="inset" side="left">
@@ -373,6 +474,12 @@ function AdminDashboard() {
               <SidebarMenuButton onClick={() => setActiveView('bookings')} isActive={activeView === 'bookings'} tooltip="All Bookings">
                 <FileText />
                 Bookings
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setActiveView('pending-approval')} isActive={activeView === 'pending-approval'} tooltip="Pending Approval">
+                <Hourglass />
+                Pending Approval
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -433,70 +540,8 @@ function AdminDashboard() {
             {renderUserDialog(isAddInsurerOpen, setAddInsurerOpen, 'insurer')}
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
 
-             {activeView === 'bookings' && (
-               <Card className="shadow-lg border-primary/20">
-                <CardHeader>
-                  <CardTitle className="font-headline text-3xl text-primary">All Bookings</CardTitle>
-                  <CardDescription>View and manage all vehicle bookings reports.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead className="font-semibold">Booking ID</TableHead>
-                        <TableHead className="hidden sm:table-cell font-semibold">Customer</TableHead>
-                        <TableHead className="hidden md:table-cell font-semibold">Vehicle</TableHead>
-                        <TableHead className="hidden sm:table-cell font-semibold">Date</TableHead>
-                        <TableHead className="font-semibold">Status</TableHead>
-                        <TableHead className="text-right font-semibold">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {loading ? (
-                        Array.from({ length: 5 }).map((_, index) => (
-                          <TableRow key={index}>
-                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
-                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                            <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                            <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
-                          </TableRow>
-                        ))
-                      ) : bookings.length > 0 ? (
-                        bookings.map((booking) => (
-                          <TableRow key={booking.id}>
-                            <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
-                            <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
-                            <TableCell className="hidden md:table-cell">{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
-                            <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
-                            <TableCell>
-                               <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
-                            </TableCell>
-                             <TableCell className="text-right">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
-                                >
-                                  <Printer className="mr-2 h-4 w-4" />
-                                  <span className="hidden sm:inline">View Report</span>
-                                </Button>
-                              </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center h-24">
-                            No bookings found.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-             )}
+            {activeView === 'bookings' && renderBookingsTable(filteredBookings, "All Bookings", "View and manage all vehicle bookings reports.")}
+            {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Pending Approval", "These reports are awaiting your review and approval.")}
         </main>
         <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
             <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
