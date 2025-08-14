@@ -211,10 +211,10 @@ function AdminDashboard() {
       form.reset();
       setControlActive(true);
       setShowPassword(false);
-      const userTypeDisplay = userType === 'insurer' ? 'Guarantor' : 'Valuer';
+      const userTypeDisplay = userType === 'insurer' ? 'Client' : 'Valuer';
       toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.`});
     } catch (error: any) {
-       const userTypeDisplay = userType === 'insurer' ? 'Guarantor' : 'Valuer';
+       const userTypeDisplay = userType === 'insurer' ? 'Client' : 'Valuer';
        console.error(`Error adding ${userType}: `, error);
        toast({
          variant: "destructive",
@@ -342,7 +342,7 @@ function AdminDashboard() {
         </div>
         <Button onClick={onAdd}>
           <PlusCircle className="mr-2" />
-          Register New {collectionName === 'insurers' ? 'Guarantor' : 'Valuer'}
+          Register New {collectionName === 'insurers' ? 'Client' : 'Valuer'}
         </Button>
       </CardHeader>
       <CardContent>
@@ -393,7 +393,7 @@ function AdminDashboard() {
     onOpenChange: (open: boolean) => void,
     userType: 'insurer' | 'valuer'
   ) => {
-    const userTypeDisplay = userType === 'insurer' ? 'Guarantor' : 'Valuer';
+    const userTypeDisplay = userType === 'insurer' ? 'Client' : 'Valuer';
     return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -566,9 +566,9 @@ function AdminDashboard() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('insurers')} isActive={activeView === 'insurers'} tooltip="Manage Guarantors">
+              <SidebarMenuButton onClick={() => setActiveView('insurers')} isActive={activeView === 'insurers'} tooltip="Manage Clients">
                 <Users />
-                Manage Guarantors
+                Manage Clients
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -642,7 +642,7 @@ function AdminDashboard() {
                 </Card>
               </div>
             )}
-            {activeView === 'insurers' && renderUserTable(insurers, "Manage Guarantors", "View and manage all registered guarantors.", () => setAddInsurerOpen(true), "insurers")}
+            {activeView === 'insurers' && renderUserTable(insurers, "Manage Clients", "View and manage all registered clients.", () => setAddInsurerOpen(true), "insurers")}
             {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuers")}
             {renderUserDialog(isAddInsurerOpen, setAddInsurerOpen, 'insurer')}
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}

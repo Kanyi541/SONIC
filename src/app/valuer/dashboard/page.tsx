@@ -264,7 +264,7 @@ export default function ValuerDashboardPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
-                                    <p className="text-xs text-muted-foreground">Awaiting Guarantor approval</p>
+                                    <p className="text-xs text-muted-foreground">Awaiting Client approval</p>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -306,7 +306,7 @@ export default function ValuerDashboardPage() {
                                             <TableHead className="font-semibold">Booking ID</TableHead>
                                             <TableHead className="hidden sm:table-cell font-semibold">Customer</TableHead>
                                             <TableHead className="hidden md:table-cell font-semibold">Vehicle</TableHead>
-                                            <TableHead className="hidden md:table-cell font-semibold">Guarantor</TableHead>
+                                            <TableHead className="hidden md:table-cell font-semibold">Client</TableHead>
                                             <TableHead className="font-semibold">Status</TableHead>
                                             <TableHead className="text-right font-semibold">Action</TableHead>
                                         </TableRow>
@@ -371,7 +371,7 @@ export default function ValuerDashboardPage() {
                                 <form onSubmit={form.handleSubmit(handleValuationSubmit)} className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div><Label>Customer Name</Label><Input value={selectedBooking?.customerName} disabled /></div>
-                                        <div><Label>Guarantor</Label><Input value={selectedBooking?.insurerName} disabled /></div>
+                                        <div><Label>Client</Label><Input value={selectedBooking?.insurerName} disabled /></div>
                                         <div><Label>Vehicle</Label><Input value={`${selectedBooking?.carMake} ${selectedBooking?.carModel}`} disabled /></div>
                                         <div><Label>Plate Number</Label><Input value={selectedBooking?.plateNumber} disabled /></div>
                                     </div>
