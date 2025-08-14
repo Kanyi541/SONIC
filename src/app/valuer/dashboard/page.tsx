@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -68,6 +68,7 @@ export default function ValuerDashboardPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     const { toast } = useToast();
+    const [searchTerm, setSearchTerm] = useState('');
 
     const form = useForm<ValuationFormValues>({
         resolver: zodResolver(valuationSchema),
@@ -197,6 +198,17 @@ export default function ValuerDashboardPage() {
         }
     };
 
+    const filteredBookings = bookings.filter(booking => {
+        const searchTermLower = searchTerm.toLowerCase();
+        return (
+            booking.bookingNumber.toLowerCase().includes(searchTermLower) ||
+            booking.customerName.toLowerCase().includes(searchTermLower) ||
+            `${booking.carMake} ${booking.carModel}`.toLowerCase().includes(searchTermLower) ||
+            booking.plateNumber.toLowerCase().includes(searchTermLower) ||
+            booking.insurerName.toLowerCase().includes(searchTermLower)
+        );
+    });
+
     const stats = {
         total: bookings.length,
         pendingValuation: bookings.filter(b => b.status === 'Pending').length,
@@ -263,8 +275,22 @@ export default function ValuerDashboardPage() {
                     {(activeView === 'dashboard' || activeView === 'valuations') && (
                         <Card className="mt-8">
                             <CardHeader>
-                                <CardTitle>All Bookings</CardTitle>
-                                <CardDescription>A list of all registered vehicle valuations.</CardDescription>
+                               <div className="flex justify-between items-center">
+                                    <div>
+                                        <CardTitle>All Bookings</CardTitle>
+                                        <CardDescription>A list of all registered vehicle valuations.</CardDescription>
+                                    </div>
+                                    <div className="relative w-full max-w-sm">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            type="search"
+                                            placeholder="Search bookings..."
+                                            className="w-full rounded-lg bg-background pl-8"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                  <Table>
@@ -287,11 +313,11 @@ export default function ValuerDashboardPage() {
                                             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
                                             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                             <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                            <TableCell className="text-right"><Skeleton className="h-8 w-48 ml-auto" /></TableCell>
+                                            <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                                         </TableRow>
                                         ))
-                                    ) : bookings.length > 0 ? (
-                                        bookings.map((booking) => (
+                                    ) : filteredBookings.length > 0 ? (
+                                        filteredBookings.map((booking) => (
                                         <TableRow key={booking.id}>
                                             <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
                                             <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
