@@ -177,13 +177,23 @@ export default function ValuerDashboardPage() {
                                             <TableCell>
                                             <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right space-x-2">
+                                                <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    // Placeholder for valuate action
+                                                }}
+                                                >
+                                                <FilePen className="mr-2 h-4 w-4" />
+                                                <span className="hidden sm:inline">Valuate</span>
+                                                </Button>
                                                 <Button
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
                                                 >
-                                                <FilePen className="mr-2 h-4 w-4" />
+                                                <Printer className="mr-2 h-4 w-4" />
                                                 <span className="hidden sm:inline">Valuated</span>
                                                 </Button>
                                             </TableCell>
