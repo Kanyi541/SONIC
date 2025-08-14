@@ -6,8 +6,16 @@ const cspHeader = `
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
     img-src 'self' https://placehold.co https://firebasestorage.googleapis.com data:;
-    connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://www.googleapis.com;
-    frame-src 'self';
+    connect-src 'self'
+      https://*.firebaseio.com
+      wss://*.firebaseio.com
+      https://firestore.googleapis.com
+      https://www.googleapis.com
+      https://identitytoolkit.googleapis.com
+      https://securetoken.googleapis.com
+      https://firebaseinstallations.googleapis.com
+      https://firebasestorage.googleapis.com;
+    frame-src 'self' https://www.gstatic.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
@@ -17,7 +25,6 @@ const cspHeader = `
 `;
 
 const nextConfig = {
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -40,7 +47,7 @@ const nextConfig = {
       }
     ],
   },
-   async headers() {
+  async headers() {
     return [
       {
         source: '/(.*)',
@@ -49,7 +56,7 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: cspHeader.replace(/\s{2,}/g, ' ').trim(),
           },
-           {
+          {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
           },
@@ -61,7 +68,7 @@ const nextConfig = {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
           },
-           {
+          {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin',
           },
@@ -72,5 +79,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-
-    
