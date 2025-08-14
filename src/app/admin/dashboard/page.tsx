@@ -44,7 +44,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
-interface Client {
+interface Insurer {
   id: string;
   name: string;
   email: string;
@@ -70,11 +70,11 @@ function AdminDashboard() {
   const { toast } = useToast();
   const router = useRouter();
   const [activeView, setActiveView] = useState('dashboard');
-  const [clients, setClients] = useState<Client[]>([]);
+  const [insurers, setInsurers] = useState<Insurer[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAddClientOpen, setAddClientOpen] = useState(false);
-  const [isClientActive, setClientActive] = useState(true);
+  const [isAddInsurerOpen, setAddInsurerOpen] = useState(false);
+  const [isInsurerActive, setInsurerActive] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
   const getInitials = (email?: string | null) => {
@@ -82,13 +82,13 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (activeView === 'clients') {
-      const unsubscribe = onSnapshot(collection(db, "clients"), (querySnapshot) => {
-        const clientsData: Client[] = [];
+    if (activeView === 'insurers') {
+      const unsubscribe = onSnapshot(collection(db, "insurers"), (querySnapshot) => {
+        const insurersData: Insurer[] = [];
         querySnapshot.forEach((doc) => {
-          clientsData.push({ id: doc.id, ...doc.data() } as Client);
+          insurersData.push({ id: doc.id, ...doc.data() } as Insurer);
         });
-        setClients(clientsData);
+        setInsurers(insurersData);
       });
       return () => unsubscribe();
     }
@@ -118,7 +118,7 @@ function AdminDashboard() {
     }
   };
   
-  const handleAddClient = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleAddInsurer = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const name = (form.elements.namedItem('name') as HTMLInputElement).value;
@@ -127,39 +127,39 @@ function AdminDashboard() {
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     
     try {
-      await addDoc(collection(db, "clients"), {
+      await addDoc(collection(db, "insurers"), {
         name,
         email,
         phone,
         password,
-        active: isClientActive,
+        active: isInsurerActive,
       });
 
-      setAddClientOpen(false);
+      setAddInsurerOpen(false);
       form.reset();
-      setClientActive(true);
+      setInsurerActive(true);
       setShowPassword(false);
-      toast({ title: "Client Added", description: `${name} has been successfully added.`});
+      toast({ title: "Insurer Added", description: `${name} has been successfully added.`});
     } catch (error: any) {
-       console.error("Error adding client: ", error);
+       console.error("Error adding insurer: ", error);
        toast({
          variant: "destructive",
-         title: "Failed to Add Client",
-         description: "An error occurred while adding the client.",
+         title: "Failed to Add Insurer",
+         description: "An error occurred while adding the insurer.",
        });
     }
   };
 
-  const toggleClientStatus = async (clientId: string) => {
-    const clientRef = doc(db, "clients", clientId);
-    const client = clients.find(c => c.id === clientId);
-    if (client) {
+  const toggleInsurerStatus = async (insurerId: string) => {
+    const insurerRef = doc(db, "insurers", insurerId);
+    const insurer = insurers.find(c => c.id === insurerId);
+    if (insurer) {
       try {
-        await updateDoc(clientRef, { active: !client.active });
-        toast({ title: "Status Updated", description: `Status for ${client.name} has been updated.`});
+        await updateDoc(insurerRef, { active: !insurer.active });
+        toast({ title: "Status Updated", description: `Status for ${insurer.name} has been updated.`});
       } catch (error) {
         console.error("Error updating status: ", error);
-        toast({ variant: "destructive", title: "Update Failed", description: "Could not update client status."});
+        toast({ variant: "destructive", title: "Update Failed", description: "Could not update insurer status."});
       }
     }
   };
@@ -199,9 +199,9 @@ function AdminDashboard() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('clients')} isActive={activeView === 'clients'} tooltip="Manage Clients">
+              <SidebarMenuButton onClick={() => setActiveView('insurers')} isActive={activeView === 'insurers'} tooltip="Manage Insurers">
                 <Users />
-                Manage Clients
+                Manage Insurers
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -269,28 +269,28 @@ function AdminDashboard() {
                 </Card>
               </div>
             )}
-            {activeView === 'clients' && (
+            {activeView === 'insurers' && (
               <Card className="shadow-lg border-primary/20">
                 <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
-                    <CardTitle className="font-headline text-3xl text-primary">Manage Clients</CardTitle>
-                    <CardDescription>View and manage all registered clients.</CardDescription>
+                    <CardTitle className="font-headline text-3xl text-primary">Manage Insurers</CardTitle>
+                    <CardDescription>View and manage all registered insurers.</CardDescription>
                   </div>
-                  <Dialog open={isAddClientOpen} onOpenChange={setAddClientOpen}>
+                  <Dialog open={isAddInsurerOpen} onOpenChange={setAddInsurerOpen}>
                     <DialogTrigger asChild>
                       <Button>
                         <PlusCircle className="mr-2" />
-                        Add Client
+                        Register New Insurer
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
                       <DialogHeader>
-                        <DialogTitle>Add New Client</DialogTitle>
+                        <DialogTitle>Register New Insurer</DialogTitle>
                         <DialogDescription>
-                          Fill in the details below to create a new client account.
+                          Fill in the details below to create a new insurer account.
                         </DialogDescription>
                       </DialogHeader>
-                      <form onSubmit={handleAddClient} className="grid gap-4 py-4">
+                      <form onSubmit={handleAddInsurer} className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="name" className="text-right">Name</Label>
                           <Input id="name" name="name" className="col-span-3" required />
@@ -315,12 +315,12 @@ function AdminDashboard() {
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="active" className="text-right">Active</Label>
                            <div className="col-span-3 flex items-center">
-                            <Switch id="active" name="active" checked={isClientActive} onCheckedChange={setClientActive} />
+                            <Switch id="active" name="active" checked={isInsurerActive} onCheckedChange={setInsurerActive} />
                             <span className="ml-3 text-sm text-muted-foreground">Is account active?</span>
                           </div>
                         </div>
                         <DialogFooter>
-                          <Button type="submit">Create Client</Button>
+                          <Button type="submit">Create Insurer</Button>
                         </DialogFooter>
                       </form>
                     </DialogContent>
@@ -337,25 +337,25 @@ function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {clients.map(client => (
-                        <TableRow key={client.id}>
+                      {insurers.map(insurer => (
+                        <TableRow key={insurer.id}>
                           <TableCell className="font-medium flex items-center gap-3">
                             <div className="p-2 bg-muted rounded-full hidden sm:flex">
                               <User className="h-5 w-5 text-primary" />
                             </div>
-                            {client.name}
+                            {insurer.name}
                           </TableCell>
-                          <TableCell className="hidden sm:table-cell">{client.email}</TableCell>
-                          <TableCell className="hidden md:table-cell">{client.phone}</TableCell>
+                          <TableCell className="hidden sm:table-cell">{insurer.email}</TableCell>
+                          <TableCell className="hidden md:table-cell">{insurer.phone}</TableCell>
                           <TableCell className="text-right">
                              <div className="flex items-center justify-end gap-2">
-                                <span className={`text-sm font-medium ${client.active ? 'text-green-500' : 'text-red-500'}`}>
-                                  {client.active ? 'Active' : 'Inactive'}
+                                <span className={`text-sm font-medium ${insurer.active ? 'text-green-500' : 'text-red-500'}`}>
+                                  {insurer.active ? 'Active' : 'Inactive'}
                                 </span>
                                 <Switch
-                                  checked={client.active}
-                                  onCheckedChange={() => toggleClientStatus(client.id)}
-                                  aria-label={`Toggle status for ${client.name}`}
+                                  checked={insurer.active}
+                                  onCheckedChange={() => toggleInsurerStatus(insurer.id)}
+                                  aria-label={`Toggle status for ${insurer.name}`}
                                 />
                               </div>
                           </TableCell>
@@ -450,3 +450,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   )
 }
+
+    

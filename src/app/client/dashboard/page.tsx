@@ -36,7 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, PlusCircle, Printer } from "lucide-react";
@@ -80,7 +80,7 @@ const bookingSchema = z.object({
 
 type BookingFormValues = z.infer<typeof bookingSchema>;
 
-export default function ClientDashboardPage() {
+export default function InsurerDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
@@ -123,21 +123,28 @@ export default function ClientDashboardPage() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    const bookingsQuery = query(collection(db, "bookings"));
-    const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
-        const bookingsData: Booking[] = [];
-        snapshot.forEach((doc) => {
-            bookingsData.push({ id: doc.id, ...doc.data() } as Booking);
+    if (loggedInUser) {
+        setLoading(true);
+        const bookingsQuery = query(collection(db, "bookings"), where("branch", "==", loggedInUser.name));
+        const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
+            const bookingsData: Booking[] = [];
+            snapshot.forEach((doc) => {
+                bookingsData.push({ id: doc.id, ...doc.data() } as Booking);
+            });
+            setBookings(bookingsData);
+            setLoading(false);
         });
-        setBookings(bookingsData);
-        setLoading(false);
-    });
 
-    return () => unsubscribe();
-}, []);
+        return () => unsubscribe();
+    }
+}, [loggedInUser]);
   
   const handleSaveBooking = async (data: BookingFormValues) => {
+    if (!loggedInUser) {
+        toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to create a booking." });
+        return;
+    }
+    
     try {
       const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
       await addDoc(collection(db, "bookings"), {
@@ -145,6 +152,8 @@ export default function ClientDashboardPage() {
         bookingNumber,
         createdAt: new Date(),
         status: "Pending", // Initial status
+        insurerId: loggedInUser.name, // Associate booking with the insurer
+        branch: loggedInUser.name, // To maintain filter functionality
       });
       toast({
         title: "Booking Created",
@@ -180,7 +189,7 @@ export default function ClientDashboardPage() {
   return (
     <UnifiedDashboardLayout
       title="CASA DASH"
-      userRole={loggedInUser?.name || "Client"}
+      userRole={loggedInUser?.name || "Insurer"}
       userEmail={loggedInUser?.email || ""}
       menuItems={[
         { name: "Bookings", view: "bookings" },
@@ -472,3 +481,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    

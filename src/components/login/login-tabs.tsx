@@ -37,15 +37,15 @@ const loginSchema = z.object({
   password: z.string().min(1, { message: "Password is required." }),
 });
 
-const clientLoginSchema = z.object({
+const insurerLoginSchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
   password: z.string().min(1, { message: "Password is required." }),
 });
 
 
 type LoginFormValues = z.infer<typeof loginSchema>;
-type ClientLoginFormValues = z.infer<typeof clientLoginSchema>;
-type Role = "Admin" | "Client" | "Valuer";
+type InsurerLoginFormValues = z.infer<typeof insurerLoginSchema>;
+type Role = "Admin" | "Insurer" | "Valuer";
 
 const PasswordInput = ({ field, ...props }: { field: any, [key: string]: any }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -147,20 +147,20 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
 };
 
 
-const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
+const InsurerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<ClientLoginFormValues>({
-    resolver: zodResolver(clientLoginSchema),
+  const form = useForm<InsurerLoginFormValues>({
+    resolver: zodResolver(insurerLoginSchema),
     defaultValues: { name: "", password: "" },
   });
 
-  const onSubmit = async (data: ClientLoginFormValues) => {
+  const onSubmit = async (data: InsurerLoginFormValues) => {
     setIsLoading(true);
     try {
-      const clientsRef = collection(db, "clients");
-      const q = query(clientsRef, where("name", "==", data.name));
+      const insurersRef = collection(db, "insurers");
+      const q = query(insurersRef, where("name", "==", data.name));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
@@ -173,10 +173,10 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         return;
       }
 
-      const clientDoc = querySnapshot.docs[0];
-      const clientData = clientDoc.data();
+      const insurerDoc = querySnapshot.docs[0];
+      const insurerData = insurerDoc.data();
 
-      if (clientData.password !== data.password) {
+      if (insurerData.password !== data.password) {
         toast({
           variant: "destructive",
           title: "Login Failed",
@@ -186,7 +186,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         return;
       }
 
-      if (!clientData.active) {
+      if (!insurerData.active) {
         toast({
           variant: "destructive",
           title: "Account Inactive",
@@ -196,12 +196,12 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         return;
       }
       
-      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: clientData.name, email: clientData.email, role: 'Client' }));
+      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: insurerData.name, email: insurerData.email, role: 'Insurer' }));
       router.push('/client/dashboard');
-      toast({ title: "Client Login Successful", description: `Welcome back, ${clientData.name}!` });
+      toast({ title: "Insurer Login Successful", description: `Welcome back, ${insurerData.name}!` });
 
     } catch (error) {
-      console.error("Client login error:", error);
+      console.error("Insurer login error:", error);
       toast({
         variant: "destructive",
         title: "Login Failed",
@@ -215,9 +215,9 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Client Login</CardTitle>
+        <CardTitle className="font-headline">Insurer Login</CardTitle>
         <CardDescription>
-          Enter your credentials to access the client dashboard.
+          Enter your credentials to access the insurer dashboard.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -230,7 +230,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                 <FormItem>
                   <FormLabel>Name (Username)</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="Insurer Name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -344,11 +344,11 @@ const MockLoginForm = ({ role, setIsLoading }: { role: Role; setIsLoading: (load
 export default function LoginTabs() {
   const [loadingStates, setLoadingStates] = useState<Record<Role, boolean>>({
     Admin: false,
-    Client: false,
+    Insurer: false,
     Valuer: false,
   });
 
-  const roles: Role[] = ["Admin", "Client", "Valuer"];
+  const roles: Role[] = ["Admin", "Insurer", "Valuer"];
   
   const getFormComponent = (role: Role) => {
     const setIsLoading = (loading: boolean) => setLoadingStates(prev => ({ ...prev, [role]: loading }));
@@ -356,8 +356,8 @@ export default function LoginTabs() {
     switch (role) {
       case 'Admin':
         return <AdminLoginForm setIsLoading={setIsLoading} />;
-      case 'Client':
-        return <ClientLoginForm setIsLoading={setIsLoading} />;
+      case 'Insurer':
+        return <InsurerLoginForm setIsLoading={setIsLoading} />;
       default:
         return <MockLoginForm role={role} setIsLoading={setIsLoading} />;
     }
