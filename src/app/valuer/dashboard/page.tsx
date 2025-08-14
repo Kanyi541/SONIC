@@ -31,6 +31,7 @@ interface Booking {
   carModel: string;
   createdAt: any;
   status: string;
+  insurerName: string;
 }
 
 export default function ValuerDashboardPage() {
@@ -75,7 +76,7 @@ export default function ValuerDashboardPage() {
 
     const stats = {
         total: bookings.length,
-        pendingValuation: bookings.filter(b => b.status === 'Pending Valuation').length,
+        pendingValuation: bookings.filter(b => b.status === 'Pending').length,
         pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
     };
@@ -149,7 +150,7 @@ export default function ValuerDashboardPage() {
                                             <TableHead>Booking ID</TableHead>
                                             <TableHead className="hidden sm:table-cell">Customer</TableHead>
                                             <TableHead className="hidden md:table-cell">Vehicle</TableHead>
-                                            <TableHead className="hidden sm:table-cell">Date</TableHead>
+                                            <TableHead className="hidden md:table-cell">Insurer</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead className="text-right">Action</TableHead>
                                         </TableRow>
@@ -161,7 +162,7 @@ export default function ValuerDashboardPage() {
                                             <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                                             <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
-                                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                             <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                                             <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                                         </TableRow>
@@ -172,7 +173,7 @@ export default function ValuerDashboardPage() {
                                             <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
                                             <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
                                             <TableCell className="hidden md:table-cell">{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
-                                            <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                                            <TableCell className="hidden md:table-cell">{booking.insurerName}</TableCell>
                                             <TableCell>
                                             <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                             </TableCell>
