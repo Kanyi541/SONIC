@@ -281,15 +281,19 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
             getDocs(emailQuery)
         ]);
 
-        const querySnapshot = usernameSnapshot.empty ? emailSnapshot : usernameSnapshot;
+        let valuerDoc;
+        if (!usernameSnapshot.empty) {
+            valuerDoc = usernameSnapshot.docs[0];
+        } else if (!emailSnapshot.empty) {
+            valuerDoc = emailSnapshot.docs[0];
+        }
 
-        if (querySnapshot.empty) {
+        if (!valuerDoc) {
             toast({ variant: "destructive", title: "Login Failed", description: "Invalid credentials." });
             setIsLoading(false);
             return;
         }
 
-        const valuerDoc = querySnapshot.docs[0];
         const valuerData = valuerDoc.data();
 
         if (valuerData.password !== data.password) {
