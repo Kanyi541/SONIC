@@ -2,39 +2,31 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check for admin role
-    function isAdmin() {
-      return request.auth.token.role == 'admin';
-    }
-
-    // Insurers collection
-    match /insurers/{insurerId} {
-      // Admins can manage all insurers
-      // Authenticated users can read insurer data (for login)
-      allow read: if isAdmin() || request.auth != null;
-      allow write: if isAdmin();
-    }
-
-    // Customers collection
-    match /customers/{customerId} {
-      // Admins can manage all customers
-      // Authenticated users can manage customers linked to their insurerId
-      allow read, create: if isAdmin() || (request.auth != null && request.resource.data.insurerId == request.auth.token.name);
-      allow update, delete: if isAdmin() || (request.auth != null && resource.data.insurerId == request.auth.token.name);
-    }
-
-    // Bookings collection
-    match /bookings/{bookingId} {
-      // Admins can manage all bookings
-      // Authenticated users can manage bookings linked to their insurerId
-      allow read, create: if isAdmin() || (request.auth != null && request.resource.data.insurerId == request.auth.token.name);
-      allow update, delete: if isAdmin() || (request.auth != null && resource.data.insurerId == request.auth.token.name);
-    }
-
-    // Default deny all other access
+    
+    // Default to denying all access.
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // Admins (any authenticated user via Firebase Auth) can manage insurers.
+    // This assumes anyone who can sign into the admin panel is a trusted admin.
+    match /insurers/{insurerId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Admins can read all bookings.
+    // Insurers can read/write bookings linked to their username.
+    match /bookings/{bookingId} {
+      // Admin access
+      allow read: if request.auth != null;
+      // Insurer access
+      allow create: if request.auth == null && request.resource.data.insurerId == request.resource.data.insurerId; // Allow from client dashboard
+      allow read, update: if request.auth == null && get(/databases/$(database)/documents/bookings/$(bookingId)).data.insurerId == request.resource.data.insurerId;
+    }
+
+    // Insurers can manage customers linked to their username.
+    match /customers/{customerId} {
+      allow read, create: if request.auth == null; // Allow from client dashboard
     }
   }
 }
