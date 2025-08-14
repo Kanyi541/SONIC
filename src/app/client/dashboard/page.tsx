@@ -245,6 +245,7 @@ export default function InsurerDashboardPage() {
             createdAt: new Date(),
             status: "Pending",
             insurerId: loggedInUser.username,
+            insurerName: loggedInUser.name,
         });
 
         toast({
@@ -755,9 +756,5 @@ export default function InsurerDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
-
-    
 
     
