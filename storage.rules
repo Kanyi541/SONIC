@@ -1,0 +1,13 @@
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow valuers to upload images to the valuations folder.
+    // Allow public read for anyone to see the report images.
+    match /valuations/{bookingId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

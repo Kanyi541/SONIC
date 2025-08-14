@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -20,19 +21,26 @@ service cloud.firestore {
     }
 
     // Bookings collection:
-    // Allow public read access for insurers to view their bookings.
-    // Writes are allowed for any user (representing a logged-in insurer).
+    // Allow public read access for all roles.
+    // Writes (create, update) are allowed for any user.
     match /bookings/{bookingId} {
       allow read: if true;
       allow write: if true;
     }
 
-    // Valuers collection:
+   // Valuers collection:
     // Allow public read for login verification.
     // Only authenticated admins can write.
     match /valuers/{valuerId} {
       allow read: if true;
       allow write: if request.auth != null;
+    }
+
+    // Valuations collection:
+    // Allow any user to create and read valuation reports.
+    match /valuations/{valuationId} {
+      allow read, create: if true;
+      allow update, delete: if request.auth != null;
     }
   }
 }
