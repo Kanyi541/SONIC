@@ -37,14 +37,14 @@ const loginSchema = z.object({
   password: z.string().min(1, { message: "Password is required." }),
 });
 
-const insurerLoginSchema = z.object({
+const userLoginSchema = z.object({
   username: z.string().min(1, { message: "Username is required." }),
   password: z.string().min(1, { message: "Password is required." }),
 });
 
 
 type LoginFormValues = z.infer<typeof loginSchema>;
-type InsurerLoginFormValues = z.infer<typeof insurerLoginSchema>;
+type UserLoginFormValues = z.infer<typeof userLoginSchema>;
 type Role = "Admin" | "Insurer" | "Valuer";
 
 const PasswordInput = ({ field, ...props }: { field: any, [key: string]: any }) => {
@@ -151,12 +151,12 @@ const InsurerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<InsurerLoginFormValues>({
-    resolver: zodResolver(insurerLoginSchema),
+  const form = useForm<UserLoginFormValues>({
+    resolver: zodResolver(userLoginSchema),
     defaultValues: { username: "", password: "" },
   });
 
-  const onSubmit = async (data: InsurerLoginFormValues) => {
+  const onSubmit = async (data: UserLoginFormValues) => {
     setIsLoading(true);
     try {
       const insurersRef = collection(db, "insurers");
@@ -260,44 +260,65 @@ const InsurerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =
   );
 };
 
-const MockLoginForm = ({ role, setIsLoading }: { role: Role; setIsLoading: (loading: boolean) => void }) => {
+const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+  const form = useForm<UserLoginFormValues>({
+    resolver: zodResolver(userLoginSchema),
+    defaultValues: { username: "", password: "" },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = async (data: UserLoginFormValues) => {
     setIsLoading(true);
     try {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-        if (data.email && data.password) {
-          const user = { name: 'Mock User', email: data.email, role };
-          sessionStorage.setItem('loggedInUser', JSON.stringify(user));
-          router.push(`/${role.toLowerCase()}/dashboard`);
-          toast({ title: `${role} Login Successful`, description: "Welcome!" });
-        } else {
-          throw new Error("Invalid credentials for mock login.");
+        const valuersRef = collection(db, "valuers");
+        const q = query(valuersRef, where("username", "==", data.username));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            toast({ variant: "destructive", title: "Login Failed", description: "Invalid credentials." });
+            setIsLoading(false);
+            return;
         }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: error.message,
-      });
+
+        const valuerDoc = querySnapshot.docs[0];
+        const valuerData = valuerDoc.data();
+
+        if (valuerData.password !== data.password) {
+            toast({ variant: "destructive", title: "Login Failed", description: "Invalid credentials." });
+            setIsLoading(false);
+            return;
+        }
+
+        if (!valuerData.active) {
+            toast({ variant: "destructive", title: "Account Inactive", description: "Your account is inactive. Please contact the administrator." });
+            setIsLoading(false);
+            return;
+        }
+        
+        sessionStorage.setItem('loggedInUser', JSON.stringify({ name: valuerData.name, username: valuerData.username, email: valuerData.email, role: 'Valuer' }));
+        router.push('/valuer/dashboard');
+        toast({ title: "Valuer Login Successful", description: `Welcome back, ${valuerData.name}!` });
+
+    } catch (error) {
+        console.error("Valuer login error:", error);
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "An unexpected error occurred. Please try again.",
+        });
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">{role} Login</CardTitle>
+        <CardTitle className="font-headline">Valuer Login</CardTitle>
         <CardDescription>
-          Enter your credentials to access the {role.toLowerCase()} dashboard.
+          Enter your credentials to access the valuer dashboard.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -305,12 +326,12 @@ const MockLoginForm = ({ role, setIsLoading }: { role: Role; setIsLoading: (load
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="email"
+              name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@example.com" {...field} />
+                    <Input placeholder="Valuer Username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -358,8 +379,10 @@ export default function LoginTabs() {
         return <AdminLoginForm setIsLoading={setIsLoading} />;
       case 'Insurer':
         return <InsurerLoginForm setIsLoading={setIsLoading} />;
+      case 'Valuer':
+        return <ValuerLoginForm setIsLoading={setIsLoading} />;
       default:
-        return <MockLoginForm role={role} setIsLoading={setIsLoading} />;
+        return null;
     }
   }
 

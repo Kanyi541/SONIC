@@ -1,14 +1,32 @@
+
 "use client";
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
 
+interface LoggedInUser {
+    name: string;
+    username: string;
+    email: string;
+    role: string;
+}
+
 export default function ValuerDashboardPage() {
+    const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
+
+    useEffect(() => {
+        const storedUser = sessionStorage.getItem('loggedInUser');
+        if (storedUser) {
+            setLoggedInUser(JSON.parse(storedUser));
+        }
+    }, []);
+
     return (
         <UnifiedDashboardLayout
             title="CASA DASH"
-            userRole="Valuer"
-            userEmail="valuer@example.com"
+            userRole={loggedInUser?.name || "Valuer"}
+            userEmail={loggedInUser?.email || ""}
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
                 { name: 'Assigned Valuations', view: 'valuations' },
@@ -19,7 +37,7 @@ export default function ValuerDashboardPage() {
                     {activeView === 'dashboard' && (
                         <Card className="shadow-lg">
                             <CardHeader>
-                                <CardTitle className="font-headline text-3xl">Welcome, Valuer!</CardTitle>
+                                <CardTitle className="font-headline text-3xl">Welcome, {loggedInUser?.name || 'Valuer'}!</CardTitle>
                                 <CardDescription>Here are the valuations assigned to you.</CardDescription>
                             </CardHeader>
                             <CardContent>
