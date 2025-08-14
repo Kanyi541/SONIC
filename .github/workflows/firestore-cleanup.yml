@@ -1,0 +1,35 @@
+name: Firestore Daily Cleanup
+
+# This workflow runs on a schedule (every day at midnight UTC)
+# and can also be triggered manually from the GitHub Actions tab.
+on:
+  schedule:
+    # Runs at 00:00 UTC every day
+    - cron: "0 0 * * *"
+  workflow_dispatch: # Allows you to run this workflow manually
+
+jobs:
+  cleanup-firestore:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        # We only need firebase-admin for this script
+        run: npm install firebase-admin
+
+      - name: Run Firestore cleanup script
+        run: node scripts/cleanup.js
+        env:
+          # This secret must be created in your GitHub repository settings.
+          # Go to Settings > Secrets and variables > Actions > New repository secret
+          # Name: FIREBASE_SERVICE_ACCOUNT_KEY
+          # Value: The JSON content of your service account key file.
+          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
