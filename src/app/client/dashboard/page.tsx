@@ -103,6 +103,7 @@ export default function InsurerDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [isCustomerDialogOpen, setCustomerDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -164,10 +165,12 @@ export default function InsurerDashboardPage() {
             setLoading(false);
         });
 
+        setLoadingCustomers(true);
         const customersQuery = query(collection(db, "customers"), where("insurerId", "==", loggedInUser.username));
         const customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
             const customersData: Customer[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
             setCustomers(customersData);
+            setLoadingCustomers(false);
         });
 
         return () => {
@@ -651,7 +654,15 @@ export default function InsurerDashboardPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {customers.length > 0 ? (
+                                {loadingCustomers ? (
+                                    Array.from({ length: 5 }).map((_, index) => (
+                                      <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                      </TableRow>
+                                    ))
+                                ) : customers.length > 0 ? (
                                     customers.map(customer => (
                                         <TableRow key={customer.id}>
                                             <TableCell className="font-medium flex items-center gap-3">
