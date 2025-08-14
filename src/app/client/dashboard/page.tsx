@@ -35,15 +35,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, doc, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 
 interface LoggedInUser {
@@ -106,6 +116,7 @@ export default function InsurerDashboardPage() {
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [isCustomerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [isComboboxOpen, setComboboxOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
@@ -295,22 +306,59 @@ export default function InsurerDashboardPage() {
                                   control={bookingControl}
                                   name="customerId"
                                   render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="flex flex-col">
                                       <FormLabel>Select Customer</FormLabel>
-                                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Choose a registered customer" />
-                                          </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                          {customers.map((customer) => (
-                                            <SelectItem key={customer.id} value={customer.id}>
-                                              {customer.name} ({customer.email})
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
+                                       <Popover open={isComboboxOpen} onOpenChange={setComboboxOpen}>
+                                        <PopoverTrigger asChild>
+                                          <FormControl>
+                                            <Button
+                                              variant="outline"
+                                              role="combobox"
+                                              className={cn(
+                                                "w-full justify-between",
+                                                !field.value && "text-muted-foreground"
+                                              )}
+                                            >
+                                              {field.value
+                                                ? customers.find(
+                                                    (customer) => customer.id === field.value
+                                                  )?.name
+                                                : "Select a customer"}
+                                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                          </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                          <Command>
+                                            <CommandInput placeholder="Search customer..." />
+                                            <CommandEmpty>No customer found.</CommandEmpty>
+                                            <CommandList>
+                                                <CommandGroup>
+                                                {customers.map((customer) => (
+                                                    <CommandItem
+                                                    value={customer.name}
+                                                    key={customer.id}
+                                                    onSelect={() => {
+                                                        bookingForm.setValue("customerId", customer.id)
+                                                        setComboboxOpen(false)
+                                                    }}
+                                                    >
+                                                    <Check
+                                                        className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        customer.id === field.value
+                                                            ? "opacity-100"
+                                                            : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {customer.name} ({customer.email})
+                                                    </CommandItem>
+                                                ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                          </Command>
+                                        </PopoverContent>
+                                      </Popover>
                                       <FormMessage />
                                     </FormItem>
                                   )}
