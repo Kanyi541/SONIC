@@ -109,7 +109,7 @@ const bookingSchema = z.object({
 
 type BookingFormValues = z.infer<typeof bookingSchema>;
 
-export default function InsurerDashboardPage() {
+export default function GuarantorDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -289,7 +289,7 @@ export default function InsurerDashboardPage() {
   return (
     <UnifiedDashboardLayout
       title="CASA DASH"
-      userRole={loggedInUser?.name || "Insurer"}
+      userRole={loggedInUser?.name || "Guarantor"}
       userEmail={loggedInUser?.email || ""}
       menuItems={[
         { name: "Bookings", view: "bookings" },

@@ -122,7 +122,7 @@ export default function ValuerDashboardPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
-                                    <p className="text-xs text-muted-foreground">Awaiting insurer approval</p>
+                                    <p className="text-xs text-muted-foreground">Awaiting Guarantor approval</p>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -150,7 +150,7 @@ export default function ValuerDashboardPage() {
                                             <TableHead>Booking ID</TableHead>
                                             <TableHead className="hidden sm:table-cell">Customer</TableHead>
                                             <TableHead className="hidden md:table-cell">Vehicle</TableHead>
-                                            <TableHead className="hidden md:table-cell">Insurer</TableHead>
+                                            <TableHead className="hidden md:table-cell">Guarantor</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead className="text-right">Action</TableHead>
                                         </TableRow>
@@ -206,3 +206,5 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    

@@ -45,7 +45,7 @@ const userLoginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 type UserLoginFormValues = z.infer<typeof userLoginSchema>;
-type Role = "Admin" | "Insurer" | "Valuer";
+type Role = "Admin" | "Guarantor" | "Valuer";
 
 const PasswordInput = ({ field, ...props }: { field: any, [key: string]: any }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -147,7 +147,7 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
 };
 
 
-const InsurerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
+const GuarantorLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -196,12 +196,12 @@ const InsurerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =
         return;
       }
       
-      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: insurerData.name, username: insurerData.username, email: insurerData.email, role: 'Insurer' }));
+      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: insurerData.name, username: insurerData.username, email: insurerData.email, role: 'Guarantor' }));
       router.push('/client/dashboard');
-      toast({ title: "Insurer Login Successful", description: `Welcome back, ${insurerData.name}!` });
+      toast({ title: "Guarantor Login Successful", description: `Welcome back, ${insurerData.name}!` });
 
     } catch (error) {
-      console.error("Insurer login error:", error);
+      console.error("Guarantor login error:", error);
       toast({
         variant: "destructive",
         title: "Login Failed",
@@ -215,9 +215,9 @@ const InsurerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Insurer Login</CardTitle>
+        <CardTitle className="font-headline">Guarantor Login</CardTitle>
         <CardDescription>
-          Enter your credentials to access the insurer dashboard.
+          Enter your credentials to access the guarantor dashboard.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -230,7 +230,7 @@ const InsurerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =
                 <FormItem>
                   <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="Insurer Username" {...field} />
+                    <Input placeholder="Guarantor Username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -376,11 +376,11 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
 export default function LoginTabs() {
   const [loadingStates, setLoadingStates] = useState<Record<Role, boolean>>({
     Admin: false,
-    Insurer: false,
+    Guarantor: false,
     Valuer: false,
   });
 
-  const roles: Role[] = ["Admin", "Insurer", "Valuer"];
+  const roles: Role[] = ["Admin", "Guarantor", "Valuer"];
   
   const getFormComponent = (role: Role) => {
     const setIsLoading = (loading: boolean) => setLoadingStates(prev => ({ ...prev, [role]: loading }));
@@ -388,8 +388,8 @@ export default function LoginTabs() {
     switch (role) {
       case 'Admin':
         return <AdminLoginForm setIsLoading={setIsLoading} />;
-      case 'Insurer':
-        return <InsurerLoginForm setIsLoading={setIsLoading} />;
+      case 'Guarantor':
+        return <GuarantorLoginForm setIsLoading={setIsLoading} />;
       case 'Valuer':
         return <ValuerLoginForm setIsLoading={setIsLoading} />;
       default:
@@ -412,3 +412,5 @@ export default function LoginTabs() {
     </Tabs>
   );
 }
+
+    

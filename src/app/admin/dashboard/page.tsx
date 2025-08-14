@@ -181,12 +181,14 @@ function AdminDashboard() {
       form.reset();
       setControlActive(true);
       setShowPassword(false);
-      toast({ title: `${userType.charAt(0).toUpperCase() + userType.slice(1)} Added`, description: `${name} has been successfully added.`});
+      const userTypeDisplay = userType === 'insurer' ? 'Guarantor' : 'Valuer';
+      toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.`});
     } catch (error: any) {
+       const userTypeDisplay = userType === 'insurer' ? 'Guarantor' : 'Valuer';
        console.error(`Error adding ${userType}: `, error);
        toast({
          variant: "destructive",
-         title: `Failed to Add ${userType.charAt(0).toUpperCase() + userType.slice(1)}`,
+         title: `Failed to Add ${userTypeDisplay}`,
          description: `An error occurred while adding the ${userType}.`,
        });
     }
@@ -233,7 +235,7 @@ function AdminDashboard() {
         </div>
         <Button onClick={onAdd}>
           <PlusCircle className="mr-2" />
-          Register New {collectionName === 'insurers' ? 'Insurer' : 'Valuer'}
+          Register New {collectionName === 'insurers' ? 'Guarantor' : 'Valuer'}
         </Button>
       </CardHeader>
       <CardContent>
@@ -283,11 +285,13 @@ function AdminDashboard() {
     isOpen: boolean,
     onOpenChange: (open: boolean) => void,
     userType: 'insurer' | 'valuer'
-  ) => (
+  ) => {
+    const userTypeDisplay = userType === 'insurer' ? 'Guarantor' : 'Valuer';
+    return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Register New {userType.charAt(0).toUpperCase() + userType.slice(1)}</DialogTitle>
+          <DialogTitle>Register New {userTypeDisplay}</DialogTitle>
           <DialogDescription>
             Fill in the details below to create a new {userType} account.
           </DialogDescription>
@@ -326,12 +330,13 @@ function AdminDashboard() {
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Create {userType.charAt(0).toUpperCase() + userType.slice(1)}</Button>
+            <Button type="submit">Create {userTypeDisplay}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
+}
 
   return (
     <SidebarProvider>
@@ -353,9 +358,9 @@ function AdminDashboard() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('insurers')} isActive={activeView === 'insurers'} tooltip="Manage Insurers">
+              <SidebarMenuButton onClick={() => setActiveView('insurers')} isActive={activeView === 'insurers'} tooltip="Manage Guarantors">
                 <Users />
-                Manage Insurers
+                Manage Guarantors
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -423,7 +428,7 @@ function AdminDashboard() {
                 </Card>
               </div>
             )}
-            {activeView === 'insurers' && renderUserTable(insurers, "Manage Insurers", "View and manage all registered insurers.", () => setAddInsurerOpen(true), "insurers")}
+            {activeView === 'insurers' && renderUserTable(insurers, "Manage Guarantors", "View and manage all registered guarantors.", () => setAddInsurerOpen(true), "insurers")}
             {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuers")}
             {renderUserDialog(isAddInsurerOpen, setAddInsurerOpen, 'insurer')}
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
