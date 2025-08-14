@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc } from "firebase/firestore";
@@ -54,6 +54,16 @@ interface Insurer {
   uid?: string;
 }
 
+interface Valuer {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+  active: boolean;
+  uid?: string;
+}
+
 interface Booking {
   id: string;
   bookingNumber: string;
@@ -72,10 +82,13 @@ function AdminDashboard() {
   const router = useRouter();
   const [activeView, setActiveView] = useState('dashboard');
   const [insurers, setInsurers] = useState<Insurer[]>([]);
+  const [valuers, setValuers] = useState<Valuer[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddInsurerOpen, setAddInsurerOpen] = useState(false);
+  const [isAddValuerOpen, setAddValuerOpen] = useState(false);
   const [isInsurerActive, setInsurerActive] = useState(true);
+  const [isValuerActive, setValuerActive] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
   const getInitials = (email?: string | null) => {
@@ -83,20 +96,29 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
+    setLoading(true);
+    let unsubscribe: () => void = () => {};
+
     if (activeView === 'insurers') {
-      const unsubscribe = onSnapshot(collection(db, "insurers"), (querySnapshot) => {
+      unsubscribe = onSnapshot(collection(db, "insurers"), (querySnapshot) => {
         const insurersData: Insurer[] = [];
         querySnapshot.forEach((doc) => {
           insurersData.push({ id: doc.id, ...doc.data() } as Insurer);
         });
         setInsurers(insurersData);
+        setLoading(false);
       });
-      return () => unsubscribe();
-    }
-    
-    if(activeView === 'bookings') {
-      setLoading(true);
-      const unsubscribe = onSnapshot(collection(db, "bookings"), (snapshot) => {
+    } else if (activeView === 'valuers') {
+      unsubscribe = onSnapshot(collection(db, "valuers"), (querySnapshot) => {
+        const valuersData: Valuer[] = [];
+        querySnapshot.forEach((doc) => {
+          valuersData.push({ id: doc.id, ...doc.data() } as Valuer);
+        });
+        setValuers(valuersData);
+        setLoading(false);
+      });
+    } else if(activeView === 'bookings') {
+      unsubscribe = onSnapshot(collection(db, "bookings"), (snapshot) => {
           const bookingsData: Booking[] = [];
           snapshot.forEach((doc) => {
               bookingsData.push({ id: doc.id, ...doc.data() } as Booking);
@@ -104,8 +126,10 @@ function AdminDashboard() {
           setBookings(bookingsData);
           setLoading(false);
       });
-      return () => unsubscribe();
+    } else {
+        setLoading(false);
     }
+    return () => unsubscribe();
   }, [activeView]);
 
   const handleLogout = async () => {
@@ -153,6 +177,40 @@ function AdminDashboard() {
     }
   };
 
+  const handleAddValuer = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const name = (form.elements.namedItem('name') as HTMLInputElement).value;
+    const username = (form.elements.namedItem('username') as HTMLInputElement).value;
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+    const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
+    
+    try {
+      await addDoc(collection(db, "valuers"), {
+        name,
+        username,
+        email,
+        phone,
+        password,
+        active: isValuerActive,
+      });
+
+      setAddValuerOpen(false);
+      form.reset();
+      setValuerActive(true);
+      setShowPassword(false);
+      toast({ title: "Valuer Added", description: `${name} has been successfully added.`});
+    } catch (error: any) {
+       console.error("Error adding valuer: ", error);
+       toast({
+         variant: "destructive",
+         title: "Failed to Add Valuer",
+         description: "An error occurred while adding the valuer.",
+       });
+    }
+  };
+
   const toggleInsurerStatus = async (insurerId: string) => {
     const insurerRef = doc(db, "insurers", insurerId);
     const insurer = insurers.find(c => c.id === insurerId);
@@ -163,6 +221,20 @@ function AdminDashboard() {
       } catch (error) {
         console.error("Error updating status: ", error);
         toast({ variant: "destructive", title: "Update Failed", description: "Could not update insurer status."});
+      }
+    }
+  };
+
+  const toggleValuerStatus = async (valuerId: string) => {
+    const valuerRef = doc(db, "valuers", valuerId);
+    const valuer = valuers.find(v => v.id === valuerId);
+    if (valuer) {
+      try {
+        await updateDoc(valuerRef, { active: !valuer.active });
+        toast({ title: "Status Updated", description: `Status for ${valuer.name} has been updated.`});
+      } catch (error) {
+        console.error("Error updating status: ", error);
+        toast({ variant: "destructive", title: "Update Failed", description: "Could not update valuer status."});
       }
     }
   };
@@ -205,6 +277,12 @@ function AdminDashboard() {
               <SidebarMenuButton onClick={() => setActiveView('insurers')} isActive={activeView === 'insurers'} tooltip="Manage Insurers">
                 <Users />
                 Manage Insurers
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Manage Valuers">
+                <UserCog />
+                Manage Valuers
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -369,6 +447,109 @@ function AdminDashboard() {
                 </CardContent>
               </Card>
             )}
+             {activeView === 'valuers' && (
+              <Card className="shadow-lg border-primary/20">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="font-headline text-3xl text-primary">Manage Valuers</CardTitle>
+                    <CardDescription>View and manage all registered valuers.</CardDescription>
+                  </div>
+                  <Dialog open={isAddValuerOpen} onOpenChange={setAddValuerOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <PlusCircle className="mr-2" />
+                        Register New Valuer
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Register New Valuer</DialogTitle>
+                        <DialogDescription>
+                          Fill in the details below to create a new valuer account.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleAddValuer} className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="name" className="text-right">Name</Label>
+                          <Input id="name" name="name" className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="username" className="text-right">Username</Label>
+                          <Input id="username" name="username" className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="email" className="text-right">Email</Label>
+                          <Input id="email" name="email" type="email" className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="phone" className="text-right">Phone</Label>
+                          <Input id="phone" name="phone" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="password" className="text-right">Password</Label>
+                           <div className="col-span-3 relative">
+                            <Input id="password" name="password" type={showPassword ? "text" : "password"} className="pr-10" required />
+                            <Button type="button" variant="ghost" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground" onClick={() => setShowPassword(!showPassword)}>
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="active" className="text-right">Active</Label>
+                           <div className="col-span-3 flex items-center">
+                            <Switch id="active" name="active" checked={isValuerActive} onCheckedChange={setValuerActive} />
+                            <span className="ml-3 text-sm text-muted-foreground">Is account active?</span>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button type="submit">Create Valuer</Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead className="hidden sm:table-cell">Username</TableHead>
+                        <TableHead className="hidden sm:table-cell">Email</TableHead>
+                        <TableHead className="hidden md:table-cell">Phone</TableHead>
+                        <TableHead className="text-right">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {valuers.map(valuer => (
+                        <TableRow key={valuer.id}>
+                          <TableCell className="font-medium flex items-center gap-3">
+                            <div className="p-2 bg-muted rounded-full hidden sm:flex">
+                              <UserCog className="h-5 w-5 text-primary" />
+                            </div>
+                            {valuer.name}
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">{valuer.username}</TableCell>
+                          <TableCell className="hidden sm:table-cell">{valuer.email}</TableCell>
+                          <TableCell className="hidden md:table-cell">{valuer.phone}</TableCell>
+                          <TableCell className="text-right">
+                             <div className="flex items-center justify-end gap-2">
+                                <span className={`text-sm font-medium ${valuer.active ? 'text-green-500' : 'text-red-500'}`}>
+                                  {valuer.active ? 'Active' : 'Inactive'}
+                                </span>
+                                <Switch
+                                  checked={valuer.active}
+                                  onCheckedChange={() => toggleValuerStatus(valuer.id)}
+                                  aria-label={`Toggle status for ${valuer.name}`}
+                                />
+                              </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
              {activeView === 'bookings' && (
                <Card className="shadow-lg border-primary/20">
                 <CardHeader>
@@ -437,7 +618,7 @@ function AdminDashboard() {
         <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
             <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
                 <p className="text-sm text-center text-muted-foreground">
-                    © {new Date().getFullYear()} Casa Motor Valuers & Assessors. All rights reserved.
+                    Casa Motor Valuers & Assessors
                 </p>
             </div>
         </footer>
