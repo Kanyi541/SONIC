@@ -38,7 +38,7 @@ const loginSchema = z.object({
 });
 
 const userLoginSchema = z.object({
-  username: z.string().min(1, { message: "Username is required." }),
+  username: z.string().min(1, { message: "Username or Email is required." }),
   password: z.string().min(1, { message: "Password is required." }),
 });
 
@@ -273,8 +273,15 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
     setIsLoading(true);
     try {
         const valuersRef = collection(db, "valuers");
-        const q = query(valuersRef, where("username", "==", data.username));
-        const querySnapshot = await getDocs(q);
+        const usernameQuery = query(valuersRef, where("username", "==", data.username));
+        const emailQuery = query(valuersRef, where("email", "==", data.username));
+
+        const [usernameSnapshot, emailSnapshot] = await Promise.all([
+            getDocs(usernameQuery),
+            getDocs(emailQuery)
+        ]);
+
+        const querySnapshot = usernameSnapshot.empty ? emailSnapshot : usernameSnapshot;
 
         if (querySnapshot.empty) {
             toast({ variant: "destructive", title: "Login Failed", description: "Invalid credentials." });
@@ -329,9 +336,9 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>Username or Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Valuer Username" {...field} />
+                    <Input placeholder="Enter username or email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
