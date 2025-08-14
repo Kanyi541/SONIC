@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Car, Clock, CheckCircle, Hourglass } from 'lucide-react';
+import { Car, Clock, CheckCircle, Hourglass, FilePen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
@@ -183,8 +183,8 @@ export default function ValuerDashboardPage() {
                                                 size="sm"
                                                 onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
                                                 >
-                                                <Printer className="mr-2 h-4 w-4" />
-                                                <span className="hidden sm:inline">View</span>
+                                                <FilePen className="mr-2 h-4 w-4" />
+                                                <span className="hidden sm:inline">Valuated</span>
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -206,5 +206,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
-    
