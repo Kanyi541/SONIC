@@ -51,7 +51,7 @@ const valuationSchema = z.object({
   assessmentValue: z.string().min(1, "Assessment value is required"),
   forcedValue: z.string().min(1, "Forced value is required"),
   salvageValue: z.string().min(1, "Salvage value is required"),
-  images: z.array(z.string()).min(1, "At least one image is required."),
+  images: z.array(z.string().url()).min(1, "At least one image is required."),
 });
 
 type ValuationFormValues = z.infer<typeof valuationSchema>;
@@ -106,18 +106,21 @@ export default function ValuerDashboardPage() {
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             const files = Array.from(event.target.files);
-            const newUrls: string[] = [];
+            const newImageUrls: string[] = [];
 
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const dataUrl = e.target?.result as string;
-                    newUrls.push(dataUrl);
-                    if (newUrls.length === files.length) {
-                       setImageDataUrls(prevUrls => [...prevUrls, ...newUrls]);
-                    }
-                };
-                reader.readAsDataURL(file);
+            const fileReaders = files.map(file => {
+                return new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        resolve(e.target?.result as string);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            Promise.all(fileReaders).then(urls => {
+                setImageDataUrls(prevUrls => [...prevUrls, ...urls]);
             });
         }
     };
@@ -295,13 +298,13 @@ export default function ValuerDashboardPage() {
                             <CardContent>
                                  <Table>
                                     <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Booking ID</TableHead>
-                                            <TableHead className="hidden sm:table-cell">Customer</TableHead>
-                                            <TableHead className="hidden md:table-cell">Vehicle</TableHead>
-                                            <TableHead className="hidden md:table-cell">Guarantor</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="text-right">Action</TableHead>
+                                        <TableRow className="bg-muted/50">
+                                            <TableHead className="font-semibold">Booking ID</TableHead>
+                                            <TableHead className="hidden sm:table-cell font-semibold">Customer</TableHead>
+                                            <TableHead className="hidden md:table-cell font-semibold">Vehicle</TableHead>
+                                            <TableHead className="hidden md:table-cell font-semibold">Guarantor</TableHead>
+                                            <TableHead className="font-semibold">Status</TableHead>
+                                            <TableHead className="text-right font-semibold">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>

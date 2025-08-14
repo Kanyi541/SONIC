@@ -585,13 +585,13 @@ export default function GuarantorDashboardPage() {
                 <CardContent>
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Booking ID</TableHead>
-                        <TableHead className="hidden sm:table-cell">Customer</TableHead>
-                        <TableHead className="hidden md:table-cell">Vehicle</TableHead>
-                        <TableHead className="hidden sm:table-cell">Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="font-semibold">Booking ID</TableHead>
+                        <TableHead className="hidden sm:table-cell font-semibold">Customer</TableHead>
+                        <TableHead className="hidden md:table-cell font-semibold">Vehicle</TableHead>
+                        <TableHead className="hidden sm:table-cell font-semibold">Date</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="text-right font-semibold">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -717,10 +717,10 @@ export default function GuarantorDashboardPage() {
                     <CardContent>
                         <Table>
                             <TableHeader>
-                                <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Phone</TableHead>
+                                <TableRow className="bg-muted/50">
+                                    <TableHead className="font-semibold">Name</TableHead>
+                                    <TableHead className="font-semibold">Email</TableHead>
+                                    <TableHead className="font-semibold">Phone</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -763,5 +763,3 @@ export default function GuarantorDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
