@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Settings } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Users, BookCopy } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -30,6 +30,17 @@ type DashboardLayoutProps = {
     menuItems: MenuItem[];
     children: (activeView: string) => React.ReactNode;
 };
+
+const getIconForView = (view: string) => {
+    switch (view) {
+        case 'bookings':
+            return <BookCopy />;
+        case 'customers':
+            return <Users />;
+        default:
+            return <LayoutDashboard />;
+    }
+}
 
 export default function UnifiedDashboardLayout({
     title,
@@ -80,7 +91,7 @@ export default function UnifiedDashboardLayout({
                         {menuItems.map(item => (
                             <SidebarMenuItem key={item.view}>
                                 <SidebarMenuButton onClick={() => setActiveView(item.view)} isActive={activeView === item.view} tooltip={item.name}>
-                                    {item.icon || <LayoutDashboard />}
+                                    {getIconForView(item.view)}
                                     {item.name}
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -141,3 +152,4 @@ export default function UnifiedDashboardLayout({
         </SidebarProvider>
     );
 }
+

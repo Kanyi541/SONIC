@@ -1,35 +1,32 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow unauthenticated reads for insurer login.
+    // Insurers can be read by anyone to allow login.
     // Writes are restricted to authenticated admins.
     match /insurers/{insurerId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    match /bookings/{bookingId} {
-      // Admin can read all bookings
-      // Insurer can read their own bookings
-      allow read: if request.auth != null || 
-                   (request.auth == null && get(/databases/$(database)/documents/insurers/$(request.resource.data.insurerId)).data.username == request.resource.data.insurerId);
-      
-      // Allow any authenticated user (admin or insurer) to create bookings
-      // For insurers, we check if the provided insurerId in the booking matches their session identifier
-      allow create: if request.auth != null || request.resource.data.insurerId != null;
+    // A customer can only be created and viewed by the insurer who registered them.
+    match /customers/{customerId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.insurerId;
+      allow create: if request.auth != null;
+    }
 
-      // Only admins can update or delete bookings
-      allow update, delete: if request.auth != null;
+    match /bookings/{bookingId} {
+        // An insurer can create a booking for one of their customers.
+        allow create: if request.auth != null;
+        // An insurer can only read bookings they created.
+        allow read: if request.auth != null && request.auth.uid == resource.data.insurerId;
+        // Only admins can update or delete bookings.
+        allow update, delete: if request.auth != null;
     }
 
     // Default security rules for other collections.
     match /valuers/{valuerId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Other collections can be added here
-    match /{document=**} {
       allow read, write: if request.auth != null;
     }
   }

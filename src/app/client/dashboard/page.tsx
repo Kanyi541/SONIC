@@ -1,8 +1,8 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import React, { useState, useEffect, useMemo } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import UnifiedDashboardLayout from "@/components/dashboard/unified-dashboard-layout";
@@ -36,10 +36,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, where } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where, doc, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +51,14 @@ interface LoggedInUser {
     username: string;
     email: string;
     role: string;
+}
+
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  insurerId: string;
 }
 
 interface Booking {
@@ -65,10 +73,20 @@ interface Booking {
   status: string;
 }
 
+const customerSchema = z.object({
+  name: z.string().min(1, "Customer name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(1, "Customer phone is required"),
+});
+
+type CustomerFormValues = z.infer<typeof customerSchema>;
+
+
 const bookingSchema = z.object({
-  customerName: z.string().min(1, "Customer name is required"),
-  customerEmail: z.string().email("Invalid email address"),
-  customerPhone: z.string().min(1, "Customer phone is required"),
+  customerId: z.string().min(1, "Please select a customer"),
+  customerName: z.string(),
+  customerEmail: z.string(),
+  customerPhone: z.string(),
   plateNumber: z.string().min(1, "Plate number is required"),
   policyNumber: z.string().min(1, "Policy number is required"),
   carMake: z.string().min(1, "Car make is required"),
@@ -83,15 +101,23 @@ type BookingFormValues = z.infer<typeof bookingSchema>;
 
 export default function InsurerDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const [isCustomerDialogOpen, setCustomerDialogOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
 
-  const form = useForm<BookingFormValues>({
+  const customerForm = useForm<CustomerFormValues>({
+      resolver: zodResolver(customerSchema),
+      defaultValues: { name: "", email: "", phone: "" },
+  });
+
+  const bookingForm = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
+        customerId: "",
         customerName: "",
         customerEmail: "",
         customerPhone: "",
@@ -107,14 +133,19 @@ export default function InsurerDashboardPage() {
   });
 
   const {
-    handleSubmit,
-    control,
-    watch,
-    formState: { isSubmitting },
-  } = form;
+    watch: watchBooking,
+    control: bookingControl,
+    setValue: setBookingValue,
+    handleSubmit: handleBookingSubmit,
+    formState: { isSubmitting: isBookingSubmitting },
+    reset: resetBookingForm,
+  } = bookingForm;
 
-  const selectedCarMake = watch("carMake");
-  const carModels = selectedCarMake ? carData.find(make => make.brand === selectedCarMake)?.models || [] : [];
+  const selectedCarMake = watchBooking("carMake");
+  const selectedCustomerId = watchBooking("customerId");
+  const carModels = useMemo(() => {
+    return selectedCarMake ? carData.find(make => make.brand === selectedCarMake)?.models || [] : [];
+  }, [selectedCarMake]);
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem('loggedInUser');
@@ -126,20 +157,53 @@ export default function InsurerDashboardPage() {
   useEffect(() => {
     if (loggedInUser) {
         setLoading(true);
-        const bookingsQuery = query(collection(db, "bookings"), where("branch", "==", loggedInUser.name));
-        const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
-            const bookingsData: Booking[] = [];
-            snapshot.forEach((doc) => {
-                bookingsData.push({ id: doc.id, ...doc.data() } as Booking);
-            });
+        const bookingsQuery = query(collection(db, "bookings"), where("insurerId", "==", loggedInUser.username));
+        const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
+            const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
             setBookings(bookingsData);
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        const customersQuery = query(collection(db, "customers"), where("insurerId", "==", loggedInUser.username));
+        const customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
+            const customersData: Customer[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
+            setCustomers(customersData);
+        });
+
+        return () => {
+            bookingsUnsubscribe();
+            customersUnsubscribe();
+        };
     }
 }, [loggedInUser]);
-  
+
+  useEffect(() => {
+      if (selectedCustomerId) {
+          const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+          if (selectedCustomer) {
+              setBookingValue("customerName", selectedCustomer.name);
+              setBookingValue("customerEmail", selectedCustomer.email);
+              setBookingValue("customerPhone", selectedCustomer.phone);
+          }
+      }
+  }, [selectedCustomerId, customers, setBookingValue]);
+
+  const handleAddCustomer = async (data: CustomerFormValues) => {
+      if (!loggedInUser) return;
+      try {
+          await addDoc(collection(db, "customers"), {
+              ...data,
+              insurerId: loggedInUser.username,
+          });
+          toast({ title: "Customer Added", description: `${data.name} has been successfully registered.` });
+          setCustomerDialogOpen(false);
+          customerForm.reset();
+      } catch (error) {
+          console.error("Error adding customer:", error);
+          toast({ variant: "destructive", title: "Error", description: "Failed to add customer." });
+      }
+  };
+
   const handleSaveBooking = async (data: BookingFormValues) => {
     if (!loggedInUser) {
         toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to create a booking." });
@@ -147,21 +211,22 @@ export default function InsurerDashboardPage() {
     }
     
     try {
+      const { customerId, ...bookingData } = data;
       const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
       await addDoc(collection(db, "bookings"), {
-        ...data,
+        ...bookingData,
         bookingNumber,
         createdAt: new Date(),
         status: "Pending", // Initial status
-        insurerId: loggedInUser.username, // Associate booking with the insurer's username
-        branch: loggedInUser.name, // To maintain filter functionality
+        insurerId: loggedInUser.username, 
+        branch: loggedInUser.name,
       });
       toast({
         title: "Booking Created",
         description: `Booking #${bookingNumber} for ${data.customerName} has been saved.`,
       });
       setBookingDialogOpen(false);
-      form.reset();
+      resetBookingForm();
     } catch (error) {
       console.error("Error creating booking: ", error);
       toast({
@@ -194,6 +259,7 @@ export default function InsurerDashboardPage() {
       userEmail={loggedInUser?.email || ""}
       menuItems={[
         { name: "Bookings", view: "bookings" },
+        { name: "Manage Customers", view: "customers"},
       ]}
     >
       {(activeView) => (
@@ -217,46 +283,71 @@ export default function InsurerDashboardPage() {
                           <DialogHeader>
                             <DialogTitle>Make a New Booking</DialogTitle>
                             <DialogDescription>
-                              Fill out the form below to create a new booking.
+                              Select a customer and fill out the form to create a new booking.
                             </DialogDescription>
                           </DialogHeader>
-                          <Form {...form}>
-                            <form onSubmit={handleSubmit(handleSaveBooking)} className="space-y-6">
+                          <Form {...bookingForm}>
+                            <form onSubmit={handleBookingSubmit(handleSaveBooking)} className="space-y-6">
+                               <FormField
+                                  control={bookingControl}
+                                  name="customerId"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Select Customer</FormLabel>
+                                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Choose a registered customer" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {customers.map((customer) => (
+                                            <SelectItem key={customer.id} value={customer.id}>
+                                              {customer.name} ({customer.email})
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <FormField
-                                        control={control}
+                                        control={bookingControl}
                                         name="customerName"
                                         render={({ field }) => (
                                             <FormItem>
                                             <FormLabel>Customer Name</FormLabel>
                                             <FormControl>
-                                                <Input {...field} placeholder="e.g. Jane Doe" />
+                                                <Input {...field} readOnly placeholder="Selected customer name" />
                                             </FormControl>
                                             <FormMessage />
                                             </FormItem>
                                         )}
                                         />
                                     <FormField
-                                        control={control}
+                                        control={bookingControl}
                                         name="customerEmail"
                                         render={({ field }) => (
                                             <FormItem>
                                             <FormLabel>Customer Email</FormLabel>
                                             <FormControl>
-                                                <Input {...field} placeholder="e.g. jane@example.com" type="email" />
+                                                <Input {...field} readOnly placeholder="Selected customer email" />
                                             </FormControl>
                                              <FormMessage />
                                             </FormItem>
                                         )}
                                         />
                                     <FormField
-                                        control={control}
+                                        control={bookingControl}
                                         name="customerPhone"
                                         render={({ field }) => (
                                             <FormItem>
                                             <FormLabel>Customer Phone</FormLabel>
                                             <FormControl>
-                                                <Input {...field} placeholder="e.g. 0712345678" />
+                                                <Input {...field} readOnly placeholder="Selected customer phone" />
                                             </FormControl>
                                              <FormMessage />
                                             </FormItem>
@@ -265,7 +356,7 @@ export default function InsurerDashboardPage() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                      <FormField
-                                        control={control}
+                                        control={bookingControl}
                                         name="plateNumber"
                                         render={({ field }) => (
                                             <FormItem>
@@ -278,7 +369,7 @@ export default function InsurerDashboardPage() {
                                         )}
                                     />
                                      <FormField
-                                        control={control}
+                                        control={bookingControl}
                                         name="policyNumber"
                                         render={({ field }) => (
                                             <FormItem>
@@ -291,7 +382,7 @@ export default function InsurerDashboardPage() {
                                         )}
                                     />
                                      <FormField
-                                        control={control}
+                                        control={bookingControl}
                                         name="branch"
                                         render={({ field }) => (
                                             <FormItem>
@@ -307,7 +398,7 @@ export default function InsurerDashboardPage() {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <FormField
-                                        control={control}
+                                        control={bookingControl}
                                         name="carMake"
                                         render={({ field }) => (
                                             <FormItem>
@@ -331,7 +422,7 @@ export default function InsurerDashboardPage() {
                                         )}
                                     />
                                      <FormField
-                                        control={control}
+                                        control={bookingControl}
                                         name="carModel"
                                         render={({ field }) => (
                                             <FormItem>
@@ -358,7 +449,7 @@ export default function InsurerDashboardPage() {
 
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <FormField
-                                        control={control}
+                                        control={bookingControl}
                                         name="maxValuationDays"
                                         render={({ field }) => (
                                             <FormItem>
@@ -371,7 +462,7 @@ export default function InsurerDashboardPage() {
                                         )}
                                     />
                                     <FormField
-                                        control={control}
+                                        control={bookingControl}
                                         name="authorisedBy"
                                         render={({ field }) => (
                                             <FormItem>
@@ -386,7 +477,7 @@ export default function InsurerDashboardPage() {
                                 </div>
 
                                  <FormField
-                                    control={control}
+                                    control={bookingControl}
                                     name="comments"
                                     render={({ field }) => (
                                         <FormItem>
@@ -407,8 +498,8 @@ export default function InsurerDashboardPage() {
                                     <Button type="button" variant="outline" onClick={() => setBookingDialogOpen(false)}>
                                         Cancel
                                     </Button>
-                                    <Button type="submit" disabled={isSubmitting}>
-                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    <Button type="submit" disabled={isBookingSubmitting}>
+                                        {isBookingSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Save Booking
                                     </Button>
                                 </DialogFooter>
@@ -477,8 +568,118 @@ export default function InsurerDashboardPage() {
               </Card>
             </TabsContent>
 
+            <TabsContent value="customers">
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>Manage Customers</CardTitle>
+                                <CardDescription>Register new customers and view existing ones.</CardDescription>
+                            </div>
+                             <Dialog open={isCustomerDialogOpen} onOpenChange={setCustomerDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button><UserPlus className="mr-2" /> Add Customer</Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                    <DialogTitle>Register New Customer</DialogTitle>
+                                    <DialogDescription>
+                                        Fill in the details to add a new customer.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                    <Form {...customerForm}>
+                                        <form onSubmit={customerForm.handleSubmit(handleAddCustomer)} className="space-y-6">
+                                            <FormField
+                                                control={customerForm.control}
+                                                name="name"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                    <FormLabel>Full Name</FormLabel>
+                                                    <FormControl>
+                                                        <Input {...field} placeholder="e.g. John Doe" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={customerForm.control}
+                                                name="email"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                    <FormLabel>Email Address</FormLabel>
+                                                    <FormControl>
+                                                        <Input {...field} type="email" placeholder="e.g. john@example.com" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={customerForm.control}
+                                                name="phone"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                    <FormLabel>Phone Number</FormLabel>
+                                                    <FormControl>
+                                                        <Input {...field} placeholder="e.g. 0712345678" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <DialogFooter>
+                                                <Button type="button" variant="outline" onClick={() => setCustomerDialogOpen(false)}>Cancel</Button>
+                                                <Button type="submit" disabled={customerForm.formState.isSubmitting}>
+                                                     {customerForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                    Save Customer
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </Form>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Phone</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {customers.length > 0 ? (
+                                    customers.map(customer => (
+                                        <TableRow key={customer.id}>
+                                            <TableCell className="font-medium flex items-center gap-3">
+                                                <div className="p-2 bg-muted rounded-full hidden sm:flex">
+                                                    <User className="h-5 w-5 text-primary" />
+                                                </div>
+                                                {customer.name}
+                                            </TableCell>
+                                            <TableCell>{customer.email}</TableCell>
+                                            <TableCell>{customer.phone}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="text-center h-24">
+                                            No customers registered yet.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+
           </Tabs>
       )}
     </UnifiedDashboardLayout>
   );
 }
+
