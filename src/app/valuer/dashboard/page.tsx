@@ -34,7 +34,7 @@ interface Booking {
 }
 
 export default function ValuerDashboardPage() {
-    const [loggedInUser, setLoggedInUser = useState<LoggedInUser | null>(null);
+    const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
@@ -205,5 +205,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
-  
