@@ -105,26 +105,29 @@ export default function ValuerDashboardPage() {
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             const files = Array.from(event.target.files);
-            
+            const newUrls: string[] = [];
+
             files.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const dataUrl = e.target?.result as string;
-                    setImageDataUrls(prevUrls => {
-                        const newUrls = [...prevUrls, dataUrl];
-                        form.setValue('images', newUrls);
-                        return newUrls;
-                    });
+                    newUrls.push(dataUrl);
+                    if (newUrls.length === files.length) {
+                       setImageDataUrls(prevUrls => [...prevUrls, ...newUrls]);
+                    }
                 };
                 reader.readAsDataURL(file);
             });
         }
     };
+
+    useEffect(() => {
+        form.setValue('images', imageDataUrls, { shouldValidate: true });
+    }, [imageDataUrls, form]);
     
     const removeImage = (index: number) => {
         const newImageDataUrls = imageDataUrls.filter((_, i) => i !== index);
         setImageDataUrls(newImageDataUrls);
-        form.setValue('images', newImageDataUrls, { shouldValidate: true });
     };
     
     const handleValuationSubmit = async (data: ValuationFormValues) => {
@@ -145,7 +148,7 @@ export default function ValuerDashboardPage() {
                 assessmentValue: data.assessmentValue,
                 forcedValue: data.forcedValue,
                 salvageValue: data.salvageValue,
-                imageUrls: imageDataUrls, // Save data URLs directly
+                imageUrls: imageDataUrls,
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
             });
