@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, onSnapshot, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -146,6 +146,26 @@ function AdminDashboard() {
     const collectionName = userType === 'insurer' ? 'insurers' : 'valuers';
     
     try {
+      // Check for existing user
+      if (userType === 'valuer') {
+        const usernameQuery = query(collection(db, 'valuers'), where("username", "==", username));
+        const emailQuery = query(collection(db, 'valuers'), where("email", "==", email));
+        
+        const [usernameSnapshot, emailSnapshot] = await Promise.all([
+            getDocs(usernameQuery),
+            getDocs(emailQuery)
+        ]);
+
+        if (!usernameSnapshot.empty) {
+            toast({ variant: "destructive", title: "Registration Failed", description: "A valuer with this username already exists." });
+            return;
+        }
+        if (!emailSnapshot.empty) {
+            toast({ variant: "destructive", title: "Registration Failed", description: "A valuer with this email already exists." });
+            return;
+        }
+      }
+
       await addDoc(collection(db, collectionName), {
         name,
         username,
@@ -492,3 +512,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   )
 }
+
+    
