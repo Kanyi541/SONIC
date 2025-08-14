@@ -38,7 +38,7 @@ const loginSchema = z.object({
 });
 
 const insurerLoginSchema = z.object({
-  name: z.string().min(1, { message: "Name is required." }),
+  username: z.string().min(1, { message: "Username is required." }),
   password: z.string().min(1, { message: "Password is required." }),
 });
 
@@ -153,14 +153,14 @@ const InsurerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =
 
   const form = useForm<InsurerLoginFormValues>({
     resolver: zodResolver(insurerLoginSchema),
-    defaultValues: { name: "", password: "" },
+    defaultValues: { username: "", password: "" },
   });
 
   const onSubmit = async (data: InsurerLoginFormValues) => {
     setIsLoading(true);
     try {
       const insurersRef = collection(db, "insurers");
-      const q = query(insurersRef, where("name", "==", data.name));
+      const q = query(insurersRef, where("username", "==", data.username));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
@@ -196,7 +196,7 @@ const InsurerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =
         return;
       }
       
-      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: insurerData.name, email: insurerData.email, role: 'Insurer' }));
+      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: insurerData.name, username: insurerData.username, email: insurerData.email, role: 'Insurer' }));
       router.push('/client/dashboard');
       toast({ title: "Insurer Login Successful", description: `Welcome back, ${insurerData.name}!` });
 
@@ -225,12 +225,12 @@ const InsurerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="name"
+              name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name (Username)</FormLabel>
+                  <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="Insurer Name" {...field} />
+                    <Input placeholder="Insurer Username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -378,5 +378,3 @@ export default function LoginTabs() {
     </Tabs>
   );
 }
-
-    

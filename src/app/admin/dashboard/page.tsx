@@ -47,6 +47,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface Insurer {
   id: string;
   name: string;
+  username: string;
   email: string;
   phone: string;
   active: boolean;
@@ -122,6 +123,7 @@ function AdminDashboard() {
     event.preventDefault();
     const form = event.currentTarget;
     const name = (form.elements.namedItem('name') as HTMLInputElement).value;
+    const username = (form.elements.namedItem('username') as HTMLInputElement).value;
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
     const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
@@ -129,6 +131,7 @@ function AdminDashboard() {
     try {
       await addDoc(collection(db, "insurers"), {
         name,
+        username,
         email,
         phone,
         password,
@@ -296,6 +299,10 @@ function AdminDashboard() {
                           <Input id="name" name="name" className="col-span-3" required />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="username" className="text-right">Username</Label>
+                          <Input id="username" name="username" className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="email" className="text-right">Email</Label>
                           <Input id="email" name="email" type="email" className="col-span-3" required />
                         </div>
@@ -331,6 +338,7 @@ function AdminDashboard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Name</TableHead>
+                        <TableHead className="hidden sm:table-cell">Username</TableHead>
                         <TableHead className="hidden sm:table-cell">Email</TableHead>
                         <TableHead className="hidden md:table-cell">Phone</TableHead>
                         <TableHead className="text-right">Status</TableHead>
@@ -345,6 +353,7 @@ function AdminDashboard() {
                             </div>
                             {insurer.name}
                           </TableCell>
+                          <TableCell className="hidden sm:table-cell">{insurer.username}</TableCell>
                           <TableCell className="hidden sm:table-cell">{insurer.email}</TableCell>
                           <TableCell className="hidden md:table-cell">{insurer.phone}</TableCell>
                           <TableCell className="text-right">
@@ -450,5 +459,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   )
 }
-
-    

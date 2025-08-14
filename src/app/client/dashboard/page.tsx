@@ -48,6 +48,7 @@ import { useRouter } from "next/navigation";
 
 interface LoggedInUser {
     name: string;
+    username: string;
     email: string;
     role: string;
 }
@@ -152,7 +153,7 @@ export default function InsurerDashboardPage() {
         bookingNumber,
         createdAt: new Date(),
         status: "Pending", // Initial status
-        insurerId: loggedInUser.name, // Associate booking with the insurer
+        insurerId: loggedInUser.username, // Associate booking with the insurer's username
         branch: loggedInUser.name, // To maintain filter functionality
       });
       toast({
@@ -481,5 +482,3 @@ export default function InsurerDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
