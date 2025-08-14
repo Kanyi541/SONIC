@@ -3,17 +3,18 @@
 
 const admin = require('firebase-admin');
 
-// This environment variable will be populated by the GitHub secret.
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-
-// Initialize the Firebase Admin SDK.
 try {
+  // This environment variable will be populated by the GitHub secret.
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+
+  // Initialize the Firebase Admin SDK.
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
 } catch (error) {
     if (!/already exists/u.test(error.message)) {
         console.error('Firebase admin initialization error', error.stack);
+        process.exit(1);
     }
 }
 
@@ -34,7 +35,7 @@ async function deleteOldDocuments(collectionName, timestampField) {
   try {
     const snapshot = await oldDocsQuery.get();
     if (snapshot.empty) {
-      console.log(`No old documents found in ${collectionName}.`);
+      console.log(`No old documents to delete in '${collectionName}'.`);
       return;
     }
 
@@ -44,7 +45,7 @@ async function deleteOldDocuments(collectionName, timestampField) {
     });
 
     await batch.commit();
-    console.log(`Successfully deleted ${snapshot.size} old documents from ${collectionName}.`);
+    console.log(`Successfully deleted ${snapshot.size} old documents from '${collectionName}'.`);
   } catch (error) {
     console.error(`Error deleting old documents from ${collectionName}:`, error);
   }
