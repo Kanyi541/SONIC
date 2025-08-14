@@ -177,7 +177,7 @@ export default function BookingReport() {
             </div>
           </main>
            <footer className="text-center text-sm text-gray-500 mt-16 pt-6 border-t border-gray-300">
-                This is a computer-generated document and does not require a signature.
+                © {new Date().getFullYear()} Casa Motor Valuers & Assessors. This is a computer-generated document and does not require a signature.
             </footer>
         </div>
       </div>

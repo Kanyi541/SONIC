@@ -48,10 +48,12 @@ export default function DashboardLayout({ title, children, isFirebase = false }:
             <footer className="py-6 md:px-8 md:py-0 border-t bg-card">
                 <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
                     <p className="text-sm text-center text-muted-foreground">
-                        © {new Date().getFullYear()} Dashboard Central. All rights reserved.
+                        © {new Date().getFullYear()} Casa Motor Valuers & Assessors. All rights reserved.
                     </p>
                 </div>
             </footer>
         </div>
     );
 }
+
+    
