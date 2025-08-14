@@ -121,6 +121,7 @@ export default function GuarantorDashboardPage() {
   const router = useRouter();
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
 
   const customerForm = useForm<CustomerFormValues>({
       resolver: zodResolver(customerSchema),
@@ -297,6 +298,15 @@ export default function GuarantorDashboardPage() {
     );
   });
 
+  const filteredCustomers = customers.filter(customer => {
+    const searchTermLower = customerSearchTerm.toLowerCase();
+    return (
+        customer.name.toLowerCase().includes(searchTermLower) ||
+        customer.email.toLowerCase().includes(searchTermLower) ||
+        customer.phone.toLowerCase().includes(searchTermLower)
+    );
+  });
+
   return (
     <UnifiedDashboardLayout
       title="CASA DASH"
@@ -314,7 +324,7 @@ export default function GuarantorDashboardPage() {
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <div>
-                      <CardTitle>All Bookings</CardTitle>
+                      <CardTitle className="font-headline text-3xl text-primary">All Bookings</CardTitle>
                       <CardDescription>View and manage all vehicle bookings.</CardDescription>
                     </div>
                     <div className="flex items-center gap-4">
@@ -609,11 +619,11 @@ export default function GuarantorDashboardPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
-                        <TableHead className="font-semibold">Booking ID</TableHead>
-                        <TableHead className="hidden sm:table-cell font-semibold">Customer</TableHead>
-                        <TableHead className="hidden md:table-cell font-semibold">Vehicle</TableHead>
-                        <TableHead className="hidden sm:table-cell font-semibold">Date</TableHead>
-                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold text-left">Booking ID</TableHead>
+                        <TableHead className="hidden sm:table-cell font-semibold text-left">Customer</TableHead>
+                        <TableHead className="hidden md:table-cell font-semibold text-left">Vehicle</TableHead>
+                        <TableHead className="hidden sm:table-cell font-semibold text-left">Date</TableHead>
+                        <TableHead className="font-semibold text-left">Status</TableHead>
                         <TableHead className="text-right font-semibold">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -669,81 +679,93 @@ export default function GuarantorDashboardPage() {
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <div>
-                                <CardTitle>Manage Customers</CardTitle>
+                                <CardTitle className="font-headline text-3xl text-primary">Manage Customers</CardTitle>
                                 <CardDescription>Register new customers and view existing ones.</CardDescription>
                             </div>
-                             <Dialog open={isCustomerDialogOpen} onOpenChange={setCustomerDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button><UserPlus className="mr-2" /> Add Customer</Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[425px]">
-                                <DialogHeader>
-                                    <DialogTitle>Register New Customer</DialogTitle>
-                                    <DialogDescription>
-                                        Fill in the details to add a new customer.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                    <Form {...customerForm}>
-                                        <form onSubmit={customerForm.handleSubmit(handleAddCustomer)} className="space-y-6 pt-4">
-                                            <FormField
-                                                control={customerForm.control}
-                                                name="name"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                    <FormLabel>Full Name</FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} placeholder="e.g. John Doe" />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={customerForm.control}
-                                                name="email"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                    <FormLabel>Email Address</FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} type="email" placeholder="e.g. john@example.com" />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={customerForm.control}
-                                                name="phone"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                    <FormLabel>Phone Number</FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} placeholder="e.g. 0712345678" />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <DialogFooter>
-                                                <Button type="button" variant="outline" onClick={() => setCustomerDialogOpen(false)}>Cancel</Button>
-                                                <Button type="submit" disabled={customerForm.formState.isSubmitting}>
-                                                     {customerForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                                    Save Customer
-                                                </Button>
-                                            </DialogFooter>
-                                        </form>
-                                    </Form>
-                                </DialogContent>
-                            </Dialog>
+                            <div className="flex items-center gap-4">
+                                <div className="relative w-full max-w-sm">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        type="search"
+                                        placeholder="Search customers..."
+                                        className="w-full rounded-lg bg-background pl-8"
+                                        value={customerSearchTerm}
+                                        onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <Dialog open={isCustomerDialogOpen} onOpenChange={setCustomerDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button><UserPlus className="mr-2" /> Add Customer</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                    <DialogHeader>
+                                        <DialogTitle>Register New Customer</DialogTitle>
+                                        <DialogDescription>
+                                            Fill in the details to add a new customer.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                        <Form {...customerForm}>
+                                            <form onSubmit={customerForm.handleSubmit(handleAddCustomer)} className="space-y-6 pt-4">
+                                                <FormField
+                                                    control={customerForm.control}
+                                                    name="name"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                        <FormLabel>Full Name</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="e.g. John Doe" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={customerForm.control}
+                                                    name="email"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                        <FormLabel>Email Address</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} type="email" placeholder="e.g. john@example.com" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={customerForm.control}
+                                                    name="phone"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                        <FormLabel>Phone Number</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="e.g. 0712345678" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <DialogFooter>
+                                                    <Button type="button" variant="outline" onClick={() => setCustomerDialogOpen(false)}>Cancel</Button>
+                                                    <Button type="submit" disabled={customerForm.formState.isSubmitting}>
+                                                         {customerForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                                        Save Customer
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </Form>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
-                                    <TableHead className="font-semibold">Name</TableHead>
-                                    <TableHead className="font-semibold">Email</TableHead>
-                                    <TableHead className="font-semibold">Phone</TableHead>
+                                    <TableHead className="font-semibold text-left">Name</TableHead>
+                                    <TableHead className="font-semibold text-left">Email</TableHead>
+                                    <TableHead className="font-semibold text-left">Phone</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -755,8 +777,8 @@ export default function GuarantorDashboardPage() {
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                       </TableRow>
                                     ))
-                                ) : customers.length > 0 ? (
-                                    customers.map(customer => (
+                                ) : filteredCustomers.length > 0 ? (
+                                    filteredCustomers.map(customer => (
                                         <TableRow key={customer.id}>
                                             <TableCell className="font-medium flex items-center gap-3">
                                                 <div className="p-2 bg-muted rounded-full hidden sm:flex">
@@ -771,7 +793,7 @@ export default function GuarantorDashboardPage() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={3} className="text-center h-24">
-                                            No customers registered yet.
+                                            No customers found.
                                         </TableCell>
                                     </TableRow>
                                 )}
