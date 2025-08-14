@@ -215,12 +215,6 @@ function AdminDashboard() {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter>
-          <Button variant="ghost" onClick={handleLogout} className="w-full justify-start">
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-          </Button>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-40 w-full border-b bg-card shadow-sm">
