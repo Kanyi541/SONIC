@@ -4,6 +4,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from '@/lib/firebase';
 
 interface LoggedInUser {
     name: string;
@@ -14,13 +16,48 @@ interface LoggedInUser {
 
 export default function ValuerDashboardPage() {
     const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storedUser = sessionStorage.getItem('loggedInUser');
-        if (storedUser) {
-            setLoggedInUser(JSON.parse(storedUser));
-        }
+        const fetchValuerData = async () => {
+            const storedUserString = sessionStorage.getItem('loggedInUser');
+            if (storedUserString) {
+                const storedUser = JSON.parse(storedUserString);
+                const valuersRef = collection(db, "valuers");
+                const q = query(valuersRef, where("username", "==", storedUser.username));
+                
+                try {
+                    const querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        const valuerDoc = querySnapshot.docs[0];
+                        const valuerData = valuerDoc.data();
+                        setLoggedInUser({
+                            name: valuerData.name,
+                            username: valuerData.username,
+                            email: valuerData.email,
+                            role: 'Valuer'
+                        });
+                    } else {
+                        // Handle case where user is in session but not in DB
+                        console.error("Valuer not found in database.");
+                    }
+                } catch (error) {
+                    console.error("Error fetching valuer data:", error);
+                }
+            }
+            setLoading(false);
+        };
+
+        fetchValuerData();
     }, []);
+
+    if (loading) {
+         return (
+            <div className="flex h-screen items-center justify-center">
+                <p>Loading...</p>
+            </div>
+        );
+    }
 
     return (
         <UnifiedDashboardLayout
