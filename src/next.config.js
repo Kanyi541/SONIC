@@ -6,7 +6,7 @@ const cspHeader = `
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
     img-src 'self' https://placehold.co https://firebasestorage.googleapis.com data:;
-    connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://www.googleapis.com https://identitytoolkit.googleapis.com;
+    connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;
     frame-src 'self';
     object-src 'none';
     base-uri 'self';
