@@ -38,7 +38,7 @@ const loginSchema = z.object({
 });
 
 const userLoginSchema = z.object({
-  username: z.string().min(1, { message: "Username or Email is required." }),
+  username: z.string().min(1, { message: "Username is required." }),
   password: z.string().min(1, { message: "Password is required." }),
 });
 
@@ -273,27 +273,16 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
     setIsLoading(true);
     try {
         const valuersRef = collection(db, "valuers");
-        const usernameQuery = query(valuersRef, where("username", "==", data.username));
-        const emailQuery = query(valuersRef, where("email", "==", data.username));
+        const q = query(valuersRef, where("username", "==", data.username));
+        const querySnapshot = await getDocs(q);
 
-        const [usernameSnapshot, emailSnapshot] = await Promise.all([
-            getDocs(usernameQuery),
-            getDocs(emailQuery)
-        ]);
-
-        let valuerDoc;
-        if (!usernameSnapshot.empty) {
-            valuerDoc = usernameSnapshot.docs[0];
-        } else if (!emailSnapshot.empty) {
-            valuerDoc = emailSnapshot.docs[0];
-        }
-
-        if (!valuerDoc) {
+        if (querySnapshot.empty) {
             toast({ variant: "destructive", title: "Login Failed", description: "Invalid credentials." });
             setIsLoading(false);
             return;
         }
 
+        const valuerDoc = querySnapshot.docs[0];
         const valuerData = valuerDoc.data();
 
         if (valuerData.password !== data.password) {
@@ -340,9 +329,9 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username or Email</FormLabel>
+                  <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter username or email" {...field} />
+                    <Input placeholder="Enter username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
