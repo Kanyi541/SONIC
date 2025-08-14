@@ -6,10 +6,10 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -28,8 +28,9 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
+  DialogClose
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input';
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,6 +44,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import Image from 'next/image';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Insurer {
   id: string;
@@ -75,6 +79,19 @@ interface Booking {
   status: string;
 }
 
+interface Valuation {
+    id: string;
+    bookingId: string;
+    assessmentDate: any;
+    assessmentValue: string;
+    forcedValue: string;
+    salvageValue: string;
+    comments?: string;
+    imageUrls: string[];
+    valuedBy: string;
+    valuedAt: any;
+}
+
 function AdminDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -89,6 +106,11 @@ function AdminDashboard() {
   const [isControlActive, setControlActive] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [bookingSearchTerm, setBookingSearchTerm] = useState('');
+  const [selectedValuation, setSelectedValuation] = useState<Valuation | null>(null);
+  const [isValuationDialogOpen, setValuationDialogOpen] = useState(false);
+  const [loadingValuation, setLoadingValuation] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -115,7 +137,15 @@ function AdminDashboard() {
     
     subscribeToCollection("insurers", setInsurers, ["insurers"]);
     subscribeToCollection("valuers", setValuers, ["valuers"]);
-    subscribeToCollection("bookings", setBookings, ["bookings", "pending-approval"]);
+    const bookingsQuery = query(collection(db, "bookings"), where("status", "!=", "Archived"));
+    if (["bookings", "pending-approval"].includes(activeView)) {
+        const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setBookings(data as Booking[]);
+            setLoading(false);
+        });
+        subscriptions.push(unsubscribe);
+    }
 
     if (!['insurers', 'valuers', 'bookings', 'pending-approval'].includes(activeView)) {
         setLoading(false);
@@ -203,6 +233,83 @@ function AdminDashboard() {
       console.error("Error updating status: ", error);
       toast({ variant: "destructive", title: "Update Failed", description: "Could not update status."});
     }
+  };
+
+  const handleViewReport = async (bookingId: string) => {
+    setLoadingValuation(true);
+    setValuationDialogOpen(true);
+    try {
+      const q = query(collection(db, "valuations"), where("bookingId", "==", bookingId));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const valuationDoc = querySnapshot.docs[0];
+        setSelectedValuation({ id: valuationDoc.id, ...valuationDoc.data() } as Valuation);
+      } else {
+        toast({ variant: "destructive", title: "Not Found", description: "No valuation report found for this booking." });
+        setValuationDialogOpen(false);
+      }
+    } catch (error) {
+      console.error("Error fetching valuation report: ", error);
+      toast({ variant: "destructive", title: "Error", description: "Could not fetch the valuation report." });
+      setValuationDialogOpen(false);
+    } finally {
+      setLoadingValuation(false);
+    }
+  };
+  
+  const handleApproval = async () => {
+    if (!selectedValuation) return;
+    setIsSubmitting(true);
+    try {
+      const bookingDocRef = doc(db, "bookings", selectedValuation.bookingId);
+      await updateDoc(bookingDocRef, { status: "Completed" });
+      
+      const valuationDocRef = doc(db, "valuations", selectedValuation.id);
+      await updateDoc(valuationDocRef, { status: "Approved", approvedAt: serverTimestamp(), approvedBy: user?.email });
+
+      toast({ title: "Report Approved", description: "The valuation report has been approved." });
+      setValuationDialogOpen(false);
+      setSelectedValuation(null);
+    } catch (error) {
+      console.error("Error approving report: ", error);
+      toast({ variant: "destructive", title: "Approval Failed", description: "An error occurred during approval." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRejection = async () => {
+      if (!selectedValuation || !rejectionReason) {
+        toast({ variant: "destructive", title: "Rejection Failed", description: "Rejection reason is required." });
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+          const bookingDocRef = doc(db, "bookings", selectedValuation.bookingId);
+          await updateDoc(bookingDocRef, { 
+            status: "Pending", 
+            rejectionReason: rejectionReason,
+            rejectedAt: serverTimestamp() 
+          });
+          
+          const valuationDocRef = doc(db, "valuations", selectedValuation.id);
+          await updateDoc(valuationDocRef, { 
+            status: "Rejected",
+            rejectionReason: rejectionReason,
+            rejectedAt: serverTimestamp(),
+            rejectedBy: user?.email
+          });
+
+          toast({ title: "Report Rejected", description: "The valuation report has been rejected and sent back to the valuer." });
+          setValuationDialogOpen(false);
+          setSelectedValuation(null);
+          setRejectionReason("");
+      } catch (error) {
+          console.error("Error rejecting report: ", error);
+          toast({ variant: "destructive", title: "Rejection Failed", description: "An error occurred during rejection." });
+      } finally {
+          setIsSubmitting(false);
+      }
   };
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -418,7 +525,7 @@ function AdminDashboard() {
                         <span className="hidden sm:inline">Instruction</span>
                       </Button>
                       {booking.status === 'Pending Approval' && (
-                         <Button variant="default" size="sm" onClick={() => {}}>
+                         <Button variant="default" size="sm" onClick={() => handleViewReport(booking.id)}>
                            <CheckCircle className="mr-2 h-4 w-4" />
                            <span className="hidden sm:inline">View Report</span>
                          </Button>
@@ -542,6 +649,89 @@ function AdminDashboard() {
 
             {activeView === 'bookings' && renderBookingsTable(filteredBookings, "All Bookings", "View and manage all vehicle bookings reports.")}
             {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Pending Approval", "These reports are awaiting your review and approval.")}
+            
+            <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
+                <DialogContent className="sm:max-w-4xl max-h-[90vh]">
+                    <DialogHeader>
+                        <DialogTitle>Valuation Report Details</DialogTitle>
+                        <DialogDescription>Review the valuation details below and take action.</DialogDescription>
+                    </DialogHeader>
+                    {loadingValuation ? (
+                        <div className="flex justify-center items-center p-8"><Skeleton className="h-24 w-full" /></div>
+                    ) : selectedValuation ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto pr-6 -mr-6">
+                            <div className="space-y-4">
+                               <Carousel className="w-full">
+                                  <CarouselContent>
+                                    {selectedValuation.imageUrls.map((url, index) => (
+                                      <CarouselItem key={index}>
+                                        <Image src={url} alt={`Valuation Image ${index + 1}`} width={800} height={600} className="rounded-lg object-cover w-full aspect-[4/3]" />
+                                      </CarouselItem>
+                                    ))}
+                                  </CarouselContent>
+                                  {selectedValuation.imageUrls.length > 1 && (
+                                    <>
+                                        <CarouselPrevious />
+                                        <CarouselNext />
+                                    </>
+                                  )}
+                                </Carousel>
+
+                                <div className="space-y-4 pt-4">
+                                     <h4 className="font-semibold text-lg">Rejection Reason</h4>
+                                     <Textarea
+                                        placeholder="Provide a reason for rejection..."
+                                        value={rejectionReason}
+                                        onChange={(e) => setRejectionReason(e.target.value)}
+                                        rows={3}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-xl text-primary">Valuation Summary</h3>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div className="font-semibold">Valued By:</div>
+                                    <div>{selectedValuation.valuedBy}</div>
+                                    
+                                    <div className="font-semibold">Valuation Date:</div>
+                                    <div>{new Date(selectedValuation.valuedAt?.toDate()).toLocaleString()}</div>
+
+                                    <div className="font-semibold">Assessment Date:</div>
+                                    <div>{new Date(selectedValuation.assessmentDate?.toDate()).toLocaleDateString()}</div>
+                                    
+                                    <div className="font-semibold text-green-600">Assessment Value:</div>
+                                    <div className="font-mono text-green-600">KES {selectedValuation.assessmentValue}</div>
+
+                                    <div className="font-semibold text-orange-600">Forced Sale Value:</div>
+                                    <div className="font-mono text-orange-600">KES {selectedValuation.forcedValue}</div>
+                                    
+                                    <div className="font-semibold text-red-600">Salvage Value:</div>
+                                    <div className="font-mono text-red-600">KES {selectedValuation.salvageValue}</div>
+                                </div>
+                                {selectedValuation.comments && (
+                                     <div className="pt-4">
+                                        <h4 className="font-semibold text-lg mb-2">Valuer&apos;s Comments</h4>
+                                        <p className="text-sm p-4 bg-muted rounded-md border">{selectedValuation.comments}</p>
+                                    </div>
+                                )}
+                                <DialogFooter className="!mt-8 gap-2 sm:gap-0">
+                                    <DialogClose asChild>
+                                      <Button variant="outline">Cancel</Button>
+                                    </DialogClose>
+                                    <Button variant="destructive" onClick={handleRejection} disabled={isSubmitting || !rejectionReason}>
+                                      {isSubmitting ? 'Rejecting...' : <><ThumbsDown className="mr-2 h-4 w-4" /> Reject</>}
+                                    </Button>
+                                    <Button variant="default" onClick={handleApproval} disabled={isSubmitting}>
+                                      {isSubmitting ? 'Approving...' : <><ThumbsUp className="mr-2 h-4 w-4" /> Approve</>}
+                                    </Button>
+                                </DialogFooter>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center p-8">No valuation data found.</div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </main>
         <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
             <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
@@ -562,3 +752,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   )
 }
+
+    
