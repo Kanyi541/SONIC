@@ -107,21 +107,25 @@ export default function ValuerDashboardPage() {
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             const files = Array.from(event.target.files);
-            setImageFiles(prev => [...prev, ...files]);
+            const newFiles = [...imageFiles, ...files];
+            setImageFiles(newFiles);
 
             const newPreviews = files.map(file => URL.createObjectURL(file));
-            setImagePreviews(prev => [...prev, ...newPreviews]);
+            const allPreviews = [...imagePreviews, ...newPreviews];
+            setImagePreviews(allPreviews);
+            form.setValue('images', allPreviews);
         }
     };
 
     const removeImage = (index: number) => {
-        setImageFiles(prev => prev.filter((_, i) => i !== index));
-        setImagePreviews(prev => {
-            const newPreviews = prev.filter((_, i) => i !== index);
-            // Clean up object URL
-            URL.revokeObjectURL(prev[index]);
-            return newPreviews;
-        });
+        const newImageFiles = imageFiles.filter((_, i) => i !== index);
+        setImageFiles(newImageFiles);
+
+        const newImagePreviews = imagePreviews.filter((_, i) => i !== index);
+        setImagePreviews(newImagePreviews);
+        form.setValue('images', newImagePreviews);
+        
+        URL.revokeObjectURL(imagePreviews[index]);
     };
 
     const handleValuationSubmit = async (data: ValuationFormValues) => {
@@ -186,6 +190,9 @@ export default function ValuerDashboardPage() {
     
 
     const openValuationDialog = (booking: Booking) => {
+        form.reset();
+        setImageFiles([]);
+        setImagePreviews([]);
         setSelectedBooking(booking);
         setValuationDialogOpen(true);
     };
@@ -337,15 +344,16 @@ export default function ValuerDashboardPage() {
                         </Card>
                     )}
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
-                        <DialogContent className="sm:max-w-2xl">
+                        <DialogContent className="sm:max-w-2xl grid-rows-[auto_1fr_auto] max-h-[90vh]">
                             <DialogHeader>
                                 <DialogTitle>Submit Valuation Report</DialogTitle>
                                 <DialogDescription>
                                     Fill in the details below for booking #{selectedBooking?.bookingNumber}.
                                 </DialogDescription>
                             </DialogHeader>
+                            <div className="overflow-y-auto pr-6 -mr-6">
                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(handleValuationSubmit)} className="grid gap-4 py-4">
+                                <form onSubmit={form.handleSubmit(handleValuationSubmit)} className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div><Label>Customer Name</Label><Input value={selectedBooking?.customerName} disabled /></div>
                                         <div><Label>Guarantor</Label><Input value={selectedBooking?.insurerName} disabled /></div>
@@ -382,7 +390,7 @@ export default function ValuerDashboardPage() {
                                                         selected={field.value}
                                                         onSelect={field.onChange}
                                                         disabled={(date) =>
-                                                            date > new Date() || date < new Date("1900-01-01")
+                                                            date > new Date() || date < new Date("2000-01-01")
                                                         }
                                                         initialFocus
                                                     />
@@ -447,28 +455,35 @@ export default function ValuerDashboardPage() {
                                                 <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
                                             </div>
                                         </div>
-                                         {imagePreviews.length > 0 && (
-                                            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                                {imagePreviews.map((preview, index) => (
-                                                <div key={index} className="relative group">
-                                                    <Image src={preview} alt={`preview ${index}`} width={150} height={150} className="w-full h-auto object-cover rounded-md" />
-                                                    <Button
-                                                    type="button"
-                                                    variant="destructive"
-                                                    size="icon"
-                                                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"
-                                                    onClick={() => removeImage(index)}
-                                                    >
-                                                    <X className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                        <FormMessage>{form.formState.errors.images?.message}</FormMessage>
+                                         <FormField
+                                            control={form.control}
+                                            name="images"
+                                            render={() => (
+                                                <FormItem>
+                                                    {imagePreviews.length > 0 && (
+                                                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                                            {imagePreviews.map((preview, index) => (
+                                                            <div key={index} className="relative group">
+                                                                <Image src={preview} alt={`preview ${index}`} width={150} height={150} className="w-full h-auto object-cover rounded-md" />
+                                                                <Button
+                                                                type="button"
+                                                                variant="destructive"
+                                                                size="icon"
+                                                                className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"
+                                                                onClick={() => removeImage(index)}
+                                                                >
+                                                                <X className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    <FormMessage/>
+                                                </FormItem>
+                                            )}
+                                        />
                                     </div>
-
-                                    <DialogFooter>
+                                    <DialogFooter className="pt-4 !mt-8">
                                         <Button type="button" variant="outline" onClick={() => setValuationDialogOpen(false)}>Cancel</Button>
                                         <Button type="submit" disabled={isUploading}>
                                             {isUploading ? "Submitting..." : "Valuate & Submit"}
@@ -476,6 +491,7 @@ export default function ValuerDashboardPage() {
                                     </DialogFooter>
                                 </form>
                             </Form>
+                            </div>
                         </DialogContent>
                     </Dialog>
                 </>
@@ -483,4 +499,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
