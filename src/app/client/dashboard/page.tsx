@@ -48,7 +48,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -225,13 +225,20 @@ export default function InsurerDashboardPage() {
     }
 
     try {
-        const plateNumberQuery = query(collection(db, "bookings"), where("plateNumber", "==", data.plateNumber));
-        const querySnapshot = await getDocs(plateNumberQuery);
+        const q = query(collection(db, "bookings"), 
+            where("policyNumber", "==", data.policyNumber),
+            where("plateNumber", "==", data.plateNumber),
+            where("carMake", "==", data.carMake),
+            where("carModel", "==", data.carModel),
+            where("customerName", "==", data.customerName)
+        );
+        const querySnapshot = await getDocs(q);
+        
         if (!querySnapshot.empty) {
             toast({
                 variant: "destructive",
                 title: "Duplicate Booking",
-                description: `A booking with plate number ${data.plateNumber} already exists.`,
+                description: "A booking with the same details (policy, plate, car, and customer) already exists.",
             });
             return;
         }
