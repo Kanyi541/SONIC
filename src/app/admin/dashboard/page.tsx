@@ -54,6 +54,15 @@ interface Insurer {
   uid?: string;
 }
 
+interface Valuer {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+  active: boolean;
+}
+
 interface Booking {
   id: string;
   bookingNumber: string;
@@ -72,10 +81,12 @@ function AdminDashboard() {
   const router = useRouter();
   const [activeView, setActiveView] = useState('dashboard');
   const [insurers, setInsurers] = useState<Insurer[]>([]);
+  const [valuers, setValuers] = useState<Valuer[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddInsurerOpen, setAddInsurerOpen] = useState(false);
-  const [isInsurerActive, setInsurerActive] = useState(true);
+  const [isAddValuerOpen, setAddValuerOpen] = useState(false);
+  const [isControlActive, setControlActive] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
   const getInitials = (email?: string | null) => {
@@ -84,30 +95,32 @@ function AdminDashboard() {
 
   useEffect(() => {
     setLoading(true);
-    let unsubscribe: () => void = () => {};
+    const subscriptions: (() => void)[] = [];
 
-    if (activeView === 'insurers') {
-      unsubscribe = onSnapshot(collection(db, "insurers"), (querySnapshot) => {
-        const insurersData: Insurer[] = [];
-        querySnapshot.forEach((doc) => {
-          insurersData.push({ id: doc.id, ...doc.data() } as Insurer);
-        });
-        setInsurers(insurersData);
-        setLoading(false);
-      });
-    } else if(activeView === 'bookings') {
-      unsubscribe = onSnapshot(collection(db, "bookings"), (snapshot) => {
-          const bookingsData: Booking[] = [];
-          snapshot.forEach((doc) => {
-              bookingsData.push({ id: doc.id, ...doc.data() } as Booking);
-          });
-          setBookings(bookingsData);
-          setLoading(false);
-      });
-    } else {
+    const subscribeToCollection = (
+        collectionName: string, 
+        setter: React.Dispatch<React.SetStateAction<any[]>>, 
+        activeViews: string[]
+    ) => {
+        if (activeViews.includes(activeView)) {
+            const unsubscribe = onSnapshot(collection(db, collectionName), (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setter(data);
+                setLoading(false);
+            });
+            subscriptions.push(unsubscribe);
+        }
+    };
+    
+    subscribeToCollection("insurers", setInsurers, ["insurers"]);
+    subscribeToCollection("valuers", setValuers, ["valuers"]);
+    subscribeToCollection("bookings", setBookings, ["bookings"]);
+
+    if (!['insurers', 'valuers', 'bookings'].includes(activeView)) {
         setLoading(false);
     }
-    return () => unsubscribe();
+    
+    return () => subscriptions.forEach(unsub => unsub());
   }, [activeView]);
 
   const handleLogout = async () => {
@@ -121,7 +134,7 @@ function AdminDashboard() {
     }
   };
   
-  const handleAddInsurer = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleAddUser = async (event: React.FormEvent<HTMLFormElement>, userType: 'insurer' | 'valuer') => {
     event.preventDefault();
     const form = event.currentTarget;
     const name = (form.elements.namedItem('name') as HTMLInputElement).value;
@@ -129,43 +142,44 @@ function AdminDashboard() {
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
     const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
+
+    const collectionName = userType === 'insurer' ? 'insurers' : 'valuers';
     
     try {
-      await addDoc(collection(db, "insurers"), {
+      await addDoc(collection(db, collectionName), {
         name,
         username,
         email,
         phone,
         password,
-        active: isInsurerActive,
+        active: isControlActive,
       });
 
-      setAddInsurerOpen(false);
+      if (userType === 'insurer') setAddInsurerOpen(false);
+      else setAddValuerOpen(false);
+
       form.reset();
-      setInsurerActive(true);
+      setControlActive(true);
       setShowPassword(false);
-      toast({ title: "Insurer Added", description: `${name} has been successfully added.`});
+      toast({ title: `${userType.charAt(0).toUpperCase() + userType.slice(1)} Added`, description: `${name} has been successfully added.`});
     } catch (error: any) {
-       console.error("Error adding insurer: ", error);
+       console.error(`Error adding ${userType}: `, error);
        toast({
          variant: "destructive",
-         title: "Failed to Add Insurer",
-         description: "An error occurred while adding the insurer.",
+         title: `Failed to Add ${userType.charAt(0).toUpperCase() + userType.slice(1)}`,
+         description: `An error occurred while adding the ${userType}.`,
        });
     }
   };
 
-  const toggleInsurerStatus = async (insurerId: string) => {
-    const insurerRef = doc(db, "insurers", insurerId);
-    const insurer = insurers.find(c => c.id === insurerId);
-    if (insurer) {
-      try {
-        await updateDoc(insurerRef, { active: !insurer.active });
-        toast({ title: "Status Updated", description: `Status for ${insurer.name} has been updated.`});
-      } catch (error) {
-        console.error("Error updating status: ", error);
-        toast({ variant: "destructive", title: "Update Failed", description: "Could not update insurer status."});
-      }
+  const toggleStatus = async (id: string, currentStatus: boolean, collectionName: string, name: string) => {
+    const docRef = doc(db, collectionName, id);
+    try {
+      await updateDoc(docRef, { active: !currentStatus });
+      toast({ title: "Status Updated", description: `Status for ${name} has been updated.`});
+    } catch (error) {
+      console.error("Error updating status: ", error);
+      toast({ variant: "destructive", title: "Update Failed", description: "Could not update status."});
     }
   };
 
@@ -183,6 +197,121 @@ function AdminDashboard() {
         return "default";
     }
   };
+
+  const renderUserTable = (
+    data: (Insurer | Valuer)[],
+    title: string,
+    description: string,
+    onAdd: () => void,
+    collectionName: string
+  ) => (
+    <Card className="shadow-lg border-primary/20">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </div>
+        <Button onClick={onAdd}>
+          <PlusCircle className="mr-2" />
+          Register New {collectionName === 'insurers' ? 'Insurer' : 'Valuer'}
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead className="hidden sm:table-cell">Username</TableHead>
+              <TableHead className="hidden sm:table-cell">Email</TableHead>
+              <TableHead className="hidden md:table-cell">Phone</TableHead>
+              <TableHead className="text-right">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.map(item => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium flex items-center gap-3">
+                  <div className="p-2 bg-muted rounded-full hidden sm:flex">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                  {item.name}
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">{item.username}</TableCell>
+                <TableCell className="hidden sm:table-cell">{item.email}</TableCell>
+                <TableCell className="hidden md:table-cell">{item.phone}</TableCell>
+                <TableCell className="text-right">
+                   <div className="flex items-center justify-end gap-2">
+                      <span className={`text-sm font-medium ${item.active ? 'text-green-500' : 'text-red-500'}`}>
+                        {item.active ? 'Active' : 'Inactive'}
+                      </span>
+                      <Switch
+                        checked={item.active}
+                        onCheckedChange={() => toggleStatus(item.id, item.active, collectionName, item.name)}
+                        aria-label={`Toggle status for ${item.name}`}
+                      />
+                    </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+
+  const renderUserDialog = (
+    isOpen: boolean,
+    onOpenChange: (open: boolean) => void,
+    userType: 'insurer' | 'valuer'
+  ) => (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Register New {userType.charAt(0).toUpperCase() + userType.slice(1)}</DialogTitle>
+          <DialogDescription>
+            Fill in the details below to create a new {userType} account.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={(e) => handleAddUser(e, userType)} className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">Name</Label>
+            <Input id="name" name="name" className="col-span-3" required />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="username" className="text-right">Username</Label>
+            <Input id="username" name="username" className="col-span-3" required />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="email" className="text-right">Email</Label>
+            <Input id="email" name="email" type="email" className="col-span-3" required />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="phone" className="text-right">Phone</Label>
+            <Input id="phone" name="phone" className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="password" className="text-right">Password</Label>
+             <div className="col-span-3 relative">
+              <Input id="password" name="password" type={showPassword ? "text" : "password"} className="pr-10" required />
+              <Button type="button" variant="ghost" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="active" className="text-right">Active</Label>
+             <div className="col-span-3 flex items-center">
+              <Switch id="active" name="active" checked={isControlActive} onCheckedChange={setControlActive} />
+              <span className="ml-3 text-sm text-muted-foreground">Is account active?</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit">Create {userType.charAt(0).toUpperCase() + userType.slice(1)}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <SidebarProvider>
@@ -208,6 +337,12 @@ function AdminDashboard() {
                 <Users />
                 Manage Insurers
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Manage Valuers">
+                    <UserCog />
+                    Manage Valuers
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setActiveView('bookings')} isActive={activeView === 'bookings'} tooltip="All Bookings">
@@ -268,109 +403,11 @@ function AdminDashboard() {
                 </Card>
               </div>
             )}
-            {activeView === 'insurers' && (
-              <Card className="shadow-lg border-primary/20">
-                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    <CardTitle className="font-headline text-3xl text-primary">Manage Insurers</CardTitle>
-                    <CardDescription>View and manage all registered insurers.</CardDescription>
-                  </div>
-                  <Dialog open={isAddInsurerOpen} onOpenChange={setAddInsurerOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <PlusCircle className="mr-2" />
-                        Register New Insurer
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Register New Insurer</DialogTitle>
-                        <DialogDescription>
-                          Fill in the details below to create a new insurer account.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleAddInsurer} className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="name" className="text-right">Name</Label>
-                          <Input id="name" name="name" className="col-span-3" required />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="username" className="text-right">Username</Label>
-                          <Input id="username" name="username" className="col-span-3" required />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="email" className="text-right">Email</Label>
-                          <Input id="email" name="email" type="email" className="col-span-3" required />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="phone" className="text-right">Phone</Label>
-                          <Input id="phone" name="phone" className="col-span-3" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="password" className="text-right">Password</Label>
-                           <div className="col-span-3 relative">
-                            <Input id="password" name="password" type={showPassword ? "text" : "password"} className="pr-10" required />
-                            <Button type="button" variant="ghost" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground" onClick={() => setShowPassword(!showPassword)}>
-                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="active" className="text-right">Active</Label>
-                           <div className="col-span-3 flex items-center">
-                            <Switch id="active" name="active" checked={isInsurerActive} onCheckedChange={setInsurerActive} />
-                            <span className="ml-3 text-sm text-muted-foreground">Is account active?</span>
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button type="submit">Create Insurer</Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead className="hidden sm:table-cell">Username</TableHead>
-                        <TableHead className="hidden sm:table-cell">Email</TableHead>
-                        <TableHead className="hidden md:table-cell">Phone</TableHead>
-                        <TableHead className="text-right">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {insurers.map(insurer => (
-                        <TableRow key={insurer.id}>
-                          <TableCell className="font-medium flex items-center gap-3">
-                            <div className="p-2 bg-muted rounded-full hidden sm:flex">
-                              <User className="h-5 w-5 text-primary" />
-                            </div>
-                            {insurer.name}
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">{insurer.username}</TableCell>
-                          <TableCell className="hidden sm:table-cell">{insurer.email}</TableCell>
-                          <TableCell className="hidden md:table-cell">{insurer.phone}</TableCell>
-                          <TableCell className="text-right">
-                             <div className="flex items-center justify-end gap-2">
-                                <span className={`text-sm font-medium ${insurer.active ? 'text-green-500' : 'text-red-500'}`}>
-                                  {insurer.active ? 'Active' : 'Inactive'}
-                                </span>
-                                <Switch
-                                  checked={insurer.active}
-                                  onCheckedChange={() => toggleInsurerStatus(insurer.id)}
-                                  aria-label={`Toggle status for ${insurer.name}`}
-                                />
-                              </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            )}
+            {activeView === 'insurers' && renderUserTable(insurers, "Manage Insurers", "View and manage all registered insurers.", () => setAddInsurerOpen(true), "insurers")}
+            {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuers")}
+            {renderUserDialog(isAddInsurerOpen, setAddInsurerOpen, 'insurer')}
+            {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
+
              {activeView === 'bookings' && (
                <Card className="shadow-lg border-primary/20">
                 <CardHeader>

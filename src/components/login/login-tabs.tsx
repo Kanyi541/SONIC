@@ -45,7 +45,7 @@ const userLoginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 type UserLoginFormValues = z.infer<typeof userLoginSchema>;
-type Role = "Admin" | "Insurer";
+type Role = "Admin" | "Insurer" | "Valuer";
 
 const PasswordInput = ({ field, ...props }: { field: any, [key: string]: any }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -260,13 +260,127 @@ const InsurerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =
   );
 };
 
+const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const form = useForm<UserLoginFormValues>({
+    resolver: zodResolver(userLoginSchema),
+    defaultValues: { username: "", password: "" },
+  });
+
+  const onSubmit = async (data: UserLoginFormValues) => {
+    setIsLoading(true);
+    try {
+      const valuersRef = collection(db, "valuers");
+      const q = query(valuersRef, where("username", "==", data.username));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: "Invalid credentials.",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const valuerDoc = querySnapshot.docs[0];
+      const valuerData = valuerDoc.data();
+
+      if (valuerData.password !== data.password) {
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: "Invalid credentials.",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!valuerData.active) {
+        toast({
+          variant: "destructive",
+          title: "Account Inactive",
+          description: "Your account is inactive. Please contact the administrator.",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: valuerData.name, username: valuerData.username, email: valuerData.email, role: 'Valuer' }));
+      router.push('/valuer/dashboard');
+      toast({ title: "Valuer Login Successful", description: `Welcome back, ${valuerData.name}!` });
+
+    } catch (error) {
+      console.error("Valuer login error:", error);
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-headline">Valuer Login</CardTitle>
+        <CardDescription>
+          Enter your credentials to access the valuer dashboard.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Valuer Username" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <PasswordInput field={field} placeholder="••••••••" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign In
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+};
+
 export default function LoginTabs() {
   const [loadingStates, setLoadingStates] = useState<Record<Role, boolean>>({
     Admin: false,
     Insurer: false,
+    Valuer: false,
   });
 
-  const roles: Role[] = ["Admin", "Insurer"];
+  const roles: Role[] = ["Admin", "Insurer", "Valuer"];
   
   const getFormComponent = (role: Role) => {
     const setIsLoading = (loading: boolean) => setLoadingStates(prev => ({ ...prev, [role]: loading }));
@@ -276,6 +390,8 @@ export default function LoginTabs() {
         return <AdminLoginForm setIsLoading={setIsLoading} />;
       case 'Insurer':
         return <InsurerLoginForm setIsLoading={setIsLoading} />;
+      case 'Valuer':
+        return <ValuerLoginForm setIsLoading={setIsLoading} />;
       default:
         return null;
     }
@@ -283,7 +399,7 @@ export default function LoginTabs() {
 
   return (
     <Tabs defaultValue="Admin" className="w-full">
-      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 h-auto sm:h-10">
+      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto sm:h-10">
         {roles.map((role) => (
           <TabsTrigger key={role} value={role}>{role}</TabsTrigger>
         ))}
