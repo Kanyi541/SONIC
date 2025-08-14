@@ -24,6 +24,7 @@ import * as z from "zod";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
+import { Textarea } from '@/components/ui/textarea';
 
 interface LoggedInUser {
     name: string;
@@ -52,6 +53,7 @@ const valuationSchema = z.object({
   forcedValue: z.string().min(1, "Forced value is required"),
   salvageValue: z.string().min(1, "Salvage value is required"),
   images: z.array(z.string().url()).min(1, "At least one image is required."),
+  comments: z.string().optional(),
 });
 
 type ValuationFormValues = z.infer<typeof valuationSchema>;
@@ -77,6 +79,7 @@ export default function ValuerDashboardPage() {
             forcedValue: "",
             salvageValue: "",
             images: [],
+            comments: "",
         }
     });
 
@@ -153,6 +156,7 @@ export default function ValuerDashboardPage() {
                 forcedValue: data.forcedValue,
                 salvageValue: data.salvageValue,
                 imageUrls: imageDataUrls,
+                comments: data.comments,
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
             });
@@ -448,6 +452,24 @@ export default function ValuerDashboardPage() {
                                         />
                                     </div>
                                     
+                                     <FormField
+                                        control={form.control}
+                                        name="comments"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Comments</FormLabel>
+                                            <FormControl>
+                                                <Textarea
+                                                    placeholder="Add any additional comments here..."
+                                                    className="resize-none"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
                                     <div>
                                         <Label>Valuation Photos</Label>
                                         <div className="mt-2 flex justify-center rounded-lg border border-dashed border-input px-6 py-10">
@@ -517,3 +539,5 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    
