@@ -42,16 +42,10 @@ const clientLoginSchema = z.object({
   password: z.string().min(1, { message: "Password is required." }),
 });
 
-const customerLoginSchema = z.object({
-  name: z.string().min(1, { message: "Username is required." }),
-  password: z.string().min(1, { message: "Password is required." }),
-});
-
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 type ClientLoginFormValues = z.infer<typeof clientLoginSchema>;
-type CustomerLoginFormValues = z.infer<typeof customerLoginSchema>;
-type Role = "Admin" | "Client" | "Customer" | "Valuer";
+type Role = "Admin" | "Client" | "Valuer";
 
 const PasswordInput = ({ field, ...props }: { field: any, [key: string]: any }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -266,110 +260,6 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   );
 };
 
-const CustomerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
-  const router = useRouter();
-  const { toast } = useToast();
-
-  const form = useForm<CustomerLoginFormValues>({
-    resolver: zodResolver(customerLoginSchema),
-    defaultValues: { name: "", password: "" },
-  });
-
-  const onSubmit = async (data: CustomerLoginFormValues) => {
-    setIsLoading(true);
-    try {
-      const customersRef = collection(db, "customers");
-      const q = query(customersRef, where("name", "==", data.name));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: "Invalid username or password.",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      const customerDoc = querySnapshot.docs[0];
-      const customerData = customerDoc.data();
-
-      if (customerData.password !== data.password) {
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: "Invalid username or password.",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: customerData.name, email: customerData.email, role: 'Customer' }));
-      router.push('/customer/dashboard');
-      toast({ title: "Login Successful", description: `Welcome back, ${customerData.name}!` });
-
-    } catch (error) {
-      console.error("Customer login error:", error);
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: "An unexpected error occurred. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">Customer Login</CardTitle>
-        <CardDescription>
-          Enter your username and password to access your dashboard.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input placeholder="your-username" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <PasswordInput field={field} placeholder="••••••••" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign In
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
-  );
-};
-
-
 const MockLoginForm = ({ role, setIsLoading }: { role: Role; setIsLoading: (loading: boolean) => void }) => {
   const router = useRouter();
   const { toast } = useToast();
@@ -455,11 +345,10 @@ export default function LoginTabs() {
   const [loadingStates, setLoadingStates] = useState<Record<Role, boolean>>({
     Admin: false,
     Client: false,
-    Customer: false,
     Valuer: false,
   });
 
-  const roles: Role[] = ["Admin", "Client", "Customer", "Valuer"];
+  const roles: Role[] = ["Admin", "Client", "Valuer"];
   
   const getFormComponent = (role: Role) => {
     const setIsLoading = (loading: boolean) => setLoadingStates(prev => ({ ...prev, [role]: loading }));
@@ -469,8 +358,6 @@ export default function LoginTabs() {
         return <AdminLoginForm setIsLoading={setIsLoading} />;
       case 'Client':
         return <ClientLoginForm setIsLoading={setIsLoading} />;
-      case 'Customer':
-        return <CustomerLoginForm setIsLoading={setIsLoading} />;
       default:
         return <MockLoginForm role={role} setIsLoading={setIsLoading} />;
     }
@@ -478,7 +365,7 @@ export default function LoginTabs() {
 
   return (
     <Tabs defaultValue="Admin" className="w-full">
-      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-4 h-auto sm:h-10">
+      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto sm:h-10">
         {roles.map((role) => (
           <TabsTrigger key={role} value={role}>{role}</TabsTrigger>
         ))}
