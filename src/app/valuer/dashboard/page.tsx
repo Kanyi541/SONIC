@@ -1,19 +1,30 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
-import { collection, onSnapshot, query, where, doc, getDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Car, Clock, CheckCircle, Hourglass, FilePen } from 'lucide-react';
+import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import Image from 'next/image';
 
 interface LoggedInUser {
     name: string;
@@ -34,11 +45,41 @@ interface Booking {
   insurerName: string;
 }
 
+const valuationSchema = z.object({
+  assessmentDate: z.date({
+    required_error: "A date of assessment is required.",
+  }),
+  assessmentValue: z.string().min(1, "Assessment value is required"),
+  forcedValue: z.string().min(1, "Forced value is required"),
+  salvageValue: z.string().min(1, "Salvage value is required"),
+  images: z.array(z.string()).min(1, "At least one image is required."),
+});
+
+type ValuationFormValues = z.infer<typeof valuationSchema>;
+
+
 export default function ValuerDashboardPage() {
     const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isValuationDialogOpen, setValuationDialogOpen] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
+    const { toast } = useToast();
+
+    const form = useForm<ValuationFormValues>({
+        resolver: zodResolver(valuationSchema),
+        defaultValues: {
+            assessmentValue: "",
+            forcedValue: "",
+            salvageValue: "",
+            images: [],
+        }
+    });
 
     useEffect(() => {
         const storedUserString = sessionStorage.getItem('loggedInUser');
@@ -59,10 +100,95 @@ export default function ValuerDashboardPage() {
 
             return () => bookingsUnsubscribe();
         } else {
-            // If there's no logged-in user, we shouldn't be loading.
             setLoading(false);
         }
     }, [loggedInUser]);
+
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files) {
+            const files = Array.from(event.target.files);
+            setImageFiles(prev => [...prev, ...files]);
+
+            const newPreviews = files.map(file => URL.createObjectURL(file));
+            setImagePreviews(prev => [...prev, ...newPreviews]);
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setImageFiles(prev => prev.filter((_, i) => i !== index));
+        setImagePreviews(prev => {
+            const newPreviews = prev.filter((_, i) => i !== index);
+            // Clean up object URL
+            URL.revokeObjectURL(prev[index]);
+            return newPreviews;
+        });
+    };
+
+    const handleValuationSubmit = async (data: ValuationFormValues) => {
+        if (!selectedBooking || !loggedInUser) return;
+
+        setIsUploading(true);
+
+        try {
+            const storage = getStorage();
+            const imageUrls: string[] = [];
+
+            for (const file of imageFiles) {
+                const storageRef = ref(storage, `valuations/${selectedBooking.id}/${Date.now()}_${file.name}`);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+                imageUrls.push(url);
+            }
+            
+            await addDoc(collection(db, "valuations"), {
+                bookingId: selectedBooking.id,
+                bookingNumber: selectedBooking.bookingNumber,
+                customerName: selectedBooking.customerName,
+                plateNumber: selectedBooking.plateNumber,
+                carMake: selectedBooking.carMake,
+                carModel: selectedBooking.carModel,
+                guarantorName: selectedBooking.insurerName,
+                assessmentDate: data.assessmentDate,
+                assessmentValue: data.assessmentValue,
+                forcedValue: data.forcedValue,
+                salvageValue: data.salvageValue,
+                imageUrls,
+                valuedBy: loggedInUser.name,
+                valuedAt: serverTimestamp(),
+            });
+
+            const bookingDocRef = doc(db, "bookings", selectedBooking.id);
+            await updateDoc(bookingDocRef, {
+                status: "Pending Approval"
+            });
+
+            toast({
+                title: "Valuation Submitted",
+                description: `Report for ${selectedBooking.bookingNumber} has been submitted for approval.`,
+            });
+            
+            setValuationDialogOpen(false);
+            form.reset();
+            setImageFiles([]);
+            setImagePreviews([]);
+
+        } catch (error) {
+            console.error("Error submitting valuation:", error);
+            toast({
+                variant: "destructive",
+                title: "Submission Failed",
+                description: "An error occurred while submitting the valuation.",
+            });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+    
+
+    const openValuationDialog = (booking: Booking) => {
+        setSelectedBooking(booking);
+        setValuationDialogOpen(true);
+    };
 
     const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
         switch (status) {
@@ -95,7 +221,7 @@ export default function ValuerDashboardPage() {
                 <>
                     {activeView === 'dashboard' && (
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                            <Card>
+                           <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">All Cars</CardTitle>
                                     <Car className="h-4 w-4 text-muted-foreground" />
@@ -164,7 +290,7 @@ export default function ValuerDashboardPage() {
                                             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
                                             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                             <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                            <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
+                                            <TableCell className="text-right"><Skeleton className="h-8 w-48 ml-auto" /></TableCell>
                                         </TableRow>
                                         ))
                                     ) : bookings.length > 0 ? (
@@ -179,31 +305,30 @@ export default function ValuerDashboardPage() {
                                             </TableCell>
                                             <TableCell className="text-right space-x-2">
                                                 <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => {
-                                                    // Placeholder for valuate action
-                                                }}
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => openValuationDialog(booking)}
+                                                    disabled={booking.status !== 'Pending'}
                                                 >
-                                                <FilePen className="mr-2 h-4 w-4" />
-                                                <span className="hidden sm:inline">Valuate</span>
+                                                    <FilePen className="mr-2 h-4 w-4" />
+                                                    <span className="hidden sm:inline">Valuate</span>
                                                 </Button>
                                                 <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
                                                 >
-                                                <Printer className="mr-2 h-4 w-4" />
-                                                <span className="hidden sm:inline">Valuated</span>
+                                                    <Printer className="mr-2 h-4 w-4" />
+                                                    <span className="hidden sm:inline">Valuated</span>
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24">
-                                            No bookings found.
-                                        </TableCell>
+                                            <TableCell colSpan={6} className="text-center h-24">
+                                                No bookings found.
+                                            </TableCell>
                                         </TableRow>
                                     )}
                                     </TableBody>
@@ -211,8 +336,151 @@ export default function ValuerDashboardPage() {
                             </CardContent>
                         </Card>
                     )}
+                    <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
+                        <DialogContent className="sm:max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>Submit Valuation Report</DialogTitle>
+                                <DialogDescription>
+                                    Fill in the details below for booking #{selectedBooking?.bookingNumber}.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(handleValuationSubmit)} className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><Label>Customer Name</Label><Input value={selectedBooking?.customerName} disabled /></div>
+                                        <div><Label>Guarantor</Label><Input value={selectedBooking?.insurerName} disabled /></div>
+                                        <div><Label>Vehicle</Label><Input value={`${selectedBooking?.carMake} ${selectedBooking?.carModel}`} disabled /></div>
+                                        <div><Label>Plate Number</Label><Input value={selectedBooking?.plateNumber} disabled /></div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                         <FormField
+                                            control={form.control}
+                                            name="assessmentDate"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-col">
+                                                <FormLabel>Date of Assessment</FormLabel>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                        variant={"outline"}
+                                                        className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                                                        >
+                                                        {field.value ? (
+                                                            format(field.value, "PPP")
+                                                        ) : (
+                                                            <span>Pick a date</span>
+                                                        )}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={field.value}
+                                                        onSelect={field.onChange}
+                                                        disabled={(date) =>
+                                                            date > new Date() || date < new Date("1900-01-01")
+                                                        }
+                                                        initialFocus
+                                                    />
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                         <FormField
+                                            control={form.control}
+                                            name="assessmentValue"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Assessment Value (KES)</FormLabel>
+                                                    <FormControl><Input placeholder="e.g. 1,500,000" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="forcedValue"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Forced Sale Value (KES)</FormLabel>
+                                                    <FormControl><Input placeholder="e.g. 1,200,000" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="salvageValue"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Salvage Value (KES)</FormLabel>
+                                                    <FormControl><Input placeholder="e.g. 300,000" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <Label>Valuation Photos</Label>
+                                        <div className="mt-2 flex justify-center rounded-lg border border-dashed border-input px-6 py-10">
+                                            <div className="text-center">
+                                                <ImageIcon className="mx-auto h-12 w-12 text-gray-300" />
+                                                <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                                                <label
+                                                    htmlFor="file-upload"
+                                                    className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 hover:text-primary/80"
+                                                >
+                                                    <span>Upload files</span>
+                                                    <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleImageChange} accept="image/*" ref={fileInputRef} />
+                                                </label>
+                                                <p className="pl-1">or drag and drop</p>
+                                                </div>
+                                                <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
+                                            </div>
+                                        </div>
+                                         {imagePreviews.length > 0 && (
+                                            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                                {imagePreviews.map((preview, index) => (
+                                                <div key={index} className="relative group">
+                                                    <Image src={preview} alt={`preview ${index}`} width={150} height={150} className="w-full h-auto object-cover rounded-md" />
+                                                    <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    size="icon"
+                                                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"
+                                                    onClick={() => removeImage(index)}
+                                                    >
+                                                    <X className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <FormMessage>{form.formState.errors.images?.message}</FormMessage>
+                                    </div>
+
+                                    <DialogFooter>
+                                        <Button type="button" variant="outline" onClick={() => setValuationDialogOpen(false)}>Cancel</Button>
+                                        <Button type="submit" disabled={isUploading}>
+                                            {isUploading ? "Submitting..." : "Valuate & Submit"}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </Form>
+                        </DialogContent>
+                    </Dialog>
                 </>
             )}
         </UnifiedDashboardLayout>
     );
 }
+
