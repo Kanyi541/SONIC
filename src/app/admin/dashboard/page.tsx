@@ -931,6 +931,8 @@ function AdminDashboard() {
                                         <div>{selectedBookingForValuation.customerName}</div>
                                         <div className="font-semibold">Customer Email:</div>
                                         <div>{selectedBookingForValuation.customerEmail}</div>
+                                        <div className="font-semibold">Vehicle:</div>
+                                        <div>{`${selectedBookingForValuation.carMake} ${selectedBookingForValuation.carModel}`}</div>
                                         <div className="font-semibold">Booking Number:</div>
                                         <div className="font-mono text-xs">{selectedBookingForValuation.bookingNumber}</div>
                                         <div className="font-semibold">Plate Number:</div>
