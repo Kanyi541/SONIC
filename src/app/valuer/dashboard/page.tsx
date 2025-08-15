@@ -520,6 +520,7 @@ export default function ValuerDashboardPage() {
                                         <div><Label>Client</Label><Input value={selectedBooking?.insurerName} disabled /></div>
                                         <div><Label>Vehicle</Label><Input value={`${selectedBooking?.carMake} ${selectedBooking?.carModel}`} disabled /></div>
                                         <div><Label>Plate Number</Label><Input value={selectedBooking?.plateNumber} disabled /></div>
+                                        <div><Label>Booking Number</Label><Input value={selectedBooking?.bookingNumber} disabled /></div>
                                     </div>
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
