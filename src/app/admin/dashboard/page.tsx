@@ -91,7 +91,8 @@ interface Valuation {
     assessmentDate: any;
     assessmentValue: string;
     forcedValue: string;
-    salvageValue: string;
+    wsValue: string;
+    rsValue: string;
     comments?: string;
     imageUrls: string[];
     valuedBy: string;
@@ -934,8 +935,11 @@ function AdminDashboard() {
                                     <div className="font-semibold text-orange-600">Forced Sale Value:</div>
                                     <div className="font-mono text-orange-600">KES {selectedValuation.forcedValue}</div>
                                     
-                                    <div className="font-semibold text-red-600">Salvage Value:</div>
-                                    <div className="font-mono text-red-600">KES {selectedValuation.salvageValue}</div>
+                                    <div className="font-semibold">Noted Value (WS):</div>
+                                    <div className="font-mono">KES {selectedValuation.wsValue}</div>
+                                    
+                                    <div className="font-semibold">Noted Value (RS):</div>
+                                    <div className="font-mono">KES {selectedValuation.rsValue}</div>
                                 </div>
                                 {selectedValuation.comments && (
                                      <div className="pt-4">

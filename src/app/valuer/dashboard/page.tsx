@@ -62,7 +62,8 @@ const valuationSchema = z.object({
   }),
   assessmentValue: z.string().min(1, "Assessment value is required"),
   forcedValue: z.string().min(1, "Forced value is required"),
-  salvageValue: z.string().min(1, "Salvage value is required"),
+  wsValue: z.string().min(1, "WS value is required"),
+  rsValue: z.string().min(1, "RS value is required"),
   images: z.array(z.string().url()).min(1, "At least one image is required."),
   comments: z.string().optional(),
 });
@@ -90,7 +91,8 @@ export default function ValuerDashboardPage() {
         defaultValues: {
             assessmentValue: "",
             forcedValue: "",
-            salvageValue: "",
+            wsValue: "",
+            rsValue: "",
             images: [],
             comments: "",
         }
@@ -204,7 +206,8 @@ export default function ValuerDashboardPage() {
                 assessmentDate: data.assessmentDate,
                 assessmentValue: data.assessmentValue,
                 forcedValue: data.forcedValue,
-                salvageValue: data.salvageValue,
+                wsValue: data.wsValue,
+                rsValue: data.rsValue,
                 imageUrls: imageDataUrls,
                 comments: data.comments,
                 valuedBy: loggedInUser.name,
@@ -584,11 +587,24 @@ export default function ValuerDashboardPage() {
                                         />
                                         <FormField
                                             control={form.control}
-                                            name="salvageValue"
+                                            name="wsValue"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Salvage Value (KES)</FormLabel>
-                                                    <FormControl><Input placeholder="e.g. 300,000" {...field} /></FormControl>
+                                                    <FormLabel>Noted Value: WS (KES)</FormLabel>
+                                                    <FormControl><Input placeholder="e.g. 20,000" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                       <FormField
+                                            control={form.control}
+                                            name="rsValue"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Noted Value: RS (KES)</FormLabel>
+                                                    <FormControl><Input placeholder="e.g. 15,000" {...field} /></FormControl>
                                                     <FormMessage />
                                                 </FormItem>
                                             )}
