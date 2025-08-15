@@ -2,13 +2,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Loader2, Printer, ArrowLeft } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
-import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface BookingData {
   id: string;
@@ -27,10 +26,8 @@ interface BookingData {
   insurerName?: string;
 }
 
-export default function BookingReport() {
-  const searchParams = useSearchParams();
+export default function BookingReport({ bookingId }: { bookingId: string }) {
   const router = useRouter();
-  const bookingId = searchParams.get('id');
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [loading, setLoading] = useState(true);
   const componentRef = useRef(null);
@@ -61,7 +58,7 @@ export default function BookingReport() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
+      <div className="flex justify-center items-center h-96 bg-gray-100">
         <Loader2 className="h-10 w-10 animate-spin text-blue-900" />
       </div>
     );
@@ -72,22 +69,18 @@ export default function BookingReport() {
   }
 
   return (
-    <div className="bg-gray-200 min-h-screen p-4 sm:p-8 font-sans">
+    <div className="bg-gray-100 font-sans">
        <div className="max-w-5xl mx-auto">
-        <div className="flex justify-end mb-6 gap-4">
-            <Button onClick={() => router.back()} variant="outline" className="text-blue-900 border-blue-900 hover:bg-blue-900 hover:text-white">
-                <ArrowLeft className="mr-2 h-5 w-5" />
-                Go Back
-            </Button>
+        <div className="flex justify-end mb-4 gap-4 sticky top-0 bg-gray-100 py-2 z-10">
             <Button onClick={handlePrint} className="bg-blue-900 hover:bg-blue-800 text-white">
                 <Printer className="mr-2 h-5 w-5" />
                 Print / Save PDF
             </Button>
         </div>
-        <div ref={componentRef} className="bg-white p-8 sm:p-14 shadow-2xl rounded-lg" id="report">
+        <div ref={componentRef} className="bg-white p-14 shadow-lg rounded-lg" id="report">
           <header className="flex justify-between items-center pb-6 border-b-2 border-blue-900">
             <div className="text-left">
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-900">CASA Motor Valuers & Assessors</h1>
+              <h1 className="text-4xl font-extrabold text-blue-900">CASA Motor Valuers & Assessors</h1>
               <p className="text-base text-gray-700 mt-1">
                 Highway Mall, Uhuru Highway<br />
                 Nairobi, Kenya
@@ -184,5 +177,3 @@ export default function BookingReport() {
     </div>
   );
 }
-
-    

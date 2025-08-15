@@ -2,12 +2,12 @@
 
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
@@ -52,6 +52,9 @@ import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Ca
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import BookingReport from '@/components/dashboard/booking-report';
+import ValuationReportView from '@/components/dashboard/valuation-report-view';
 
 
 interface Insurer {
@@ -97,6 +100,8 @@ interface Valuation {
     imageUrls: string[];
     valuedBy: string;
     valuedAt: any;
+    status?: 'Approved' | 'Rejected';
+    rejectionReason?: string;
 }
 
 type ChartDataPoint = {
@@ -129,6 +134,8 @@ function AdminDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [activeChartToggles, setActiveChartToggles] = useState<string[]>(['PendingApproval', 'Approved', 'Rejected']);
+  const [isReportModalOpen, setReportModalOpen] = useState(false);
+  const [selectedBookingForReports, setSelectedBookingForReports] = useState<Booking | null>(null);
 
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -291,6 +298,11 @@ function AdminDashboard() {
       console.error("Error updating status: ", error);
       toast({ variant: "destructive", title: "Update Failed", description: "Could not update status."});
     }
+  };
+  
+  const handleOpenReports = (booking: Booking) => {
+    setSelectedBookingForReports(booking);
+    setReportModalOpen(true);
   };
 
   const handleViewReport = async (bookingId: string) => {
@@ -606,18 +618,18 @@ function AdminDashboard() {
                      <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                   </TableCell>
                    <TableCell className="text-right space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
-                      >
-                        <Printer className="mr-2 h-4 w-4" />
-                        <span className="hidden sm:inline">Instruction</span>
-                      </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenReports(booking)}
+                        >
+                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            <span className="hidden sm:inline">Reports</span>
+                        </Button>
                       {booking.status === 'Pending Approval' && (
                          <Button variant="default" size="sm" onClick={() => handleViewReport(booking.id)}>
                            <CheckCircle className="mr-2 h-4 w-4" />
-                           <span className="hidden sm:inline">View Report</span>
+                           <span className="hidden sm:inline">Review</span>
                          </Button>
                       )}
                     </TableCell>
@@ -989,6 +1001,42 @@ function AdminDashboard() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            <Dialog open={isReportModalOpen} onOpenChange={setReportModalOpen}>
+                <DialogContent className="max-w-5xl">
+                    <DialogHeader>
+                        <DialogTitle>View Reports</DialogTitle>
+                        <DialogDescription>
+                            Toggle between the booking authorization letter and the valuation report.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedBookingForReports && (
+                        <Tabs defaultValue="booking-report" className="w-full">
+                            <TabsList>
+                                <TabsTrigger value="booking-report">Booking Report</TabsTrigger>
+                                <TabsTrigger 
+                                    value="valuation-report"
+                                    disabled={selectedBookingForReports.status === 'Pending' || selectedBookingForReports.status === 'Pending Valuation'}>
+                                    Valuation Report
+                                </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="booking-report">
+                                <div className="max-h-[70vh] overflow-y-auto p-1">
+                                    <Suspense fallback={<div>Loading...</div>}>
+                                       <BookingReport bookingId={selectedBookingForReports.id}/>
+                                    </Suspense>
+                                </div>
+                            </TabsContent>
+                            <TabsContent value="valuation-report">
+                                <div className="max-h-[70vh] overflow-y-auto p-1">
+                                    <ValuationReportView bookingId={selectedBookingForReports.id} />
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+                    )}
+                </DialogContent>
+            </Dialog>
+
         </main>
         <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
             <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
