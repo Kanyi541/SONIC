@@ -47,8 +47,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 
 interface Insurer {
@@ -95,6 +96,14 @@ interface Valuation {
     valuedAt: any;
 }
 
+type ChartDataPoint = {
+    month: string;
+    PendingApproval: number;
+    Approved: number;
+    Rejected: number;
+};
+
+
 function AdminDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -114,10 +123,44 @@ function AdminDashboard() {
   const [loadingValuation, setLoadingValuation] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [activeChartToggles, setActiveChartToggles] = useState<string[]>(['PendingApproval', 'Approved', 'Rejected']);
 
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
   };
+    
+    const generateChartData = (bookings: Booking[]) => {
+        const last12Months: ChartDataPoint[] = [];
+        const today = new Date();
+
+        for (let i = 11; i >= 0; i--) {
+            const date = subMonths(today, i);
+            const monthName = format(date, 'MMM');
+            last12Months.push({ month: monthName, PendingApproval: 0, Approved: 0, Rejected: 0 });
+        }
+
+        bookings.forEach(booking => {
+            if (booking.createdAt) {
+                const bookingDate = booking.createdAt.toDate();
+                const monthName = format(bookingDate, 'MMM');
+                const monthData = last12Months.find(d => d.month === monthName);
+                if (monthData) {
+                    if (booking.status === 'Pending Approval') monthData.PendingApproval++;
+                    if (booking.status === 'Completed') monthData.Approved++;
+                    if (booking.status === 'Rejected') monthData.Rejected++;
+                }
+            }
+        });
+
+        setChartData(last12Months);
+    };
+
+    const handleToggle = (status: string) => {
+        setActiveChartToggles(prev => 
+            prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+        );
+    };
 
   useEffect(() => {
     setLoading(true);
@@ -144,7 +187,11 @@ function AdminDashboard() {
     if (["dashboard", "bookings", "pending-approval"].includes(activeView)) {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setBookings(data as Booking[]);
+            const bookingsData = data as Booking[];
+            setBookings(bookingsData);
+            if(activeView === 'dashboard') {
+              generateChartData(bookingsData);
+            }
             setLoading(false);
         });
         subscriptions.push(unsubscribe);
@@ -290,7 +337,7 @@ function AdminDashboard() {
       try {
           const bookingDocRef = doc(db, "bookings", selectedValuation.bookingId);
           await updateDoc(bookingDocRef, { 
-            status: "Pending", 
+            status: "Rejected", 
             rejectionReason: rejectionReason,
             rejectedAt: serverTimestamp() 
           });
@@ -325,6 +372,8 @@ function AdminDashboard() {
         return "destructive";
       case "Completed":
         return "default";
+      case "Rejected":
+        return "destructive";
       default:
         return "default";
     }
@@ -335,30 +384,22 @@ function AdminDashboard() {
         pendingValuation: bookings.filter(b => b.status === 'Pending').length,
         pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
+        rejected: bookings.filter(b => b.status === 'Rejected').length,
     };
 
-    const chartData = [
-        { status: "Pending", count: stats.pendingValuation, fill: "hsl(var(--primary))" },
-        { status: "Approval", count: stats.pendingApproval, fill: "hsl(var(--destructive))" },
-        { status: "Completed", count: stats.completed, fill: "hsl(var(--chart-1))" },
-    ];
-    
     const chartConfig = {
-      count: {
-        label: "Count",
-      },
-      pending: {
-        label: "Pending",
-        color: "hsl(var(--primary))",
-      },
-      approval: {
-        label: "Approval",
+      PendingApproval: {
+        label: "Pending Approval",
         color: "hsl(var(--destructive))",
       },
-      completed: {
-        label: "Completed",
+      Approved: {
+        label: "Approved",
         color: "hsl(var(--chart-1))",
       },
+      Rejected: {
+          label: "Rejected",
+          color: "hsl(var(--primary))"
+      }
     } 
 
   const renderUserTable = (
@@ -681,22 +722,12 @@ function AdminDashboard() {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation}</div>
-                            <p className="text-xs text-muted-foreground">Awaiting valuation reports</p>
-                        </CardContent>
-                    </Card>
-                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
                             <Hourglass className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
-                            <p className="text-xs text-muted-foreground">Awaiting Client approval</p>
+                            <p className="text-xs text-muted-foreground">Awaiting admin approval</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -709,29 +740,66 @@ function AdminDashboard() {
                             <p className="text-xs text-muted-foreground">Completed and approved</p>
                         </CardContent>
                     </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+                            <XCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.rejected}</div>
+                            <p className="text-xs text-muted-foreground">Rejected reports</p>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Booking Status Distribution</CardTitle>
-                        <CardDescription>A summary of all booking statuses.</CardDescription>
+                        <CardTitle>Booking Statistics</CardTitle>
+                        <CardDescription>Monthly trends for report statuses.</CardDescription>
+                         <div className="flex justify-end gap-2 mt-4">
+                            <Button 
+                                variant={activeChartToggles.length === 3 ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setActiveChartToggles(['PendingApproval', 'Approved', 'Rejected'])}
+                            >
+                                All
+                            </Button>
+                            <Button 
+                                variant={activeChartToggles.includes('PendingApproval') ? 'destructive' : 'outline'}
+                                size="sm" 
+                                onClick={() => handleToggle('PendingApproval')}
+                            >
+                                Pending Approval
+                            </Button>
+                            <Button 
+                                variant={activeChartToggles.includes('Approved') ? 'secondary' : 'outline'}
+                                className="bg-green-500 text-white hover:bg-green-600"
+                                size="sm" 
+                                onClick={() => handleToggle('Approved')}
+                            >
+                                Approved
+                            </Button>
+                            <Button 
+                                variant={activeChartToggles.includes('Rejected') ? 'default' : 'outline'}
+                                size="sm" 
+                                onClick={() => handleToggle('Rejected')}
+                            >
+                                Rejected
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-                             <BarChart accessibilityLayer data={chartData}>
-                                <XAxis
-                                dataKey="status"
-                                tickLine={false}
-                                tickMargin={10}
-                                axisLine={false}
-                                />
+                        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="month" />
                                 <YAxis />
-                                <Tooltip
-                                    cursor={false}
-                                    content={<ChartTooltipContent hideLabel />}
-                                />
-                                <Bar dataKey="count" radius={8} />
-                            </BarChart>
+                                <Tooltip content={<ChartTooltipContent />} />
+                                <Legend />
+                                {activeChartToggles.includes('PendingApproval') && <Line type="monotone" dataKey="PendingApproval" stroke={chartConfig.PendingApproval.color} strokeWidth={2} name="Pending Approval" />}
+                                {activeChartToggles.includes('Approved') && <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />}
+                                {activeChartToggles.includes('Rejected') && <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />}
+                            </LineChart>
                         </ChartContainer>
                     </CardContent>
                 </Card>
