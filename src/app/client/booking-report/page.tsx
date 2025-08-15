@@ -196,6 +196,5 @@ export default function BookingReportPage() {
     </Suspense>
   );
 }
-    
 
     

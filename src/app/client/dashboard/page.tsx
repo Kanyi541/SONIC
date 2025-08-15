@@ -1235,3 +1235,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
