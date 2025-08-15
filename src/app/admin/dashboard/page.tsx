@@ -49,7 +49,7 @@ import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 
 
 interface Insurer {
@@ -97,7 +97,7 @@ interface Valuation {
 }
 
 type ChartDataPoint = {
-    month: string;
+    day: string;
     PendingApproval: number;
     Approved: number;
     Rejected: number;
@@ -131,29 +131,33 @@ function AdminDashboard() {
   };
     
     const generateChartData = (bookings: Booking[]) => {
-        const last12Months: ChartDataPoint[] = [];
         const today = new Date();
+        const firstDayOfMonth = startOfMonth(today);
+        const lastDayOfMonth = endOfMonth(today);
+        const daysInMonth = eachDayOfInterval({ start: firstDayOfMonth, end: lastDayOfMonth });
 
-        for (let i = 11; i >= 0; i--) {
-            const date = subMonths(today, i);
-            const monthName = format(date, 'MMM');
-            last12Months.push({ month: monthName, PendingApproval: 0, Approved: 0, Rejected: 0 });
-        }
+        const monthlyData: ChartDataPoint[] = daysInMonth.map(day => ({
+            day: format(day, 'd'),
+            PendingApproval: 0,
+            Approved: 0,
+            Rejected: 0,
+        }));
 
         bookings.forEach(booking => {
             if (booking.createdAt) {
                 const bookingDate = booking.createdAt.toDate();
-                const monthName = format(bookingDate, 'MMM');
-                const monthData = last12Months.find(d => d.month === monthName);
-                if (monthData) {
-                    if (booking.status === 'Pending Approval') monthData.PendingApproval++;
-                    if (booking.status === 'Completed') monthData.Approved++;
-                    if (booking.status === 'Rejected') monthData.Rejected++;
+                if (bookingDate >= firstDayOfMonth && bookingDate <= lastDayOfMonth) {
+                    const dayOfMonth = getDate(bookingDate) - 1; 
+                    if (monthlyData[dayOfMonth]) {
+                        if (booking.status === 'Pending Approval') monthlyData[dayOfMonth].PendingApproval++;
+                        if (booking.status === 'Completed') monthlyData[dayOfMonth].Approved++;
+                        if (booking.status === 'Rejected') monthlyData[dayOfMonth].Rejected++;
+                    }
                 }
             }
         });
-
-        setChartData(last12Months);
+        
+        setChartData(monthlyData);
     };
 
     const handleToggle = (status: string) => {
@@ -703,12 +707,10 @@ function AdminDashboard() {
         <main className="flex-1 container py-8">
             {activeView === 'dashboard' && (
               <div className="grid gap-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline text-3xl text-primary">Welcome, Admin!</CardTitle>
-                        <CardDescription>This is your secure control panel.</CardDescription>
-                    </CardHeader>
-                </Card>
+                <div>
+                    <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, Admin!</h1>
+                    <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Valuers & Assessors.</p>
+                </div>
                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                    <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -754,8 +756,8 @@ function AdminDashboard() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Booking Statistics</CardTitle>
-                        <CardDescription>Monthly trends for report statuses.</CardDescription>
+                        <CardTitle>Booking Statistics ({format(new Date(), 'MMMM')})</CardTitle>
+                        <CardDescription>Daily trends for report statuses this month.</CardDescription>
                          <div className="flex justify-end gap-2 mt-4">
                             <Button 
                                 variant={activeChartToggles.length === 3 ? 'default' : 'outline'}
@@ -792,7 +794,7 @@ function AdminDashboard() {
                         <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
                            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="month" />
+                                <XAxis dataKey="day" />
                                 <YAxis />
                                 <Tooltip content={<ChartTooltipContent />} />
                                 <Legend />
