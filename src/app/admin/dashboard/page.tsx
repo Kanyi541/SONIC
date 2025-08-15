@@ -647,7 +647,7 @@ function AdminDashboard() {
                 Dashboard
               </SidebarMenuButton>
             </SidebarMenuItem>
-
+            
             <Collapsible>
                 <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
@@ -673,9 +673,9 @@ function AdminDashboard() {
                     </SidebarMenuItem>
                 </CollapsibleContent>
             </Collapsible>
-            
+
             <Collapsible>
-                 <CollapsibleTrigger className="w-full">
+                 <CollapsibleTrigger className="w-full" onClick={() => setActiveView('bookings')}>
                     <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
                          <div className="flex items-center gap-2">
                             <BookOpen/>
@@ -684,15 +684,16 @@ function AdminDashboard() {
                         <ChevronDown className="h-4 w-4" />
                     </div>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="ml-4">
+                 <CollapsibleContent className="ml-4">
                     <SidebarMenuItem>
                         <SidebarMenuButton onClick={() => setActiveView('bookings')} isActive={activeView === 'bookings'} tooltip="All Bookings">
                             <FileText />
-                            Bookings
+                            All Bookings
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                  </CollapsibleContent>
             </Collapsible>
+            
             <SidebarMenuItem>
                 <SidebarMenuButton 
                 onClick={() => setActiveView('pending-approval')} 
