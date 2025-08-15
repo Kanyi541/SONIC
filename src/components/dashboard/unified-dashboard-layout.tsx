@@ -87,7 +87,8 @@ export default function UnifiedDashboardLayout({
         }
     };
     
-    const isClientDashboard = userRole !== "Admin";
+    const isValuerDashboard = userRole !== "Admin" && !menuItems.some(item => item.view === 'customers');
+
     const topLevelItems = menuItems.filter(item => ['dashboard', 'create-booking'].includes(item.view));
     const managementItems = menuItems.filter(item => ['customers', 'agents'].includes(item.view));
     const bookingItems = menuItems.filter(item => ['bookings', 'valuations'].includes(item.view));
@@ -122,7 +123,7 @@ export default function UnifiedDashboardLayout({
                             </SidebarMenuItem>
                          ))}
 
-                        {isClientDashboard && (
+                        {!isValuerDashboard && (
                             <>
                                <Collapsible>
                                     <CollapsibleTrigger className="w-full">
@@ -145,31 +146,31 @@ export default function UnifiedDashboardLayout({
                                         ))}
                                     </CollapsibleContent>
                                 </Collapsible>
-
-                                <Collapsible>
-                                    <CollapsibleTrigger className="w-full" onClick={() => setActiveView('bookings')}>
-                                        <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
-                                            <div className="flex items-center gap-2">
-                                                <BookCopy/>
-                                                <span>View Bookings</span>
-                                            </div>
-                                            <ChevronDown className="h-4 w-4" />
-                                        </div>
-                                    </CollapsibleTrigger>
-                                     <CollapsibleContent className="ml-4">
-                                        {bookingItems.map(item => (
-                                            <SidebarMenuItem key={item.view}>
-                                                <SidebarMenuButton onClick={() => setActiveView(item.view)} isActive={activeView === item.view} tooltip={item.name}>
-                                                    {getIconForView(item.view)}
-                                                    All Bookings
-                                                </SidebarMenuButton>
-                                            </SidebarMenuItem>
-                                        ))}
-                                     </CollapsibleContent>
-                                </Collapsible>
                             </>
                         )}
                         
+                        <Collapsible>
+                            <CollapsibleTrigger className="w-full" onClick={() => bookingItems.length > 0 && setActiveView(bookingItems[0].view)}>
+                                <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
+                                    <div className="flex items-center gap-2">
+                                        <BookCopy/>
+                                        <span>View Bookings</span>
+                                    </div>
+                                    <ChevronDown className="h-4 w-4" />
+                                </div>
+                            </CollapsibleTrigger>
+                                <CollapsibleContent className="ml-4">
+                                {bookingItems.map(item => (
+                                    <SidebarMenuItem key={item.view}>
+                                        <SidebarMenuButton onClick={() => setActiveView(item.view)} isActive={activeView === item.view} tooltip={item.name}>
+                                            {getIconForView(item.view)}
+                                            {item.name}
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))}
+                                </CollapsibleContent>
+                        </Collapsible>
+
                         {pendingApprovalItem && (
                              <SidebarMenuItem>
                                 <SidebarMenuButton 
@@ -189,30 +190,6 @@ export default function UnifiedDashboardLayout({
                                     )}
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
-                        )}
-
-                        {!isClientDashboard && menuItems.length > 1 && (
-                            <Collapsible>
-                                <CollapsibleTrigger className="w-full">
-                                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
-                                        <div className="flex items-center gap-2">
-                                            <BookCopy />
-                                            <span>View Bookings</span>
-                                        </div>
-                                        <ChevronDown className="h-4 w-4" />
-                                    </div>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent className="ml-4">
-                                    {menuItems.filter(item => item.view !== 'dashboard').map(item => (
-                                        <SidebarMenuItem key={item.view}>
-                                            <SidebarMenuButton onClick={() => setActiveView(item.view)} isActive={activeView === item.view} tooltip={item.name}>
-                                                {getIconForView(item.view)}
-                                                {item.name}
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    ))}
-                                </CollapsibleContent>
-                            </Collapsible>
                         )}
 
                     </SidebarMenu>

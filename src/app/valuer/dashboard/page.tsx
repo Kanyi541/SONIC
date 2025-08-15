@@ -28,6 +28,7 @@ import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 
 interface LoggedInUser {
     name: string;
@@ -266,6 +267,9 @@ export default function ValuerDashboardPage() {
         );
     });
 
+    const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
+    const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
+
     const stats = {
         total: bookings.length,
         pendingValuation: bookings.filter(b => b.status === 'Pending').length,
@@ -288,6 +292,90 @@ export default function ValuerDashboardPage() {
           color: "hsl(var(--primary))"
       }
     } 
+
+    const renderBookingsTable = (
+        bookingsData: Booking[],
+        title: string,
+        description: string
+    ) => (
+         <Card>
+            <CardHeader>
+               <div className="flex justify-between items-center">
+                    <div>
+                        <CardTitle>{title}</CardTitle>
+                        <CardDescription>{description}</CardDescription>
+                    </div>
+                    <div className="relative w-full max-w-sm">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Search bookings..."
+                            className="w-full rounded-lg bg-background pl-8"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent>
+                 <Table>
+                    <TableHeader>
+                        <TableRow className="bg-muted/50">
+                            <TableHead className="font-semibold">Booking ID</TableHead>
+                            <TableHead className="hidden sm:table-cell font-semibold">Customer</TableHead>
+                            <TableHead className="hidden md:table-cell font-semibold">Vehicle</TableHead>
+                            <TableHead className="hidden md:table-cell font-semibold">Client</TableHead>
+                            <TableHead className="font-semibold">Status</TableHead>
+                            <TableHead className="text-right font-semibold">Action</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {loading ? (
+                        Array.from({ length: 5 }).map((_, index) => (
+                        <TableRow key={index}>
+                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+                            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                            <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                            <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
+                        </TableRow>
+                        ))
+                    ) : bookingsData.length > 0 ? (
+                        bookingsData.map((booking) => (
+                        <TableRow key={booking.id}>
+                            <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
+                            <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
+                            <TableCell className="hidden md:table-cell">{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
+                            <TableCell className="hidden md:table-cell">{booking.insurerName}</TableCell>
+                            <TableCell>
+                            <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right space-x-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openValuationDialog(booking)}
+                                    disabled={booking.status !== 'Pending'}
+                                >
+                                    <FilePen className="mr-2 h-4 w-4" />
+                                    <span className="hidden sm:inline">Valuate</span>
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                        ))
+                    ) : (
+                        <TableRow>
+                            <TableCell colSpan={6} className="text-center h-24">
+                                No bookings found.
+                            </TableCell>
+                        </TableRow>
+                    )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
     
     return (
         <UnifiedDashboardLayout
@@ -296,187 +384,117 @@ export default function ValuerDashboardPage() {
             userEmail={loggedInUser?.email || ""}
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
-                { name: 'All Valuations', view: 'valuations' },
+                { name: 'All Bookings', view: 'valuations' },
+                { name: 'Pending Approval', view: 'pending-approval', notificationCount: stats.pendingApproval },
             ]}
         >
             {(activeView) => (
                 <>
-                    {activeView === 'dashboard' && (
-                        <div className="grid gap-8">
-                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                               <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">All Cars</CardTitle>
-                                        <Car className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.total}</div>
-                                        <p className="text-xs text-muted-foreground">Total registered plates</p>
-                                    </CardContent>
-                                </Card>
+                    <Tabs value={activeView} className="w-full">
+                        <TabsContent value="dashboard">
+                            <div className="grid gap-8">
+                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                                   <Card>
+                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                            <CardTitle className="text-sm font-medium">All Cars</CardTitle>
+                                            <Car className="h-4 w-4 text-muted-foreground" />
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.total}</div>
+                                            <p className="text-xs text-muted-foreground">Total registered plates</p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                            <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
+                                            <Clock className="h-4 w-4 text-muted-foreground" />
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation}</div>
+                                            <p className="text-xs text-muted-foreground">Awaiting valuation reports</p>
+                                        </CardContent>
+                                    </Card>
+                                     <Card>
+                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+                                            <Hourglass className="h-4 w-4 text-muted-foreground" />
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
+                                            <p className="text-xs text-muted-foreground">Awaiting Client approval</p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+                                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.completed}</div>
+                                            <p className="text-xs text-muted-foreground">Completed and approved</p>
+                                        </CardContent>
+                                    </Card>
+                                </div>
                                 <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
-                                        <Clock className="h-4 w-4 text-muted-foreground" />
+                                    <CardHeader>
+                                        <CardTitle>Valuation Statistics ({format(new Date(), 'MMMM')})</CardTitle>
+                                        <CardDescription>Daily trends for your valuation statuses this month.</CardDescription>
+                                         <div className="flex justify-end gap-2 mt-4">
+                                            <Button 
+                                                variant={activeChartToggles.length === 3 ? 'default' : 'outline'}
+                                                size="sm"
+                                                onClick={() => setActiveChartToggles(['Pending', 'Approved', 'Rejected'])}
+                                            >
+                                                All
+                                            </Button>
+                                            <Button 
+                                                variant={activeChartToggles.includes('Pending') ? 'destructive' : 'outline'}
+                                                size="sm" 
+                                                onClick={() => handleToggle('Pending')}
+                                            >
+                                                Pending
+                                            </Button>
+                                            <Button 
+                                                variant={activeChartToggles.includes('Approved') ? 'secondary' : 'outline'}
+                                                className="bg-green-500 text-white hover:bg-green-600"
+                                                size="sm" 
+                                                onClick={() => handleToggle('Approved')}
+                                            >
+                                                Approved
+                                            </Button>
+                                            <Button 
+                                                variant={activeChartToggles.includes('Rejected') ? 'default' : 'outline'}
+                                                size="sm" 
+                                                onClick={() => handleToggle('Rejected')}
+                                            >
+                                                Rejected
+                                            </Button>
+                                        </div>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation}</div>
-                                        <p className="text-xs text-muted-foreground">Awaiting valuation reports</p>
-                                    </CardContent>
-                                </Card>
-                                 <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
-                                        <Hourglass className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
-                                        <p className="text-xs text-muted-foreground">Awaiting Client approval</p>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Approved</CardTitle>
-                                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.completed}</div>
-                                        <p className="text-xs text-muted-foreground">Completed and approved</p>
+                                        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                                           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="day" />
+                                                <YAxis domain={[0, 1000]} />
+                                                <Tooltip content={<ChartTooltipContent />} />
+                                                <Legend />
+                                                {activeChartToggles.includes('Pending') && <Line type="monotone" dataKey="Pending" stroke={chartConfig.Pending.color} strokeWidth={2} />}
+                                                {activeChartToggles.includes('Approved') && <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />}
+                                                {activeChartToggles.includes('Rejected') && <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />}
+                                            </LineChart>
+                                        </ChartContainer>
                                     </CardContent>
                                 </Card>
                             </div>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Valuation Statistics ({format(new Date(), 'MMMM')})</CardTitle>
-                                    <CardDescription>Daily trends for your valuation statuses this month.</CardDescription>
-                                     <div className="flex justify-end gap-2 mt-4">
-                                        <Button 
-                                            variant={activeChartToggles.length === 3 ? 'default' : 'outline'}
-                                            size="sm"
-                                            onClick={() => setActiveChartToggles(['Pending', 'Approved', 'Rejected'])}
-                                        >
-                                            All
-                                        </Button>
-                                        <Button 
-                                            variant={activeChartToggles.includes('Pending') ? 'destructive' : 'outline'}
-                                            size="sm" 
-                                            onClick={() => handleToggle('Pending')}
-                                        >
-                                            Pending
-                                        </Button>
-                                        <Button 
-                                            variant={activeChartToggles.includes('Approved') ? 'secondary' : 'outline'}
-                                            className="bg-green-500 text-white hover:bg-green-600"
-                                            size="sm" 
-                                            onClick={() => handleToggle('Approved')}
-                                        >
-                                            Approved
-                                        </Button>
-                                        <Button 
-                                            variant={activeChartToggles.includes('Rejected') ? 'default' : 'outline'}
-                                            size="sm" 
-                                            onClick={() => handleToggle('Rejected')}
-                                        >
-                                            Rejected
-                                        </Button>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                                       <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="day" />
-                                            <YAxis domain={[0, 1000]} />
-                                            <Tooltip content={<ChartTooltipContent />} />
-                                            <Legend />
-                                            {activeChartToggles.includes('Pending') && <Line type="monotone" dataKey="Pending" stroke={chartConfig.Pending.color} strokeWidth={2} />}
-                                            {activeChartToggles.includes('Approved') && <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />}
-                                            {activeChartToggles.includes('Rejected') && <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />}
-                                        </LineChart>
-                                    </ChartContainer>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
-                    {activeView === 'valuations' && (
-                        <Card>
-                            <CardHeader>
-                               <div className="flex justify-between items-center">
-                                    <div>
-                                        <CardTitle>All Bookings</CardTitle>
-                                        <CardDescription>A list of all registered vehicle valuations.</CardDescription>
-                                    </div>
-                                    <div className="relative w-full max-w-sm">
-                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            type="search"
-                                            placeholder="Search bookings..."
-                                            className="w-full rounded-lg bg-background pl-8"
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                 <Table>
-                                    <TableHeader>
-                                        <TableRow className="bg-muted/50">
-                                            <TableHead className="font-semibold">Booking ID</TableHead>
-                                            <TableHead className="hidden sm:table-cell font-semibold">Customer</TableHead>
-                                            <TableHead className="hidden md:table-cell font-semibold">Vehicle</TableHead>
-                                            <TableHead className="hidden md:table-cell font-semibold">Client</TableHead>
-                                            <TableHead className="font-semibold">Status</TableHead>
-                                            <TableHead className="text-right font-semibold">Action</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                    {loading ? (
-                                        Array.from({ length: 5 }).map((_, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                                            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
-                                            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                                            <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                            <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
-                                        </TableRow>
-                                        ))
-                                    ) : filteredBookings.length > 0 ? (
-                                        filteredBookings.map((booking) => (
-                                        <TableRow key={booking.id}>
-                                            <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
-                                            <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
-                                            <TableCell className="hidden md:table-cell">{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
-                                            <TableCell className="hidden md:table-cell">{booking.insurerName}</TableCell>
-                                            <TableCell>
-                                            <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right space-x-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => openValuationDialog(booking)}
-                                                    disabled={booking.status !== 'Pending'}
-                                                >
-                                                    <FilePen className="mr-2 h-4 w-4" />
-                                                    <span className="hidden sm:inline">Valuate</span>
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="text-center h-24">
-                                                No bookings found.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                    )}
+                        </TabsContent>
+                        <TabsContent value="valuations">
+                           {renderBookingsTable(pendingBookings, "All Bookings", "A list of all registered vehicle valuations.")}
+                        </TabsContent>
+                        <TabsContent value="pending-approval">
+                           {renderBookingsTable(pendingApprovalBookings, "Pending Approval", "A list of all valuations awaiting approval from clients.")}
+                        </TabsContent>
+                    </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
                         <DialogContent className="sm:max-w-2xl grid-rows-[auto_1fr_auto] max-h-[90vh]">
                             <DialogHeader>
