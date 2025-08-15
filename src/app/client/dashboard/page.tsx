@@ -547,6 +547,7 @@ export default function ClientDashboardPage() {
       userEmail={loggedInUser?.email || ""}
       menuItems={[
         { name: "Dashboard", view: "dashboard" },
+        { name: "Create Booking", view: "create-booking", action: () => setBookingDialogOpen(true) },
         { name: "Bookings", view: "bookings" },
         { name: "Manage Customers", view: "customers"},
         { name: "Manage Agents", view: "agents"},
@@ -554,6 +555,276 @@ export default function ClientDashboardPage() {
       ]}
     >
       {(activeView) => (
+          <>
+          <Dialog open={isBookingDialogOpen} onOpenChange={setBookingDialogOpen}>
+              <DialogContent className="sm:max-w-3xl grid-rows-[auto_1fr_auto] max-h-[90vh]">
+                <DialogHeader>
+                  <DialogTitle>Make a New Booking</DialogTitle>
+                  <DialogDescription>
+                    Select a customer and fill out the form to create a new booking.
+                  </DialogDescription>
+                </DialogHeader>
+                  <div className="overflow-y-auto pr-6 -mr-6">
+                    <Form {...bookingForm}>
+                      <form onSubmit={handleBookingSubmit(handleSaveBooking)} className="space-y-4">
+                          <FormField
+                            control={bookingControl}
+                            name="customerId"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-col">
+                                <FormLabel>Select Customer</FormLabel>
+                                  <Popover open={isComboboxOpen} onOpenChange={setComboboxOpen}>
+                                  <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        className={cn(
+                                          "w-full justify-between",
+                                          !field.value && "text-muted-foreground"
+                                        )}
+                                      >
+                                        {field.value
+                                          ? customers.find(
+                                              (customer) => customer.id === field.value
+                                            )?.name
+                                          : "Select a customer"}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                      </Button>
+                                    </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                      <CommandInput placeholder="Search customer..." />
+                                      <CommandEmpty>No customer found.</CommandEmpty>
+                                      <CommandList>
+                                          <CommandGroup>
+                                          {customers.map((customer) => (
+                                              <CommandItem
+                                              value={customer.name}
+                                              key={customer.id}
+                                              onSelect={() => {
+                                                  bookingForm.setValue("customerId", customer.id)
+                                                  setComboboxOpen(false)
+                                              }}
+                                              >
+                                              <Check
+                                                  className={cn(
+                                                  "mr-2 h-4 w-4",
+                                                  customer.id === field.value
+                                                      ? "opacity-100"
+                                                      : "opacity-0"
+                                                  )}
+                                              />
+                                              {customer.name} ({customer.email})
+                                              </CommandItem>
+                                          ))}
+                                          </CommandGroup>
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <FormField
+                                  control={bookingControl}
+                                  name="customerName"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Customer Name</FormLabel>
+                                      <FormControl>
+                                          <Input {...field} readOnly placeholder="Selected customer name" />
+                                      </FormControl>
+                                      <FormMessage />
+                                      </FormItem>
+                                  )}
+                                  />
+                              <FormField
+                                  control={bookingControl}
+                                  name="customerEmail"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Customer Email</FormLabel>
+                                      <FormControl>
+                                          <Input {...field} readOnly placeholder="Selected customer email" />
+                                      </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                  )}
+                                  />
+                              <FormField
+                                  control={bookingControl}
+                                  name="customerPhone"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Customer Phone</FormLabel>
+                                      <FormControl>
+                                          <Input {...field} readOnly placeholder="Selected customer phone" />
+                                      </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField
+                                  control={bookingControl}
+                                  name="plateNumber"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Plate Number</FormLabel>
+                                      <FormControl>
+                                          <Input {...field} placeholder="e.g. KDA 123B" />
+                                      </FormControl>
+                                      <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                                <FormField
+                                  control={bookingControl}
+                                  name="policyNumber"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Policy Number</FormLabel>
+                                      <FormControl>
+                                          <Input {...field} placeholder="Enter policy number" />
+                                      </FormControl>
+                                      <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                                <FormField
+                                  control={bookingControl}
+                                  name="branch"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Branch</FormLabel>
+                                      <FormControl>
+                                          <Input {...field} placeholder="e.g. Nairobi" />
+                                      </FormControl>
+                                      <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <FormField
+                                  control={bookingControl}
+                                  name="carMake"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Car Make</FormLabel>
+                                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                              <FormControl>
+                                                  <SelectTrigger>
+                                                      <SelectValue placeholder="Select a car make" />
+                                                  </SelectTrigger>
+                                              </FormControl>
+                                              <SelectContent>
+                                                  {carData.map((make) => (
+                                                      <SelectItem key={make.brand} value={make.brand}>
+                                                          {make.brand}
+                                                      </SelectItem>
+                                                  ))}
+                                              </SelectContent>
+                                          </Select>
+                                      <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                                <FormField
+                                  control={bookingControl}
+                                  name="carModel"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Car Model</FormLabel>
+                                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedCarMake}>
+                                              <FormControl>
+                                                  <SelectTrigger>
+                                                      <SelectValue placeholder="Select a car model" />
+                                                  </SelectTrigger>
+                                              </FormControl>
+                                              <SelectContent>
+                                                  {carModels.map((model) => (
+                                                      <SelectItem key={model} value={model}>
+                                                          {model}
+                                                      </SelectItem>
+                                                  ))}
+                                              </SelectContent>
+                                          </Select>
+                                      <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                          </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                  control={bookingControl}
+                                  name="maxValuationDays"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Maximum Valuation Days</FormLabel>
+                                      <FormControl>
+                                          <Input type="number" {...field} placeholder="e.g. 3" />
+                                      </FormControl>
+                                      <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                              <FormField
+                                  control={bookingControl}
+                                  name="authorisedBy"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Authorised By</FormLabel>
+                                      <FormControl>
+                                          <Input {...field} placeholder="Enter name of authoriser" />
+                                      </FormControl>
+                                      <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                          </div>
+
+                            <FormField
+                              control={bookingControl}
+                              name="comments"
+                              render={({ field }) => (
+                                  <FormItem>
+                                  <FormLabel>Comments</FormLabel>
+                                  <FormControl>
+                                      <Textarea
+                                          placeholder="Add any additional comments here..."
+                                          className="resize-none"
+                                          {...field}
+                                      />
+                                  </FormControl>
+                                  <FormMessage />
+                                  </FormItem>
+                              )}
+                          />
+
+                          <DialogFooter className="pt-4">
+                              <Button type="button" variant="outline" onClick={() => setBookingDialogOpen(false)}>
+                                  Cancel
+                              </Button>
+                              <Button type="submit" disabled={isBookingSubmitting}>
+                                  {isBookingSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                  Save Booking
+                              </Button>
+                          </DialogFooter>
+                      </form>
+                    </Form>
+                  </div>
+              </DialogContent>
+          </Dialog>
+
           <Tabs value={activeView} className="w-full">
             <TabsContent value="dashboard">
                <div className="grid gap-8">
@@ -657,293 +928,7 @@ export default function ClientDashboardPage() {
               </div>
             </TabsContent>
             <TabsContent value="bookings">
-                <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <CardTitle className="font-headline text-3xl text-primary">Create Booking</CardTitle>
-                                    <CardDescription>Create a new booking and view it in the reports.</CardDescription>
-                                </div>
-                                <Dialog open={isBookingDialogOpen} onOpenChange={setBookingDialogOpen}>
-                                    <DialogTrigger asChild>
-                                      <Button>
-                                        <PlusCircle className="mr-2" />
-                                        Add Booking
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="sm:max-w-3xl grid-rows-[auto_1fr_auto] max-h-[90vh]">
-                                      <DialogHeader>
-                                        <DialogTitle>Make a New Booking</DialogTitle>
-                                        <DialogDescription>
-                                          Select a customer and fill out the form to create a new booking.
-                                        </DialogDescription>
-                                      </DialogHeader>
-                                       <div className="overflow-y-auto pr-6 -mr-6">
-                                          <Form {...bookingForm}>
-                                            <form onSubmit={handleBookingSubmit(handleSaveBooking)} className="space-y-4">
-                                               <FormField
-                                                  control={bookingControl}
-                                                  name="customerId"
-                                                  render={({ field }) => (
-                                                    <FormItem className="flex flex-col">
-                                                      <FormLabel>Select Customer</FormLabel>
-                                                       <Popover open={isComboboxOpen} onOpenChange={setComboboxOpen}>
-                                                        <PopoverTrigger asChild>
-                                                          <FormControl>
-                                                            <Button
-                                                              variant="outline"
-                                                              role="combobox"
-                                                              className={cn(
-                                                                "w-full justify-between",
-                                                                !field.value && "text-muted-foreground"
-                                                              )}
-                                                            >
-                                                              {field.value
-                                                                ? customers.find(
-                                                                    (customer) => customer.id === field.value
-                                                                  )?.name
-                                                                : "Select a customer"}
-                                                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                            </Button>
-                                                          </FormControl>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                          <Command>
-                                                            <CommandInput placeholder="Search customer..." />
-                                                            <CommandEmpty>No customer found.</CommandEmpty>
-                                                            <CommandList>
-                                                                <CommandGroup>
-                                                                {customers.map((customer) => (
-                                                                    <CommandItem
-                                                                    value={customer.name}
-                                                                    key={customer.id}
-                                                                    onSelect={() => {
-                                                                        bookingForm.setValue("customerId", customer.id)
-                                                                        setComboboxOpen(false)
-                                                                    }}
-                                                                    >
-                                                                    <Check
-                                                                        className={cn(
-                                                                        "mr-2 h-4 w-4",
-                                                                        customer.id === field.value
-                                                                            ? "opacity-100"
-                                                                            : "opacity-0"
-                                                                        )}
-                                                                    />
-                                                                    {customer.name} ({customer.email})
-                                                                    </CommandItem>
-                                                                ))}
-                                                                </CommandGroup>
-                                                            </CommandList>
-                                                          </Command>
-                                                        </PopoverContent>
-                                                      </Popover>
-                                                      <FormMessage />
-                                                    </FormItem>
-                                                  )}
-                                                />
-
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <FormField
-                                                        control={bookingControl}
-                                                        name="customerName"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                            <FormLabel>Customer Name</FormLabel>
-                                                            <FormControl>
-                                                                <Input {...field} readOnly placeholder="Selected customer name" />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                        />
-                                                    <FormField
-                                                        control={bookingControl}
-                                                        name="customerEmail"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                            <FormLabel>Customer Email</FormLabel>
-                                                            <FormControl>
-                                                                <Input {...field} readOnly placeholder="Selected customer email" />
-                                                            </FormControl>
-                                                             <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                        />
-                                                    <FormField
-                                                        control={bookingControl}
-                                                        name="customerPhone"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                            <FormLabel>Customer Phone</FormLabel>
-                                                            <FormControl>
-                                                                <Input {...field} readOnly placeholder="Selected customer phone" />
-                                                            </FormControl>
-                                                             <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                     <FormField
-                                                        control={bookingControl}
-                                                        name="plateNumber"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                            <FormLabel>Plate Number</FormLabel>
-                                                            <FormControl>
-                                                                <Input {...field} placeholder="e.g. KDA 123B" />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                     <FormField
-                                                        control={bookingControl}
-                                                        name="policyNumber"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                            <FormLabel>Policy Number</FormLabel>
-                                                            <FormControl>
-                                                                <Input {...field} placeholder="Enter policy number" />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                     <FormField
-                                                        control={bookingControl}
-                                                        name="branch"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                            <FormLabel>Branch</FormLabel>
-                                                            <FormControl>
-                                                                <Input {...field} placeholder="e.g. Nairobi" />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <FormField
-                                                        control={bookingControl}
-                                                        name="carMake"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                            <FormLabel>Car Make</FormLabel>
-                                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                                    <FormControl>
-                                                                        <SelectTrigger>
-                                                                            <SelectValue placeholder="Select a car make" />
-                                                                        </SelectTrigger>
-                                                                    </FormControl>
-                                                                    <SelectContent>
-                                                                        {carData.map((make) => (
-                                                                            <SelectItem key={make.brand} value={make.brand}>
-                                                                                {make.brand}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                     <FormField
-                                                        control={bookingControl}
-                                                        name="carModel"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                            <FormLabel>Car Model</FormLabel>
-                                                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedCarMake}>
-                                                                    <FormControl>
-                                                                        <SelectTrigger>
-                                                                            <SelectValue placeholder="Select a car model" />
-                                                                        </SelectTrigger>
-                                                                    </FormControl>
-                                                                    <SelectContent>
-                                                                        {carModels.map((model) => (
-                                                                            <SelectItem key={model} value={model}>
-                                                                                {model}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-
-                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                     <FormField
-                                                        control={bookingControl}
-                                                        name="maxValuationDays"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                            <FormLabel>Maximum Valuation Days</FormLabel>
-                                                            <FormControl>
-                                                                <Input type="number" {...field} placeholder="e.g. 3" />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={bookingControl}
-                                                        name="authorisedBy"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                            <FormLabel>Authorised By</FormLabel>
-                                                            <FormControl>
-                                                                <Input {...field} placeholder="Enter name of authoriser" />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-
-                                                 <FormField
-                                                    control={bookingControl}
-                                                    name="comments"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                        <FormLabel>Comments</FormLabel>
-                                                        <FormControl>
-                                                            <Textarea
-                                                                placeholder="Add any additional comments here..."
-                                                                className="resize-none"
-                                                                {...field}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <DialogFooter className="pt-4">
-                                                    <Button type="button" variant="outline" onClick={() => setBookingDialogOpen(false)}>
-                                                        Cancel
-                                                    </Button>
-                                                    <Button type="submit" disabled={isBookingSubmitting}>
-                                                        {isBookingSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                                        Save Booking
-                                                    </Button>
-                                                </DialogFooter>
-                                            </form>
-                                          </Form>
-                                       </div>
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
-                        </CardHeader>
-                    </Card>
-                    {renderBookingsTable(completedBookings, "Completed Bookings", "View all completed vehicle booking reports.")}
-                </div>
+                {renderBookingsTable(completedBookings, "Completed Bookings", "View all completed vehicle booking reports.")}
             </TabsContent>
             
             <TabsContent value="pending-approval">
@@ -1232,6 +1217,7 @@ export default function ClientDashboardPage() {
             </TabsContent>
 
           </Tabs>
+        </>
       )}
     </UnifiedDashboardLayout>
   );

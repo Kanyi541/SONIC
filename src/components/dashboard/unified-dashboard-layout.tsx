@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog, PlusCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -23,6 +23,7 @@ interface MenuItem {
     view: string;
     icon?: React.ReactNode;
     notificationCount?: number;
+    action?: () => void;
 }
 
 type DashboardLayoutProps = {
@@ -37,6 +38,8 @@ const getIconForView = (view: string) => {
     switch (view) {
         case 'dashboard':
             return <LayoutDashboard />;
+        case 'create-booking':
+            return <PlusCircle />;
         case 'bookings':
             return <BookCopy />;
         case 'customers':
@@ -84,7 +87,7 @@ export default function UnifiedDashboardLayout({
     };
     
     const isClientDashboard = userRole !== "Admin";
-    const topLevelItems = menuItems.filter(item => ['dashboard'].includes(item.view));
+    const topLevelItems = menuItems.filter(item => ['dashboard', 'create-booking'].includes(item.view));
     const managementItems = menuItems.filter(item => ['customers', 'agents'].includes(item.view));
     const bookingItems = menuItems.filter(item => ['bookings'].includes(item.view));
     const pendingApprovalItem = menuItems.find(item => item.view === 'pending-approval');
@@ -106,7 +109,7 @@ export default function UnifiedDashboardLayout({
                          {topLevelItems.map(item => (
                             <SidebarMenuItem key={item.view}>
                                 <SidebarMenuButton 
-                                    onClick={() => setActiveView(item.view)} 
+                                    onClick={() => item.action ? item.action() : setActiveView(item.view)} 
                                     isActive={activeView === item.view} 
                                     tooltip={item.name}
                                 >
