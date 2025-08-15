@@ -269,6 +269,7 @@ export default function ValuerDashboardPage() {
 
     const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
     const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
+    const completedBookings = filteredBookings.filter(b => b.status === "Completed");
 
     const stats = {
         total: bookings.length,
@@ -489,10 +490,10 @@ export default function ValuerDashboardPage() {
                             </div>
                         </TabsContent>
                         <TabsContent value="valuations">
-                           {renderBookingsTable(pendingBookings, "All Bookings", "A list of all registered vehicle valuations.")}
+                           {renderBookingsTable(completedBookings, "Completed Bookings", "A list of all completed vehicle valuations.")}
                         </TabsContent>
                         <TabsContent value="pending-approval">
-                           {renderBookingsTable(pendingApprovalBookings, "Pending Approval", "A list of all valuations awaiting approval from clients.")}
+                           {renderBookingsTable(pendingApprovalBookings, "A list of all valuations awaiting approval from clients.", "A list of all valuations awaiting approval from clients.")}
                         </TabsContent>
                     </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
