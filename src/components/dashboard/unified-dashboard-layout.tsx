@@ -82,9 +82,10 @@ export default function UnifiedDashboardLayout({
     };
     
     const isClientDashboard = userRole !== "Admin";
-    const topLevelItems = menuItems.filter(item => ['dashboard', 'pending-approval'].includes(item.view));
+    const topLevelItems = menuItems.filter(item => ['dashboard'].includes(item.view));
     const managementItems = menuItems.filter(item => ['customers'].includes(item.view));
     const bookingItems = menuItems.filter(item => ['bookings'].includes(item.view));
+    const pendingApprovalItem = menuItems.find(item => item.view === 'pending-approval');
 
 
     return (
@@ -106,17 +107,11 @@ export default function UnifiedDashboardLayout({
                                     onClick={() => setActiveView(item.view)} 
                                     isActive={activeView === item.view} 
                                     tooltip={item.name}
-                                    className="flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-2">
                                         {getIconForView(item.view)}
                                         {item.name}
                                     </div>
-                                    {item.notificationCount && item.notificationCount > 0 && (
-                                        <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
-                                            {item.notificationCount}
-                                        </span>
-                                    )}
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                          ))}
@@ -167,6 +162,27 @@ export default function UnifiedDashboardLayout({
                                      </CollapsibleContent>
                                 </Collapsible>
                             </>
+                        )}
+                        
+                        {pendingApprovalItem && (
+                             <SidebarMenuItem>
+                                <SidebarMenuButton 
+                                    onClick={() => setActiveView(pendingApprovalItem.view)} 
+                                    isActive={activeView === pendingApprovalItem.view} 
+                                    tooltip={pendingApprovalItem.name}
+                                    className="flex items-center justify-between"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        {getIconForView(pendingApprovalItem.view)}
+                                        {pendingApprovalItem.name}
+                                    </div>
+                                    {pendingApprovalItem.notificationCount && pendingApprovalItem.notificationCount > 0 && (
+                                        <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
+                                            {pendingApprovalItem.notificationCount}
+                                        </span>
+                                    )}
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
                         )}
 
                         {!isClientDashboard && menuItems.map(item => (

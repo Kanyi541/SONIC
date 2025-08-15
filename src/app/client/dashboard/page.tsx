@@ -356,7 +356,8 @@ export default function ClientDashboardPage() {
             booking.plateNumber.toLowerCase().includes(searchTermLower)
         );
     });
-
+    
+    const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
     const completedBookings = filteredBookings.filter(b => b.status === "Completed");
 
     const filteredCustomers = customers.filter(customer => {
@@ -875,7 +876,7 @@ export default function ClientDashboardPage() {
             </TabsContent>
             
             <TabsContent value="pending-approval">
-              {renderBookingsTable(filteredBookings.filter(b => b.status === "Pending Approval"), "Pending Approval", "These reports from valuers are awaiting your approval.")}
+              {renderBookingsTable(pendingApprovalBookings, "Pending Approval", "These reports from valuers are awaiting your approval.")}
             </TabsContent>
 
             <TabsContent value="customers">
