@@ -122,6 +122,7 @@ function AdminDashboard() {
   const [showPassword, setShowPassword] = useState(false);
   const [bookingSearchTerm, setBookingSearchTerm] = useState('');
   const [selectedValuation, setSelectedValuation] = useState<Valuation | null>(null);
+  const [selectedBookingForValuation, setSelectedBookingForValuation] = useState<Booking | null>(null);
   const [isValuationDialogOpen, setValuationDialogOpen] = useState(false);
   const [loadingValuation, setLoadingValuation] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -301,6 +302,10 @@ function AdminDashboard() {
       if (!querySnapshot.empty) {
         const valuationDoc = querySnapshot.docs[0];
         setSelectedValuation({ id: valuationDoc.id, ...valuationDoc.data() } as Valuation);
+
+        const bookingData = bookings.find(b => b.id === bookingId);
+        setSelectedBookingForValuation(bookingData || null);
+
       } else {
         toast({ variant: "destructive", title: "Not Found", description: "No valuation report found for this booking." });
         setValuationDialogOpen(false);
@@ -918,6 +923,21 @@ function AdminDashboard() {
                                 </div>
                             </div>
                             <div className="space-y-4">
+                                {selectedBookingForValuation && (
+                                  <div>
+                                    <h3 className="font-bold text-xl text-primary mb-4">Client & Booking Details</h3>
+                                    <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm p-4 bg-muted rounded-md border mb-6">
+                                        <div className="font-semibold">Customer Name:</div>
+                                        <div>{selectedBookingForValuation.customerName}</div>
+                                        <div className="font-semibold">Customer Email:</div>
+                                        <div>{selectedBookingForValuation.customerEmail}</div>
+                                        <div className="font-semibold">Booking Number:</div>
+                                        <div className="font-mono text-xs">{selectedBookingForValuation.bookingNumber}</div>
+                                        <div className="font-semibold">Plate Number:</div>
+                                        <div className="font-mono">{selectedBookingForValuation.plateNumber}</div>
+                                    </div>
+                                  </div>
+                                )}
                                 <h3 className="font-bold text-xl text-primary">Valuation Summary</h3>
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div className="font-semibold">Valued By:</div>
