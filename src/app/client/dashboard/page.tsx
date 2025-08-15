@@ -130,7 +130,7 @@ const bookingSchema = z.object({
   carModel: z.string().min(1, "Car model is required"),
   branch: z.string().min(1, "Branch is required"),
   maxValuationDays: z.string().min(1, "Maximum valuation days are required"),
-  authorisedBy: z.string().min(1, "Authorised by is required"),
+  agentId: z.string().min(1, "An agent must be selected"),
   comments: z.string().optional(),
 });
 
@@ -179,7 +179,7 @@ export default function ClientDashboardPage() {
         carModel: "",
         branch: "",
         maxValuationDays: "",
-        authorisedBy: "",
+        agentId: "",
         comments: "",
     }
   });
@@ -356,10 +356,12 @@ export default function ClientDashboardPage() {
         }
 
         const { customerId, ...bookingData } = data;
+        const selectedAgent = agents.find(agent => agent.id === data.agentId);
         const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
         await addDoc(collection(db, "bookings"), {
             ...bookingData,
+            authorisedBy: selectedAgent ? selectedAgent.name : "N/A",
             bookingNumber,
             createdAt: new Date(),
             status: "Pending",
@@ -779,13 +781,24 @@ export default function ClientDashboardPage() {
                               />
                               <FormField
                                   control={bookingControl}
-                                  name="authorisedBy"
+                                  name="agentId"
                                   render={({ field }) => (
                                       <FormItem>
-                                      <FormLabel>Authorised By</FormLabel>
-                                      <FormControl>
-                                          <Input {...field} placeholder="Enter name of authoriser" />
-                                      </FormControl>
+                                      <FormLabel>Agent</FormLabel>
+                                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                              <FormControl>
+                                                  <SelectTrigger>
+                                                      <SelectValue placeholder="Select an agent" />
+                                                  </SelectTrigger>
+                                              </FormControl>
+                                              <SelectContent>
+                                                  {agents.map((agent) => (
+                                                      <SelectItem key={agent.id} value={agent.id}>
+                                                          {agent.name}
+                                                      </SelectItem>
+                                                  ))}
+                                              </SelectContent>
+                                          </Select>
                                       <FormMessage />
                                       </FormItem>
                                   )}

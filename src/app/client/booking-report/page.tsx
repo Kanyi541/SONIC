@@ -135,7 +135,7 @@ function BookingReport() {
                       <span className="text-gray-900 font-medium">{booking.policyNumber}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-blue-100">
-                      <span className="font-semibold text-gray-700">Authorised By:</span>
+                      <span className="font-semibold text-gray-700">Authorised By (Agent):</span>
                       <span className="text-gray-900 font-medium">{booking.authorisedBy}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-blue-100">
