@@ -886,7 +886,7 @@ function AdminDashboard() {
             {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Pending Approval", "These reports are awaiting your review and approval.")}
             
             <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
-                <DialogContent className="sm:max-w-4xl max-h-[90vh]">
+                <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
                         <DialogTitle>Valuation Report Details</DialogTitle>
                         <DialogDescription>Review the valuation details below and take action.</DialogDescription>
@@ -894,7 +894,8 @@ function AdminDashboard() {
                     {loadingValuation ? (
                         <div className="flex justify-center items-center p-8"><Skeleton className="h-24 w-full" /></div>
                     ) : selectedValuation ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto pr-6 -mr-6">
+                        <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto pr-6 -mr-6 flex-grow">
                             <div className="space-y-4">
                                <Carousel className="w-full">
                                   <CarouselContent>
@@ -969,19 +970,20 @@ function AdminDashboard() {
                                         <p className="text-sm p-4 bg-muted rounded-md border">{selectedValuation.comments}</p>
                                     </div>
                                 )}
-                                <DialogFooter className="!mt-8 gap-2 sm:gap-0">
-                                    <DialogClose asChild>
-                                      <Button variant="outline">Cancel</Button>
-                                    </DialogClose>
-                                    <Button variant="destructive" onClick={handleRejection} disabled={isSubmitting || !rejectionReason}>
-                                      {isSubmitting ? 'Rejecting...' : <><ThumbsDown className="mr-2 h-4 w-4" /> Reject</>}
-                                    </Button>
-                                    <Button variant="default" onClick={handleApproval} disabled={isSubmitting}>
-                                      {isSubmitting ? 'Approving...' : <><ThumbsUp className="mr-2 h-4 w-4" /> Approve</>}
-                                    </Button>
-                                </DialogFooter>
                             </div>
                         </div>
+                         <DialogFooter className="!mt-8 gap-2 sm:gap-0 pt-4 border-t">
+                            <DialogClose asChild>
+                              <Button variant="outline">Cancel</Button>
+                            </DialogClose>
+                            <Button variant="destructive" onClick={handleRejection} disabled={isSubmitting || !rejectionReason}>
+                              {isSubmitting ? 'Rejecting...' : <><ThumbsDown className="mr-2 h-4 w-4" /> Reject</>}
+                            </Button>
+                            <Button variant="default" onClick={handleApproval} disabled={isSubmitting}>
+                              {isSubmitting ? 'Approving...' : <><ThumbsUp className="mr-2 h-4 w-4" /> Approve</>}
+                            </Button>
+                        </DialogFooter>
+                        </>
                     ) : (
                         <div className="text-center p-8">No valuation data found.</div>
                     )}
