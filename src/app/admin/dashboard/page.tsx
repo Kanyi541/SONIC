@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
@@ -50,6 +50,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 
 interface Insurer {
@@ -644,42 +645,70 @@ function AdminDashboard() {
                 Dashboard
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('insurers')} isActive={activeView === 'insurers'} tooltip="Manage Clients">
-                <Users />
-                Manage Clients
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Manage Valuers">
-                    <UserCog />
-                    Manage Valuers
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('bookings')} isActive={activeView === 'bookings'} tooltip="All Bookings">
-                <FileText />
-                Bookings
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => setActiveView('pending-approval')} 
-                  isActive={activeView === 'pending-approval'} 
-                  tooltip="Pending Approval"
-                  className="flex items-center justify-between"
-                >
-                    <div className="flex items-center gap-2">
-                        <Hourglass />
-                        Pending Approval
+
+            <Collapsible>
+                <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
+                         <div className="flex items-center gap-2">
+                             <FolderCog/>
+                             <span>Management</span>
+                        </div>
+                        <ChevronDown className="h-4 w-4" />
                     </div>
-                    {!loading && stats.pendingApproval > 0 && (
-                        <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
-                            {stats.pendingApproval}
-                        </span>
-                    )}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="ml-4">
+                     <SidebarMenuItem>
+                        <SidebarMenuButton onClick={() => setActiveView('insurers')} isActive={activeView === 'insurers'} tooltip="Manage Clients">
+                            <Users />
+                            Manage Clients
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Manage Valuers">
+                            <UserCog />
+                            Manage Valuers
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </CollapsibleContent>
+            </Collapsible>
+            
+            <Collapsible>
+                 <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
+                         <div className="flex items-center gap-2">
+                            <BookOpen/>
+                             <span>View Bookings</span>
+                        </div>
+                        <ChevronDown className="h-4 w-4" />
+                    </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="ml-4">
+                    <SidebarMenuItem>
+                        <SidebarMenuButton onClick={() => setActiveView('bookings')} isActive={activeView === 'bookings'} tooltip="All Bookings">
+                            <FileText />
+                            Bookings
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton 
+                        onClick={() => setActiveView('pending-approval')} 
+                        isActive={activeView === 'pending-approval'} 
+                        tooltip="Pending Approval"
+                        className="flex items-center justify-between"
+                        >
+                            <div className="flex items-center gap-2">
+                                <Hourglass />
+                                Pending Approval
+                            </div>
+                            {!loading && stats.pendingApproval > 0 && (
+                                <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
+                                    {stats.pendingApproval}
+                                </span>
+                            )}
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                 </CollapsibleContent>
+            </Collapsible>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
