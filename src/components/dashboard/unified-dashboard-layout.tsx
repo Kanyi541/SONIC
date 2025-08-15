@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -22,6 +22,7 @@ interface MenuItem {
     name: string;
     view: string;
     icon?: React.ReactNode;
+    notificationCount?: number;
 }
 
 type DashboardLayoutProps = {
@@ -40,6 +41,8 @@ const getIconForView = (view: string) => {
             return <BookCopy />;
         case 'customers':
             return <Users />;
+        case 'pending-approval':
+            return <Hourglass />;
         default:
             return <LayoutDashboard />;
     }
@@ -79,6 +82,10 @@ export default function UnifiedDashboardLayout({
     };
     
     const isClientDashboard = userRole !== "Admin";
+    const topLevelItems = menuItems.filter(item => ['dashboard', 'pending-approval'].includes(item.view));
+    const managementItems = menuItems.filter(item => ['customers'].includes(item.view));
+    const bookingItems = menuItems.filter(item => ['bookings'].includes(item.view));
+
 
     return (
         <SidebarProvider>
@@ -93,12 +100,26 @@ export default function UnifiedDashboardLayout({
                 </SidebarHeader>
                 <SidebarContent>
                     <SidebarMenu>
-                         <SidebarMenuItem>
-                            <SidebarMenuButton onClick={() => setActiveView('dashboard')} isActive={activeView === 'dashboard'} tooltip="Dashboard">
-                                <LayoutDashboard />
-                                Dashboard
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
+                         {topLevelItems.map(item => (
+                            <SidebarMenuItem key={item.view}>
+                                <SidebarMenuButton 
+                                    onClick={() => setActiveView(item.view)} 
+                                    isActive={activeView === item.view} 
+                                    tooltip={item.name}
+                                    className="flex items-center justify-between"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        {getIconForView(item.view)}
+                                        {item.name}
+                                    </div>
+                                    {item.notificationCount && item.notificationCount > 0 && (
+                                        <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
+                                            {item.notificationCount}
+                                        </span>
+                                    )}
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                         ))}
 
                         {isClientDashboard && (
                             <>
@@ -113,12 +134,14 @@ export default function UnifiedDashboardLayout({
                                         </div>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="ml-4">
-                                        <SidebarMenuItem>
-                                            <SidebarMenuButton onClick={() => setActiveView('customers')} isActive={activeView === 'customers'} tooltip="Manage Customers">
-                                                <Users />
-                                                Manage Customers
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
+                                        {managementItems.map(item => (
+                                             <SidebarMenuItem key={item.view}>
+                                                <SidebarMenuButton onClick={() => setActiveView(item.view)} isActive={activeView === item.view} tooltip={item.name}>
+                                                    {getIconForView(item.view)}
+                                                    {item.name}
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        ))}
                                     </CollapsibleContent>
                                 </Collapsible>
 
@@ -133,12 +156,14 @@ export default function UnifiedDashboardLayout({
                                         </div>
                                     </CollapsibleTrigger>
                                      <CollapsibleContent className="ml-4">
-                                        <SidebarMenuItem>
-                                            <SidebarMenuButton onClick={() => setActiveView('bookings')} isActive={activeView === 'bookings'} tooltip="All Bookings">
-                                                <BookCopy />
-                                                All Bookings
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
+                                        {bookingItems.map(item => (
+                                            <SidebarMenuItem key={item.view}>
+                                                <SidebarMenuButton onClick={() => setActiveView(item.view)} isActive={activeView === item.view} tooltip={item.name}>
+                                                    {getIconForView(item.view)}
+                                                    All Bookings
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        ))}
                                      </CollapsibleContent>
                                 </Collapsible>
                             </>
