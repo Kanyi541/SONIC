@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog, PlusCircle, FileText } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog, PlusCircle, FileText, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -49,6 +49,8 @@ const getIconForView = (view: string) => {
             return <UserCog />;
         case 'pending-approval':
             return <Hourglass />;
+        case 'pending-bookings':
+            return <Clock />;
         default:
             return <LayoutDashboard />;
     }
@@ -91,7 +93,7 @@ export default function UnifiedDashboardLayout({
 
     const topLevelItems = menuItems.filter(item => ['dashboard', 'create-booking'].includes(item.view));
     const managementItems = menuItems.filter(item => ['customers', 'agents'].includes(item.view));
-    const bookingItems = menuItems.filter(item => ['bookings', 'valuations'].includes(item.view));
+    const bookingItems = menuItems.filter(item => ['bookings', 'valuations', 'pending-bookings'].includes(item.view));
     const pendingApprovalItem = menuItems.find(item => item.view === 'pending-approval');
 
 
@@ -150,7 +152,7 @@ export default function UnifiedDashboardLayout({
                         )}
                         
                         <Collapsible>
-                            <CollapsibleTrigger className="w-full" onClick={() => bookingItems.length > 0 && setActiveView(bookingItems[0].view)}>
+                            <CollapsibleTrigger className="w-full">
                                 <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
                                     <div className="flex items-center gap-2">
                                         <BookCopy/>
@@ -162,9 +164,21 @@ export default function UnifiedDashboardLayout({
                                 <CollapsibleContent className="ml-4">
                                 {bookingItems.map(item => (
                                     <SidebarMenuItem key={item.view}>
-                                        <SidebarMenuButton onClick={() => setActiveView(item.view)} isActive={activeView === item.view} tooltip={item.name}>
-                                            {getIconForView(item.view)}
-                                            {item.name}
+                                        <SidebarMenuButton 
+                                            onClick={() => setActiveView(item.view)} 
+                                            isActive={activeView === item.view} 
+                                            tooltip={item.name}
+                                            className="flex items-center justify-between"
+                                        >
+                                           <div className="flex items-center gap-2">
+                                                {getIconForView(item.view)}
+                                                {item.name}
+                                            </div>
+                                             {item.notificationCount && item.notificationCount > 0 && (
+                                                <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
+                                                    {item.notificationCount}
+                                                </span>
+                                            )}
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 ))}

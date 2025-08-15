@@ -190,7 +190,7 @@ function AdminDashboard() {
     subscribeToCollection("insurers", setInsurers, ["insurers"]);
     subscribeToCollection("valuers", setValuers, ["valuers"]);
     const bookingsQuery = query(collection(db, "bookings"), where("status", "!=", "Archived"));
-    if (["dashboard", "bookings", "pending-approval"].includes(activeView)) {
+    if (["dashboard", "bookings", "pending-approval", "pending-bookings"].includes(activeView)) {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const bookingsData = data as Booking[];
@@ -203,7 +203,7 @@ function AdminDashboard() {
         subscriptions.push(unsubscribe);
     }
 
-    if (!['insurers', 'valuers', 'bookings', 'pending-approval', 'dashboard'].includes(activeView)) {
+    if (!['insurers', 'valuers', 'bookings', 'pending-approval', 'pending-bookings', 'dashboard'].includes(activeView)) {
         setLoading(false);
     }
     
@@ -387,6 +387,7 @@ function AdminDashboard() {
   
     const stats = {
         total: bookings.length,
+        pending: bookings.filter(b => b.status === 'Pending').length,
         pendingValuation: bookings.filter(b => b.status === 'Pending').length,
         pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
@@ -535,7 +536,8 @@ function AdminDashboard() {
       booking.plateNumber.toLowerCase().includes(searchTermLower)
     );
   });
-
+  
+  const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
   const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
   const completedBookings = filteredBookings.filter(b => b.status === "Completed");
   
@@ -675,7 +677,7 @@ function AdminDashboard() {
             </Collapsible>
 
             <Collapsible>
-                 <CollapsibleTrigger className="w-full" onClick={() => setActiveView('bookings')}>
+                 <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
                          <div className="flex items-center gap-2">
                             <BookOpen/>
@@ -685,6 +687,24 @@ function AdminDashboard() {
                     </div>
                 </CollapsibleTrigger>
                  <CollapsibleContent className="ml-4">
+                    <SidebarMenuItem>
+                        <SidebarMenuButton 
+                        onClick={() => setActiveView('pending-bookings')} 
+                        isActive={activeView === 'pending-bookings'} 
+                        tooltip="Pending Bookings"
+                        className="flex items-center justify-between"
+                        >
+                            <div className="flex items-center gap-2">
+                                <Clock />
+                                Pending Bookings
+                            </div>
+                            {!loading && stats.pending > 0 && (
+                                <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
+                                    {stats.pending}
+                                </span>
+                            )}
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton onClick={() => setActiveView('bookings')} isActive={activeView === 'bookings'} tooltip="All Bookings">
                             <FileText />
@@ -855,7 +875,7 @@ function AdminDashboard() {
             {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuers")}
             {renderUserDialog(isAddInsurerOpen, setAddInsurerOpen, 'insurer')}
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
-
+            {activeView === 'pending-bookings' && renderBookingsTable(pendingBookings, "Pending Bookings", "View all new vehicle booking requests.")}
             {activeView === 'bookings' && renderBookingsTable(completedBookings, "Completed Bookings", "View all completed vehicle booking reports.")}
             {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Pending Approval", "These reports are awaiting your review and approval.")}
             

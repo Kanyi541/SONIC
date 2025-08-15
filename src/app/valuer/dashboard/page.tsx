@@ -273,6 +273,7 @@ export default function ValuerDashboardPage() {
 
     const stats = {
         total: bookings.length,
+        pending: bookings.filter(b => b.status === 'Pending').length,
         pendingValuation: bookings.filter(b => b.status === 'Pending').length,
         pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
@@ -385,8 +386,9 @@ export default function ValuerDashboardPage() {
             userEmail={loggedInUser?.email || ""}
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
-                { name: 'All Bookings', view: 'valuations' },
+                { name: 'Pending Bookings', view: 'pending-bookings', notificationCount: stats.pending },
                 { name: 'Pending Approval', view: 'pending-approval', notificationCount: stats.pendingApproval },
+                { name: 'Bookings', view: 'bookings' },
             ]}
         >
             {(activeView) => (
@@ -489,11 +491,14 @@ export default function ValuerDashboardPage() {
                                 </Card>
                             </div>
                         </TabsContent>
-                        <TabsContent value="valuations">
+                        <TabsContent value="pending-bookings">
+                           {renderBookingsTable(pendingBookings, "Pending Bookings", "A list of all new vehicle valuations.")}
+                        </TabsContent>
+                        <TabsContent value="bookings">
                            {renderBookingsTable(completedBookings, "Completed Bookings", "A list of all completed vehicle valuations.")}
                         </TabsContent>
                         <TabsContent value="pending-approval">
-                           {renderBookingsTable(pendingApprovalBookings, "A list of all valuations awaiting approval from clients.", "A list of all valuations awaiting approval from clients.")}
+                           {renderBookingsTable(pendingApprovalBookings, "Pending Approval", "A list of all valuations awaiting approval from clients.")}
                         </TabsContent>
                     </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>

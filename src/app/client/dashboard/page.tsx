@@ -49,7 +49,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2 } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -405,6 +405,7 @@ export default function ClientDashboardPage() {
   
     const stats = {
         total: bookings.length,
+        pending: bookings.filter(b => b.status === 'Pending').length,
         pendingValuation: bookings.filter(b => b.status === 'Pending').length,
         pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
@@ -421,6 +422,7 @@ export default function ClientDashboardPage() {
         );
     });
     
+    const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
     const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
     const completedBookings = filteredBookings.filter(b => b.status === "Completed");
 
@@ -554,6 +556,7 @@ export default function ClientDashboardPage() {
         { name: "Bookings", view: "bookings" },
         { name: "Manage Customers", view: "customers"},
         { name: "Manage Agents", view: "agents"},
+        { name: "Pending Bookings", view: "pending-bookings", notificationCount: stats.pending },
         { name: "Pending Approval", view: "pending-approval", notificationCount: stats.pendingApproval },
       ]}
     >
@@ -945,6 +948,10 @@ export default function ClientDashboardPage() {
                 {renderBookingsTable(completedBookings, "Completed Bookings", "View all completed vehicle booking reports.")}
             </TabsContent>
             
+            <TabsContent value="pending-bookings">
+              {renderBookingsTable(pendingBookings, "Pending Bookings", "View all new vehicle booking requests.")}
+            </TabsContent>
+
             <TabsContent value="pending-approval">
               {renderBookingsTable(pendingApprovalBookings, "Pending Approval", "These reports from valuers are awaiting your approval.")}
             </TabsContent>
