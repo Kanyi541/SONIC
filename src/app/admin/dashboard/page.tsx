@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
@@ -47,6 +47,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+
 
 interface Insurer {
   id: string;
@@ -138,7 +141,7 @@ function AdminDashboard() {
     subscribeToCollection("insurers", setInsurers, ["insurers"]);
     subscribeToCollection("valuers", setValuers, ["valuers"]);
     const bookingsQuery = query(collection(db, "bookings"), where("status", "!=", "Archived"));
-    if (["bookings", "pending-approval"].includes(activeView)) {
+    if (["dashboard", "bookings", "pending-approval"].includes(activeView)) {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setBookings(data as Booking[]);
@@ -147,7 +150,7 @@ function AdminDashboard() {
         subscriptions.push(unsubscribe);
     }
 
-    if (!['insurers', 'valuers', 'bookings', 'pending-approval'].includes(activeView)) {
+    if (!['insurers', 'valuers', 'bookings', 'pending-approval', 'dashboard'].includes(activeView)) {
         setLoading(false);
     }
     
@@ -326,6 +329,37 @@ function AdminDashboard() {
         return "default";
     }
   };
+  
+    const stats = {
+        total: bookings.length,
+        pendingValuation: bookings.filter(b => b.status === 'Pending').length,
+        pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
+        completed: bookings.filter(b => b.status === 'Completed').length,
+    };
+
+    const chartData = [
+        { status: "Pending", count: stats.pendingValuation, fill: "hsl(var(--primary))" },
+        { status: "Approval", count: stats.pendingApproval, fill: "hsl(var(--destructive))" },
+        { status: "Completed", count: stats.completed, fill: "hsl(var(--chart-1))" },
+    ];
+    
+    const chartConfig = {
+      count: {
+        label: "Count",
+      },
+      pending: {
+        label: "Pending",
+        color: "hsl(var(--primary))",
+      },
+      approval: {
+        label: "Approval",
+        color: "hsl(var(--destructive))",
+      },
+      completed: {
+        label: "Completed",
+        color: "hsl(var(--chart-1))",
+      },
+    } 
 
   const renderUserTable = (
     data: (Insurer | Valuer)[],
@@ -628,16 +662,77 @@ function AdminDashboard() {
         <main className="flex-1 container py-8">
             {activeView === 'dashboard' && (
               <div className="grid gap-8">
-                <Card className="shadow-lg border-primary/20">
+                <Card>
                     <CardHeader>
                         <CardTitle className="font-headline text-3xl text-primary">Welcome, Admin!</CardTitle>
                         <CardDescription>This is your secure control panel.</CardDescription>
                     </CardHeader>
+                </Card>
+                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                   <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">All Cars</CardTitle>
+                            <Car className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.total}</div>
+                            <p className="text-xs text-muted-foreground">Total registered plates</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation}</div>
+                            <p className="text-xs text-muted-foreground">Awaiting valuation reports</p>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+                            <Hourglass className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
+                            <p className="text-xs text-muted-foreground">Awaiting Client approval</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.completed}</div>
+                            <p className="text-xs text-muted-foreground">Completed and approved</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Booking Status Distribution</CardTitle>
+                        <CardDescription>A summary of all booking statuses.</CardDescription>
+                    </CardHeader>
                     <CardContent>
-                        <div className="p-4 bg-muted rounded-lg">
-                            <h3 className="font-headline text-lg font-semibold mb-2">Admin Panel</h3>
-                            <p className="text-muted-foreground">Here you can manage users, view analytics, and configure system settings. Use the navigation to explore different sections.</p>
-                        </div>
+                        <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+                             <BarChart accessibilityLayer data={chartData}>
+                                <XAxis
+                                dataKey="status"
+                                tickLine={false}
+                                tickMargin={10}
+                                axisLine={false}
+                                />
+                                <YAxis />
+                                <Tooltip
+                                    cursor={false}
+                                    content={<ChartTooltipContent hideLabel />}
+                                />
+                                <Bar dataKey="count" radius={8} />
+                            </BarChart>
+                        </ChartContainer>
                     </CardContent>
                 </Card>
               </div>
