@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -41,6 +41,8 @@ const getIconForView = (view: string) => {
             return <BookCopy />;
         case 'customers':
             return <Users />;
+        case 'agents':
+            return <UserCog />;
         case 'pending-approval':
             return <Hourglass />;
         default:
@@ -83,7 +85,7 @@ export default function UnifiedDashboardLayout({
     
     const isClientDashboard = userRole !== "Admin";
     const topLevelItems = menuItems.filter(item => ['dashboard'].includes(item.view));
-    const managementItems = menuItems.filter(item => ['customers'].includes(item.view));
+    const managementItems = menuItems.filter(item => ['customers', 'agents'].includes(item.view));
     const bookingItems = menuItems.filter(item => ['bookings'].includes(item.view));
     const pendingApprovalItem = menuItems.find(item => item.view === 'pending-approval');
 

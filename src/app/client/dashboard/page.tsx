@@ -45,10 +45,10 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2 } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,7 @@ import { cn } from "@/lib/utils";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 interface LoggedInUser {
@@ -72,6 +73,14 @@ interface Customer {
   email: string;
   phone: string;
   insurerId: string;
+}
+
+interface Agent {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  clientId: string;
 }
 
 interface Booking {
@@ -101,6 +110,14 @@ const customerSchema = z.object({
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
 
+const agentSchema = z.object({
+    name: z.string().min(1, "Agent name is required"),
+    email: z.string().email("Invalid email address"),
+    phone: z.string().min(1, "Agent phone is required"),
+});
+
+type AgentFormValues = z.infer<typeof agentSchema>;
+
 
 const bookingSchema = z.object({
   customerId: z.string().min(1, "Please select a customer"),
@@ -122,22 +139,31 @@ type BookingFormValues = z.infer<typeof bookingSchema>;
 export default function ClientDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
+  const [loadingAgents, setLoadingAgents] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [isCustomerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [isAgentDialogOpen, setAgentDialogOpen] = useState(false);
   const [isComboboxOpen, setComboboxOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
+  const [agentSearchTerm, setAgentSearchTerm] = useState("");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [activeChartToggles, setActiveChartToggles] = useState<string[]>(['Pending', 'Approved', 'Rejected']);
 
   const customerForm = useForm<CustomerFormValues>({
       resolver: zodResolver(customerSchema),
       defaultValues: { name: "", email: "", phone: "" },
+  });
+
+  const agentForm = useForm<AgentFormValues>({
+    resolver: zodResolver(agentSchema),
+    defaultValues: { name: "", email: "", phone: "" },
   });
 
   const bookingForm = useForm<BookingFormValues>({
@@ -234,10 +260,19 @@ export default function ClientDashboardPage() {
             setCustomers(customersData);
             setLoadingCustomers(false);
         });
+        
+        setLoadingAgents(true);
+        const agentsQuery = query(collection(db, "agents"), where("clientId", "==", loggedInUser.username));
+        const agentsUnsubscribe = onSnapshot(agentsQuery, (snapshot) => {
+            const agentsData: Agent[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Agent));
+            setAgents(agentsData);
+            setLoadingAgents(false);
+        });
 
         return () => {
             bookingsUnsubscribe();
             customersUnsubscribe();
+            agentsUnsubscribe();
         };
     }
 }, [loggedInUser]);
@@ -267,6 +302,32 @@ export default function ClientDashboardPage() {
           console.error("Error adding customer:", error);
           toast({ variant: "destructive", title: "Error", description: "Failed to add customer." });
       }
+  };
+
+  const handleAddAgent = async (data: AgentFormValues) => {
+    if (!loggedInUser) return;
+    try {
+        await addDoc(collection(db, "agents"), {
+            ...data,
+            clientId: loggedInUser.username,
+        });
+        toast({ title: "Agent Added", description: `${data.name} has been successfully registered.` });
+        setAgentDialogOpen(false);
+        agentForm.reset();
+    } catch (error) {
+        console.error("Error adding agent:", error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to add agent." });
+    }
+  };
+  
+  const handleDeleteAgent = async (agentId: string) => {
+    try {
+        await deleteDoc(doc(db, "agents", agentId));
+        toast({ title: "Agent Deleted", description: "The agent has been successfully removed." });
+    } catch (error) {
+        console.error("Error deleting agent:", error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to delete agent." });
+    }
   };
 
   const handleSaveBooking = async (data: BookingFormValues) => {
@@ -366,6 +427,15 @@ export default function ClientDashboardPage() {
             customer.name.toLowerCase().includes(searchTermLower) ||
             customer.email.toLowerCase().includes(searchTermLower) ||
             customer.phone.toLowerCase().includes(searchTermLower)
+        );
+    });
+    
+    const filteredAgents = agents.filter(agent => {
+        const searchTermLower = agentSearchTerm.toLowerCase();
+        return (
+            agent.name.toLowerCase().includes(searchTermLower) ||
+            agent.email.toLowerCase().includes(searchTermLower) ||
+            agent.phone.toLowerCase().includes(searchTermLower)
         );
     });
   
@@ -479,6 +549,7 @@ export default function ClientDashboardPage() {
         { name: "Dashboard", view: "dashboard" },
         { name: "Bookings", view: "bookings" },
         { name: "Manage Customers", view: "customers"},
+        { name: "Manage Agents", view: "agents"},
         { name: "Pending Approval", view: "pending-approval", notificationCount: stats.pendingApproval },
       ]}
     >
@@ -999,6 +1070,158 @@ export default function ClientDashboardPage() {
                                     <TableRow>
                                         <TableCell colSpan={3} className="text-center h-24">
                                             No customers found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            
+            <TabsContent value="agents">
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle className="font-headline text-3xl text-primary">Manage Agents</CardTitle>
+                                <CardDescription>Register new agents and view existing ones.</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="relative w-full max-w-sm">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        type="search"
+                                        placeholder="Search agents..."
+                                        className="w-full rounded-lg bg-background pl-8"
+                                        value={agentSearchTerm}
+                                        onChange={(e) => setAgentSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <Dialog open={isAgentDialogOpen} onOpenChange={setAgentDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button><UserCog className="mr-2" /> Register Agent</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                    <DialogHeader>
+                                        <DialogTitle>Register New Agent</DialogTitle>
+                                        <DialogDescription>
+                                            Fill in the details to add a new agent.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                        <Form {...agentForm}>
+                                            <form onSubmit={agentForm.handleSubmit(handleAddAgent)} className="space-y-6 pt-4">
+                                                <FormField
+                                                    control={agentForm.control}
+                                                    name="name"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                        <FormLabel>Full Name</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="e.g. Jane Smith" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={agentForm.control}
+                                                    name="email"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                        <FormLabel>Email Address</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} type="email" placeholder="e.g. jane@example.com" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={agentForm.control}
+                                                    name="phone"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                        <FormLabel>Phone Number</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="e.g. 0712345678" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <DialogFooter>
+                                                    <Button type="button" variant="outline" onClick={() => setAgentDialogOpen(false)}>Cancel</Button>
+                                                    <Button type="submit" disabled={agentForm.formState.isSubmitting}>
+                                                         {agentForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                                        Save Agent
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </Form>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/50">
+                                    <TableHead className="font-semibold text-left">Name</TableHead>
+                                    <TableHead className="font-semibold text-left">Email</TableHead>
+                                    <TableHead className="font-semibold text-left">Phone</TableHead>
+                                    <TableHead className="font-semibold text-right">Action</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loadingAgents ? (
+                                    Array.from({ length: 3 }).map((_, index) => (
+                                      <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+                                      </TableRow>
+                                    ))
+                                ) : filteredAgents.length > 0 ? (
+                                    filteredAgents.map(agent => (
+                                        <TableRow key={agent.id}>
+                                            <TableCell className="font-medium flex items-center gap-3">
+                                                <div className="p-2 bg-muted rounded-full hidden sm:flex">
+                                                    <UserCog className="h-5 w-5 text-primary" />
+                                                </div>
+                                                {agent.name}
+                                            </TableCell>
+                                            <TableCell>{agent.email}</TableCell>
+                                            <TableCell>{agent.phone}</TableCell>
+                                            <TableCell className="text-right">
+                                                 <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="destructive" size="icon">
+                                                          <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This action cannot be undone. This will permanently delete the agent.
+                                                        </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteAgent(agent.id)}>Continue</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center h-24">
+                                            No agents found.
                                         </TableCell>
                                     </TableRow>
                                 )}
