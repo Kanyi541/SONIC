@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState, useEffect } from 'react';
@@ -690,26 +691,26 @@ function AdminDashboard() {
                             Bookings
                         </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton 
-                        onClick={() => setActiveView('pending-approval')} 
-                        isActive={activeView === 'pending-approval'} 
-                        tooltip="Pending Approval"
-                        className="flex items-center justify-between"
-                        >
-                            <div className="flex items-center gap-2">
-                                <Hourglass />
-                                Pending Approval
-                            </div>
-                            {!loading && stats.pendingApproval > 0 && (
-                                <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
-                                    {stats.pendingApproval}
-                                </span>
-                            )}
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
                  </CollapsibleContent>
             </Collapsible>
+            <SidebarMenuItem>
+                <SidebarMenuButton 
+                onClick={() => setActiveView('pending-approval')} 
+                isActive={activeView === 'pending-approval'} 
+                tooltip="Pending Approval"
+                className="flex items-center justify-between"
+                >
+                    <div className="flex items-center gap-2">
+                        <Hourglass />
+                        Pending Approval
+                    </div>
+                    {!loading && stats.pendingApproval > 0 && (
+                        <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
+                            {stats.pendingApproval}
+                        </span>
+                    )}
+                </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
