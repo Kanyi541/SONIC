@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog, PlusCircle } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog, PlusCircle, FileText } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -41,6 +41,7 @@ const getIconForView = (view: string) => {
         case 'create-booking':
             return <PlusCircle />;
         case 'bookings':
+        case 'valuations':
             return <BookCopy />;
         case 'customers':
             return <Users />;
@@ -89,7 +90,7 @@ export default function UnifiedDashboardLayout({
     const isClientDashboard = userRole !== "Admin";
     const topLevelItems = menuItems.filter(item => ['dashboard', 'create-booking'].includes(item.view));
     const managementItems = menuItems.filter(item => ['customers', 'agents'].includes(item.view));
-    const bookingItems = menuItems.filter(item => ['bookings'].includes(item.view));
+    const bookingItems = menuItems.filter(item => ['bookings', 'valuations'].includes(item.view));
     const pendingApprovalItem = menuItems.find(item => item.view === 'pending-approval');
 
 
@@ -248,3 +249,5 @@ export default function UnifiedDashboardLayout({
         </SidebarProvider>
     );
 }
+
+    
