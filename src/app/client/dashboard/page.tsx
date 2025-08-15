@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import UnifiedDashboardLayout from "@/components/dashboard/unified-dashboard-layout";
@@ -48,12 +48,15 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 
 
 interface LoggedInUser {
@@ -82,6 +85,13 @@ interface Booking {
   createdAt: any;
   status: string;
 }
+
+type ChartDataPoint = {
+    day: string;
+    Pending: number;
+    Approved: number;
+    Rejected: number;
+};
 
 const customerSchema = z.object({
   name: z.string().min(1, "Customer name is required"),
@@ -122,6 +132,8 @@ export default function ClientDashboardPage() {
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [activeChartToggles, setActiveChartToggles] = useState<string[]>(['Pending', 'Approved', 'Rejected']);
 
   const customerForm = useForm<CustomerFormValues>({
       resolver: zodResolver(customerSchema),
@@ -168,6 +180,42 @@ export default function ClientDashboardPage() {
     }
   }, []);
 
+  const generateChartData = (bookings: Booking[]) => {
+      const today = new Date();
+      const firstDayOfMonth = startOfMonth(today);
+      const lastDayOfMonth = endOfMonth(today);
+      const daysInMonth = eachDayOfInterval({ start: firstDayOfMonth, end: lastDayOfMonth });
+
+      const monthlyData: ChartDataPoint[] = daysInMonth.map(day => ({
+          day: format(day, 'd'),
+          Pending: 0,
+          Approved: 0,
+          Rejected: 0,
+      }));
+
+      bookings.forEach(booking => {
+          if (booking.createdAt) {
+              const bookingDate = booking.createdAt.toDate();
+              if (bookingDate >= firstDayOfMonth && bookingDate <= lastDayOfMonth) {
+                  const dayOfMonth = getDate(bookingDate) - 1; 
+                  if (monthlyData[dayOfMonth]) {
+                      if (booking.status === 'Pending') monthlyData[dayOfMonth].Pending++;
+                      if (booking.status === 'Completed') monthlyData[dayOfMonth].Approved++;
+                      if (booking.status === 'Rejected') monthlyData[dayOfMonth].Rejected++;
+                  }
+              }
+          }
+      });
+      
+      setChartData(monthlyData);
+  };
+
+  const handleToggle = (status: string) => {
+      setActiveChartToggles(prev => 
+          prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+      );
+  };
+
   useEffect(() => {
     if (loggedInUser) {
         setLoading(true);
@@ -175,6 +223,7 @@ export default function ClientDashboardPage() {
         const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
             setBookings(bookingsData);
+            generateChartData(bookingsData);
             setLoading(false);
         });
 
@@ -283,6 +332,8 @@ export default function ClientDashboardPage() {
         return "destructive";
       case "Completed":
         return "default";
+      case "Rejected":
+        return "destructive";
       default:
         return "default";
     }
@@ -306,6 +357,29 @@ export default function ClientDashboardPage() {
         customer.phone.toLowerCase().includes(searchTermLower)
     );
   });
+  
+  const stats = {
+      total: bookings.length,
+      pendingValuation: bookings.filter(b => b.status === 'Pending').length,
+      pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
+      completed: bookings.filter(b => b.status === 'Completed').length,
+      rejected: bookings.filter(b => b.status === 'Rejected').length,
+  };
+
+  const chartConfig = {
+    Pending: {
+      label: "Pending",
+      color: "hsl(var(--secondary-foreground))",
+    },
+    Approved: {
+      label: "Approved",
+      color: "hsl(var(--chart-1))",
+    },
+    Rejected: {
+        label: "Rejected",
+        color: "hsl(var(--primary))"
+    }
+  } 
 
   return (
     <UnifiedDashboardLayout
@@ -313,12 +387,114 @@ export default function ClientDashboardPage() {
       userRole={loggedInUser?.name || "Client"}
       userEmail={loggedInUser?.email || ""}
       menuItems={[
+        { name: "Dashboard", view: "dashboard" },
         { name: "Bookings", view: "bookings" },
         { name: "Manage Customers", view: "customers"},
       ]}
     >
       {(activeView) => (
           <Tabs value={activeView} className="w-full">
+            <TabsContent value="dashboard">
+               <div className="grid gap-8">
+                <div>
+                    <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, {loggedInUser?.name}!</h1>
+                    <p className="text-muted-foreground mt-2">Here's a summary of your recent activity.</p>
+                </div>
+                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                   <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                            <Car className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.total}</div>
+                            <p className="text-xs text-muted-foreground">Total bookings made</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
+                            <Hourglass className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation}</div>
+                            <p className="text-xs text-muted-foreground">Awaiting valuation from valuer</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.completed}</div>
+                            <p className="text-xs text-muted-foreground">Completed and approved reports</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+                            <XCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.rejected}</div>
+                            <p className="text-xs text-muted-foreground">Rejected reports</p>
+                        </CardContent>
+                    </Card>
+                </div>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Booking Statistics ({format(new Date(), 'MMMM')})</CardTitle>
+                        <CardDescription>Daily trends for your booking statuses this month.</CardDescription>
+                         <div className="flex justify-end gap-2 mt-4">
+                            <Button 
+                                variant={activeChartToggles.length === 3 ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setActiveChartToggles(['Pending', 'Approved', 'Rejected'])}
+                            >
+                                All
+                            </Button>
+                            <Button 
+                                variant={activeChartToggles.includes('Pending') ? 'destructive' : 'outline'}
+                                size="sm" 
+                                onClick={() => handleToggle('Pending')}
+                            >
+                                Pending
+                            </Button>
+                            <Button 
+                                variant={activeChartToggles.includes('Approved') ? 'secondary' : 'outline'}
+                                className="bg-green-500 text-white hover:bg-green-600"
+                                size="sm" 
+                                onClick={() => handleToggle('Approved')}
+                            >
+                                Approved
+                            </Button>
+                            <Button 
+                                variant={activeChartToggles.includes('Rejected') ? 'default' : 'outline'}
+                                size="sm" 
+                                onClick={() => handleToggle('Rejected')}
+                            >
+                                Rejected
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="day" />
+                                <YAxis />
+                                <Tooltip content={<ChartTooltipContent />} />
+                                <Legend />
+                                {activeChartToggles.includes('Pending') && <Line type="monotone" dataKey="Pending" stroke={chartConfig.Pending.color} strokeWidth={2} />}
+                                {activeChartToggles.includes('Approved') && <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />}
+                                {activeChartToggles.includes('Rejected') && <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />}
+                            </LineChart>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
             <TabsContent value="bookings">
               <Card>
                 <CardHeader>
@@ -808,5 +984,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    

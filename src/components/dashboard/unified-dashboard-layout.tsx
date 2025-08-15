@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Settings, Users, BookCopy } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface MenuItem {
     name: string;
@@ -33,6 +34,8 @@ type DashboardLayoutProps = {
 
 const getIconForView = (view: string) => {
     switch (view) {
+        case 'dashboard':
+            return <LayoutDashboard />;
         case 'bookings':
             return <BookCopy />;
         case 'customers':
@@ -75,6 +78,8 @@ export default function UnifiedDashboardLayout({
         }
     };
     
+    const isClientDashboard = userRole !== "Admin";
+
     return (
         <SidebarProvider>
             <Sidebar variant="inset" side="left">
@@ -88,7 +93,58 @@ export default function UnifiedDashboardLayout({
                 </SidebarHeader>
                 <SidebarContent>
                     <SidebarMenu>
-                        {menuItems.map(item => (
+                         <SidebarMenuItem>
+                            <SidebarMenuButton onClick={() => setActiveView('dashboard')} isActive={activeView === 'dashboard'} tooltip="Dashboard">
+                                <LayoutDashboard />
+                                Dashboard
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+
+                        {isClientDashboard && (
+                            <>
+                               <Collapsible>
+                                    <CollapsibleTrigger className="w-full">
+                                        <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
+                                            <div className="flex items-center gap-2">
+                                                <FolderCog/>
+                                                <span>Management</span>
+                                            </div>
+                                            <ChevronDown className="h-4 w-4" />
+                                        </div>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="ml-4">
+                                        <SidebarMenuItem>
+                                            <SidebarMenuButton onClick={() => setActiveView('customers')} isActive={activeView === 'customers'} tooltip="Manage Customers">
+                                                <Users />
+                                                Manage Customers
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    </CollapsibleContent>
+                                </Collapsible>
+
+                                <Collapsible>
+                                    <CollapsibleTrigger className="w-full" onClick={() => setActiveView('bookings')}>
+                                        <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
+                                            <div className="flex items-center gap-2">
+                                                <BookCopy/>
+                                                <span>View Bookings</span>
+                                            </div>
+                                            <ChevronDown className="h-4 w-4" />
+                                        </div>
+                                    </CollapsibleTrigger>
+                                     <CollapsibleContent className="ml-4">
+                                        <SidebarMenuItem>
+                                            <SidebarMenuButton onClick={() => setActiveView('bookings')} isActive={activeView === 'bookings'} tooltip="All Bookings">
+                                                <BookCopy />
+                                                All Bookings
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                     </CollapsibleContent>
+                                </Collapsible>
+                            </>
+                        )}
+
+                        {!isClientDashboard && menuItems.map(item => (
                             <SidebarMenuItem key={item.view}>
                                 <SidebarMenuButton onClick={() => setActiveView(item.view)} isActive={activeView === item.view} tooltip={item.name}>
                                     {getIconForView(item.view)}
@@ -146,5 +202,3 @@ export default function UnifiedDashboardLayout({
         </SidebarProvider>
     );
 }
-
-    
