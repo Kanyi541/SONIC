@@ -424,7 +424,7 @@ export default function ClientDashboardPage() {
     
     const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
     const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
-    const completedBookings = filteredBookings.filter(b => b.status === "Completed");
+    const completedBookings = filteredBookings.filter(b => b.status === "Completed" || b.status === "Rejected");
 
     const filteredCustomers = customers.filter(customer => {
         const searchTermLower = customerSearchTerm.toLowerCase();
@@ -945,7 +945,7 @@ export default function ClientDashboardPage() {
               </div>
             </TabsContent>
             <TabsContent value="bookings">
-                {renderBookingsTable(completedBookings, "Completed Bookings", "View all completed vehicle booking reports.")}
+                {renderBookingsTable(completedBookings, "Completed & Rejected Bookings", "View all completed and rejected vehicle booking reports.")}
             </TabsContent>
             
             <TabsContent value="pending-bookings">

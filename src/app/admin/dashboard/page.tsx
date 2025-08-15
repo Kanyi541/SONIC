@@ -545,7 +545,7 @@ function AdminDashboard() {
   
   const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
   const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
-  const completedBookings = filteredBookings.filter(b => b.status === "Completed");
+  const completedBookings = filteredBookings.filter(b => b.status === "Completed" || b.status === "Rejected");
   
   const renderBookingsTable = (
     bookingsData: Booking[],
@@ -882,7 +882,7 @@ function AdminDashboard() {
             {renderUserDialog(isAddInsurerOpen, setAddInsurerOpen, 'insurer')}
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
             {activeView === 'pending-bookings' && renderBookingsTable(pendingBookings, "Pending Bookings", "View all new vehicle booking requests.")}
-            {activeView === 'bookings' && renderBookingsTable(completedBookings, "Completed Bookings", "View all completed vehicle booking reports.")}
+            {activeView === 'bookings' && renderBookingsTable(completedBookings, "Completed & Rejected Bookings", "View all completed and rejected vehicle booking reports.")}
             {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Pending Approval", "These reports are awaiting your review and approval.")}
             
             <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
