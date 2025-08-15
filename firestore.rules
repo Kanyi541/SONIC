@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -16,6 +15,14 @@ service cloud.firestore {
     // Allow public read access for insurers to view their customer lists.
     // Writes are allowed for any user (representing a logged-in insurer).
     match /customers/{customerId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Agents collection:
+    // Allow public read access for clients to view their agent lists.
+    // Writes are allowed for any user (representing a logged-in client).
+    match /agents/{agentId} {
       allow read: if true;
       allow write: if true;
     }
