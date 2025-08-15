@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search } from 'lucide-react';
+import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -25,6 +25,8 @@ import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
+import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 
 interface LoggedInUser {
     name: string;
@@ -44,6 +46,13 @@ interface Booking {
   status: string;
   insurerName: string;
 }
+
+type ChartDataPoint = {
+    day: string;
+    Pending: number;
+    Approved: number;
+    Rejected: number;
+};
 
 const valuationSchema = z.object({
   assessmentDate: z.date({
@@ -71,6 +80,8 @@ export default function ValuerDashboardPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
+    const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+    const [activeChartToggles, setActiveChartToggles] = useState<string[]>(['Pending', 'Approved', 'Rejected']);
 
     const form = useForm<ValuationFormValues>({
         resolver: zodResolver(valuationSchema),
@@ -91,12 +102,49 @@ export default function ValuerDashboardPage() {
         }
     }, []);
 
+    const generateChartData = (bookings: Booking[]) => {
+      const today = new Date();
+      const firstDayOfMonth = startOfMonth(today);
+      const lastDayOfMonth = endOfMonth(today);
+      const daysInMonth = eachDayOfInterval({ start: firstDayOfMonth, end: lastDayOfMonth });
+
+      const monthlyData: ChartDataPoint[] = daysInMonth.map(day => ({
+          day: format(day, 'd'),
+          Pending: 0,
+          Approved: 0,
+          Rejected: 0,
+      }));
+
+      bookings.forEach(booking => {
+          if (booking.createdAt) {
+              const bookingDate = booking.createdAt.toDate();
+              if (bookingDate >= firstDayOfMonth && bookingDate <= lastDayOfMonth) {
+                  const dayOfMonth = getDate(bookingDate) - 1; 
+                  if (monthlyData[dayOfMonth]) {
+                      if (booking.status === 'Pending') monthlyData[dayOfMonth].Pending++;
+                      if (booking.status === 'Completed') monthlyData[dayOfMonth].Approved++;
+                      if (booking.status === 'Rejected') monthlyData[dayOfMonth].Rejected++;
+                  }
+              }
+          }
+      });
+      
+      setChartData(monthlyData);
+    };
+
+    const handleToggle = (status: string) => {
+      setActiveChartToggles(prev => 
+          prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+      );
+    };
+
     useEffect(() => {
         if (loggedInUser) {
             setLoading(true);
             const bookingsUnsubscribe = onSnapshot(collection(db, "bookings"), (snapshot) => {
                 const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
                 setBookings(bookingsData);
+                generateChartData(bookingsData);
                 setLoading(false);
             });
 
@@ -201,6 +249,7 @@ export default function ValuerDashboardPage() {
             case "Pending Valuation": return "outline";
             case "Pending Approval": return "destructive";
             case "Completed": return "default";
+            case "Rejected": return "destructive";
             default: return "default";
         }
     };
@@ -221,7 +270,23 @@ export default function ValuerDashboardPage() {
         pendingValuation: bookings.filter(b => b.status === 'Pending').length,
         pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
+        rejected: bookings.filter(b => b.status === 'Rejected').length,
     };
+
+    const chartConfig = {
+      Pending: {
+        label: "Pending",
+        color: "hsl(var(--secondary-foreground))",
+      },
+      Approved: {
+        label: "Approved",
+        color: "hsl(var(--chart-1))",
+      },
+      Rejected: {
+          label: "Rejected",
+          color: "hsl(var(--primary))"
+      }
+    } 
     
     return (
         <UnifiedDashboardLayout
@@ -236,51 +301,104 @@ export default function ValuerDashboardPage() {
             {(activeView) => (
                 <>
                     {activeView === 'dashboard' && (
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                           <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">All Cars</CardTitle>
-                                    <Car className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.total}</div>
-                                    <p className="text-xs text-muted-foreground">Total registered plates</p>
-                                </CardContent>
-                            </Card>
+                        <div className="grid gap-8">
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                               <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">All Cars</CardTitle>
+                                        <Car className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.total}</div>
+                                        <p className="text-xs text-muted-foreground">Total registered plates</p>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
+                                        <Clock className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation}</div>
+                                        <p className="text-xs text-muted-foreground">Awaiting valuation reports</p>
+                                    </CardContent>
+                                </Card>
+                                 <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+                                        <Hourglass className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
+                                        <p className="text-xs text-muted-foreground">Awaiting Client approval</p>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Approved</CardTitle>
+                                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.completed}</div>
+                                        <p className="text-xs text-muted-foreground">Completed and approved</p>
+                                    </CardContent>
+                                </Card>
+                            </div>
                             <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
-                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                <CardHeader>
+                                    <CardTitle>Valuation Statistics ({format(new Date(), 'MMMM')})</CardTitle>
+                                    <CardDescription>Daily trends for your valuation statuses this month.</CardDescription>
+                                     <div className="flex justify-end gap-2 mt-4">
+                                        <Button 
+                                            variant={activeChartToggles.length === 3 ? 'default' : 'outline'}
+                                            size="sm"
+                                            onClick={() => setActiveChartToggles(['Pending', 'Approved', 'Rejected'])}
+                                        >
+                                            All
+                                        </Button>
+                                        <Button 
+                                            variant={activeChartToggles.includes('Pending') ? 'destructive' : 'outline'}
+                                            size="sm" 
+                                            onClick={() => handleToggle('Pending')}
+                                        >
+                                            Pending
+                                        </Button>
+                                        <Button 
+                                            variant={activeChartToggles.includes('Approved') ? 'secondary' : 'outline'}
+                                            className="bg-green-500 text-white hover:bg-green-600"
+                                            size="sm" 
+                                            onClick={() => handleToggle('Approved')}
+                                        >
+                                            Approved
+                                        </Button>
+                                        <Button 
+                                            variant={activeChartToggles.includes('Rejected') ? 'default' : 'outline'}
+                                            size="sm" 
+                                            onClick={() => handleToggle('Rejected')}
+                                        >
+                                            Rejected
+                                        </Button>
+                                    </div>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation}</div>
-                                    <p className="text-xs text-muted-foreground">Awaiting valuation reports</p>
-                                </CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
-                                    <Hourglass className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
-                                    <p className="text-xs text-muted-foreground">Awaiting Client approval</p>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Approved</CardTitle>
-                                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.completed}</div>
-                                    <p className="text-xs text-muted-foreground">Completed and approved</p>
+                                    <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                                       <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis dataKey="day" />
+                                            <YAxis />
+                                            <Tooltip content={<ChartTooltipContent />} />
+                                            <Legend />
+                                            {activeChartToggles.includes('Pending') && <Line type="monotone" dataKey="Pending" stroke={chartConfig.Pending.color} strokeWidth={2} />}
+                                            {activeChartToggles.includes('Approved') && <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />}
+                                            {activeChartToggles.includes('Rejected') && <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />}
+                                        </LineChart>
+                                    </ChartContainer>
                                 </CardContent>
                             </Card>
                         </div>
                     )}
-                    {(activeView === 'dashboard' || activeView === 'valuations') && (
-                        <Card className="mt-8">
+                    {activeView === 'valuations' && (
+                        <Card>
                             <CardHeader>
                                <div className="flex justify-between items-center">
                                     <div>
@@ -539,5 +657,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
-    
