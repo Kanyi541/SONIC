@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -390,7 +389,7 @@ export default function ValuerDashboardPage() {
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
                 { name: 'Pending Bookings', view: 'pending-bookings', notificationCount: stats.pending },
-                { name: 'View Approvals', view: 'bookings' },
+                { name: 'View Pending Approvals', view: 'bookings' },
             ]}
         >
             {(activeView) => (
@@ -497,9 +496,6 @@ export default function ValuerDashboardPage() {
                            {renderBookingsTable(pendingBookings, "Pending Bookings", "A list of all new vehicle valuations.")}
                         </TabsContent>
                         <TabsContent value="bookings">
-                           {renderBookingsTable(completedBookings, "Completed & Rejected Bookings", "A list of all completed and rejected vehicle valuations.")}
-                        </TabsContent>
-                        <TabsContent value="pending-approval">
                            {renderBookingsTable(pendingApprovalBookings, "Pending Approval", "A list of all valuations awaiting approval from clients.")}
                         </TabsContent>
                     </Tabs>
@@ -698,3 +694,5 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    
