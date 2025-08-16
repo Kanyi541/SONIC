@@ -391,7 +391,7 @@ export default function ValuerDashboardPage() {
                 { name: 'Dashboard', view: 'dashboard' },
                 { name: 'Pending Bookings', view: 'pending-bookings', notificationCount: stats.pending },
                 { name: 'Pending Approval', view: 'pending-approval', notificationCount: stats.pendingApproval },
-                { name: 'Bookings', view: 'bookings' },
+                { name: 'Completed & Rejected Bookings', view: 'bookings' },
             ]}
         >
             {(activeView) => (
