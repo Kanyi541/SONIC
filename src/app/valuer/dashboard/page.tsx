@@ -387,7 +387,7 @@ export default function ValuerDashboardPage() {
             userEmail={loggedInUser?.email || ""}
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
-                { name: 'Pending Bookings', view: 'pending-bookings', notificationCount: stats.pending },
+                { name: 'Pending Approval', view: 'pending-bookings', notificationCount: stats.pending },
                 { name: 'Finalized Reports', view: 'bookings' },
             ]}
         >
@@ -492,10 +492,10 @@ export default function ValuerDashboardPage() {
                             </div>
                         </TabsContent>
                         <TabsContent value="pending-bookings">
-                           {renderBookingsTable(pendingBookings, "Pending Bookings", "A list of all new vehicle valuations.")}
+                           {renderBookingsTable(pendingBookings, "Pending Approval", "A list of all new vehicle valuations.")}
                         </TabsContent>
                         <TabsContent value="bookings">
-                           {renderBookingsTable(completedBookings, "Completed & Rejected Reports", "A list of all valuations that have been approved or rejected by clients.")}
+                           {renderBookingsTable(completedBookings, "Finalized Reports", "A list of all valuations that have been approved or rejected by clients.")}
                         </TabsContent>
                     </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
@@ -693,5 +693,7 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    
 
     
