@@ -270,7 +270,6 @@ export default function ValuerDashboardPage() {
     });
 
     const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
-    const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
     const completedBookings = filteredBookings.filter(b => b.status === "Completed" || b.status === "Rejected");
 
     const stats = {
@@ -389,7 +388,7 @@ export default function ValuerDashboardPage() {
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
                 { name: 'Pending Bookings', view: 'pending-bookings', notificationCount: stats.pending },
-                { name: 'View Pending Approvals', view: 'bookings' },
+                { name: 'Finalized Reports', view: 'bookings' },
             ]}
         >
             {(activeView) => (
