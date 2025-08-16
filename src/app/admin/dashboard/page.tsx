@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
@@ -47,7 +47,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
-import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
+import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid, PieChart, Pie, Cell } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -110,6 +110,11 @@ type ChartDataPoint = {
     Approved: number;
     Rejected: number;
 };
+
+const storageData = [
+    { name: 'Used', value: 1.5, fill: 'hsl(var(--primary))' },
+    { name: 'Free', value: 8.5, fill: 'hsl(var(--muted))' }
+];
 
 
 function AdminDashboard() {
@@ -218,7 +223,7 @@ function AdminDashboard() {
         subscriptions.push(unsubscribe);
     }
 
-    if (!['insurers', 'valuers', 'bookings', 'pending-approval', 'dashboard'].includes(activeView)) {
+    if (!['insurers', 'valuers', 'bookings', 'pending-approval', 'dashboard', 'storage'].includes(activeView)) {
         setLoading(false);
     }
     
@@ -740,6 +745,12 @@ function AdminDashboard() {
                     )}
                 </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setActiveView('storage')} isActive={activeView === 'storage'} tooltip="Storage">
+                <Database />
+                Storage
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -885,6 +896,40 @@ function AdminDashboard() {
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
             {activeView === 'bookings' && renderBookingsTable(completedBookings, "Completed & Rejected Bookings", "View all completed and rejected vehicle booking reports.")}
             {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Admin Valuation Approval", "These reports are awaiting your review and approval.")}
+            {activeView === 'storage' && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Storage Usage</CardTitle>
+                        <CardDescription>
+                            An overview of your Firebase Storage usage. This is an illustrative chart based on the standard free tier.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center justify-center">
+                       <div className="h-[300px] w-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie data={storageData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={120} label>
+                                        {storageData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                    <Legend />
+                                </PieChart>
+                            </ResponsiveContainer>
+                       </div>
+                       <p className="mt-4 text-center text-muted-foreground max-w-md">
+                           The chart above shows an example usage of 1.5GB out of a 10GB total. For real-time, accurate storage data, please visit your Firebase Console.
+                       </p>
+                       <Button asChild variant="default" className="mt-4">
+                           <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer">
+                               Go to Firebase Console
+                               <ExternalLink className="ml-2 h-4 w-4" />
+                           </a>
+                       </Button>
+                    </CardContent>
+                </Card>
+            )}
             
             <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
               <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
