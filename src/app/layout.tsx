@@ -3,8 +3,15 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'CASA DASH',
-  description: 'Multi-role dashboard application',
+  title: 'CASA DASH - Motor Vehicle Valuers & Assessors in Kenya',
+  description: 'Professional motor vehicle valuation and assessment services in Kenya. Trusted by insurance companies, banks, and financial institutions for car valuation, accident damage assessment, and more.',
+  keywords: [
+    'Motor valuers in Kenya',
+    'Motor vehicle assessment services Kenya',
+    'Car valuation for insurance and bank loans',
+    'Vehicle accident damage assessment Kenya',
+    'Trusted motor valuation company Nairobi -portal'
+  ],
 };
 
 export default function RootLayout({
