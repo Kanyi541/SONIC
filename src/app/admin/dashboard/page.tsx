@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
@@ -743,12 +742,12 @@ function AdminDashboard() {
                 <SidebarMenuButton 
                 onClick={() => setActiveView('pending-approval')} 
                 isActive={activeView === 'pending-approval'} 
-                tooltip="Finalized Reports"
+                tooltip="Admin Valuation Approval"
                 className="flex items-center justify-between"
                 >
                     <div className="flex items-center gap-2">
                         <Hourglass />
-                        Finalized Reports
+                        Admin Valuation Approval
                     </div>
                     {!loading && stats.pendingApproval > 0 && (
                         <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
@@ -902,7 +901,7 @@ function AdminDashboard() {
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
             {activeView === 'pending-bookings' && renderBookingsTable(pendingBookings, "Pending Bookings", "View all new vehicle booking requests.")}
             {activeView === 'bookings' && renderBookingsTable(completedBookings, "Completed & Rejected Bookings", "View all completed and rejected vehicle booking reports.")}
-            {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Pending Approval", "These reports are awaiting your review and approval.")}
+            {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Admin Valuation Approval", "These reports are awaiting your review and approval.")}
             
             <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
               <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
