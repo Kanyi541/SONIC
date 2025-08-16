@@ -2,7 +2,7 @@
 
 "use client"
 
-import { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
@@ -55,6 +55,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BookingReport from '@/components/dashboard/booking-report';
 import ValuationReportView from '@/components/dashboard/valuation-report-view';
+import { useReactToPrint } from 'react-to-print';
 
 
 interface Insurer {
@@ -136,6 +137,12 @@ function AdminDashboard() {
   const [activeChartToggles, setActiveChartToggles] = useState<string[]>(['PendingApproval', 'Approved', 'Rejected']);
   const [isReportModalOpen, setReportModalOpen] = useState(false);
   const [selectedBookingForReports, setSelectedBookingForReports] = useState<Booking | null>(null);
+  
+  const bookingReportRef = React.useRef(null);
+  
+  const handlePrintBookingReport = useReactToPrint({
+    content: () => bookingReportRef.current,
+  });
 
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -736,12 +743,12 @@ function AdminDashboard() {
                 <SidebarMenuButton 
                 onClick={() => setActiveView('pending-approval')} 
                 isActive={activeView === 'pending-approval'} 
-                tooltip="Pending Approval"
+                tooltip="Finalized Reports"
                 className="flex items-center justify-between"
                 >
                     <div className="flex items-center gap-2">
                         <Hourglass />
-                        Pending Approval
+                        Finalized Reports
                     </div>
                     {!loading && stats.pendingApproval > 0 && (
                         <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
@@ -898,108 +905,108 @@ function AdminDashboard() {
             {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Pending Approval", "These reports are awaiting your review and approval.")}
             
             <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
-                <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-                    <DialogHeader>
-                        <DialogTitle>Valuation Report Details</DialogTitle>
-                        <DialogDescription>Review the valuation details below and take action.</DialogDescription>
-                    </DialogHeader>
-                    {loadingValuation ? (
-                        <div className="flex justify-center items-center p-8"><Skeleton className="h-24 w-full" /></div>
-                    ) : selectedValuation ? (
-                        <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto pr-6 -mr-6 flex-grow">
-                            <div className="space-y-4">
-                               <Carousel className="w-full">
-                                  <CarouselContent>
-                                    {selectedValuation.imageUrls.map((url, index) => (
-                                      <CarouselItem key={index}>
-                                        <Image src={url} alt={`Valuation Image ${index + 1}`} width={800} height={600} className="rounded-lg object-cover w-full aspect-[4/3]" />
-                                      </CarouselItem>
-                                    ))}
-                                  </CarouselContent>
-                                  {selectedValuation.imageUrls.length > 1 && (
-                                    <>
-                                        <CarouselPrevious />
-                                        <CarouselNext />
-                                    </>
-                                  )}
-                                </Carousel>
+              <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Valuation Report Details</DialogTitle>
+                    <DialogDescription>Review the valuation details below and take action.</DialogDescription>
+                </DialogHeader>
+                {loadingValuation ? (
+                    <div className="flex justify-center items-center p-8"><Skeleton className="h-24 w-full" /></div>
+                ) : selectedValuation ? (
+                    <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto pr-6 -mr-6 flex-grow">
+                        <div className="space-y-4">
+                           <Carousel className="w-full">
+                              <CarouselContent>
+                                {selectedValuation.imageUrls.map((url, index) => (
+                                  <CarouselItem key={index}>
+                                    <Image src={url} alt={`Valuation Image ${index + 1}`} width={800} height={600} className="rounded-lg object-cover w-full aspect-[4/3]" />
+                                  </CarouselItem>
+                                ))}
+                              </CarouselContent>
+                              {selectedValuation.imageUrls.length > 1 && (
+                                <>
+                                    <CarouselPrevious />
+                                    <CarouselNext />
+                                </>
+                              )}
+                            </Carousel>
 
-                                <div className="space-y-4 pt-4">
-                                     <h4 className="font-semibold text-lg">Rejection Reason</h4>
-                                     <Textarea
-                                        placeholder="Provide a reason for rejection..."
-                                        value={rejectionReason}
-                                        onChange={(e) => setRejectionReason(e.target.value)}
-                                        rows={3}
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-4">
-                                {selectedBookingForValuation && (
-                                  <div>
-                                    <h3 className="font-bold text-xl text-primary mb-4">Client & Booking Details</h3>
-                                    <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm p-4 bg-muted rounded-md border mb-6">
-                                        <div className="font-semibold">Customer Name:</div>
-                                        <div>{selectedBookingForValuation.customerName}</div>
-                                        <div className="font-semibold">Customer Email:</div>
-                                        <div>{selectedBookingForValuation.customerEmail}</div>
-                                        <div className="font-semibold">Vehicle:</div>
-                                        <div>{`${selectedBookingForValuation.carMake} ${selectedBookingForValuation.carModel}`}</div>
-                                        <div className="font-semibold">Booking Number:</div>
-                                        <div className="font-mono text-xs">{selectedBookingForValuation.bookingNumber}</div>
-                                        <div className="font-semibold">Plate Number:</div>
-                                        <div className="font-mono">{selectedBookingForValuation.plateNumber}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                <h3 className="font-bold text-xl text-primary">Valuation Summary</h3>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div className="font-semibold">Valued By:</div>
-                                    <div>{selectedValuation.valuedBy}</div>
-                                    
-                                    <div className="font-semibold">Valuation Date:</div>
-                                    <div>{new Date(selectedValuation.valuedAt?.toDate()).toLocaleString()}</div>
-
-                                    <div className="font-semibold">Assessment Date:</div>
-                                    <div>{new Date(selectedValuation.assessmentDate?.toDate()).toLocaleDateString()}</div>
-                                    
-                                    <div className="font-semibold text-green-600">Assessment Value:</div>
-                                    <div className="font-mono text-green-600">KES {selectedValuation.assessmentValue}</div>
-
-                                    <div className="font-semibold text-orange-600">Forced Sale Value:</div>
-                                    <div className="font-mono text-orange-600">KES {selectedValuation.forcedValue}</div>
-                                    
-                                    <div className="font-semibold">Noted Value (WS):</div>
-                                    <div className="font-mono">KES {selectedValuation.wsValue}</div>
-                                    
-                                    <div className="font-semibold">Noted Value (RS):</div>
-                                    <div className="font-mono">KES {selectedValuation.rsValue}</div>
-                                </div>
-                                {selectedValuation.comments && (
-                                     <div className="pt-4">
-                                        <h4 className="font-semibold text-lg mb-2">Valuer's Comments</h4>
-                                        <p className="text-sm p-4 bg-muted rounded-md border">{selectedValuation.comments}</p>
-                                    </div>
-                                )}
+                            <div className="space-y-4 pt-4">
+                                 <h4 className="font-semibold text-lg">Rejection Reason</h4>
+                                 <Textarea
+                                    placeholder="Provide a reason for rejection..."
+                                    value={rejectionReason}
+                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                    rows={3}
+                                />
                             </div>
                         </div>
-                         <DialogFooter className="!mt-8 gap-2 sm:gap-0 pt-4 border-t">
-                            <DialogClose asChild>
-                              <Button variant="outline">Cancel</Button>
-                            </DialogClose>
-                            <Button variant="destructive" onClick={handleRejection} disabled={isSubmitting || !rejectionReason}>
-                              {isSubmitting ? 'Rejecting...' : <><ThumbsDown className="mr-2 h-4 w-4" /> Reject</>}
-                            </Button>
-                            <Button variant="default" onClick={handleApproval} disabled={isSubmitting}>
-                              {isSubmitting ? 'Approving...' : <><ThumbsUp className="mr-2 h-4 w-4" /> Approve</>}
-                            </Button>
-                        </DialogFooter>
-                        </>
-                    ) : (
-                        <div className="text-center p-8">No valuation data found.</div>
-                    )}
-                </DialogContent>
+                        <div className="space-y-4">
+                            {selectedBookingForValuation && (
+                              <div>
+                                <h3 className="font-bold text-xl text-primary mb-4">Client & Booking Details</h3>
+                                <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm p-4 bg-muted rounded-md border mb-6">
+                                    <div className="font-semibold">Customer Name:</div>
+                                    <div>{selectedBookingForValuation.customerName}</div>
+                                    <div className="font-semibold">Customer Email:</div>
+                                    <div>{selectedBookingForValuation.customerEmail}</div>
+                                    <div className="font-semibold">Vehicle:</div>
+                                    <div>{`${selectedBookingForValuation.carMake} ${selectedBookingForValuation.carModel}`}</div>
+                                    <div className="font-semibold">Booking Number:</div>
+                                    <div className="font-mono text-xs">{selectedBookingForValuation.bookingNumber}</div>
+                                    <div className="font-semibold">Plate Number:</div>
+                                    <div className="font-mono">{selectedBookingForValuation.plateNumber}</div>
+                                </div>
+                              </div>
+                            )}
+                            <h3 className="font-bold text-xl text-primary">Valuation Summary</h3>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="font-semibold">Valued By:</div>
+                                <div>{selectedValuation.valuedBy}</div>
+                                
+                                <div className="font-semibold">Valuation Date:</div>
+                                <div>{new Date(selectedValuation.valuedAt?.toDate()).toLocaleString()}</div>
+
+                                <div className="font-semibold">Assessment Date:</div>
+                                <div>{new Date(selectedValuation.assessmentDate?.toDate()).toLocaleDateString()}</div>
+                                
+                                <div className="font-semibold text-green-600">Assessment Value:</div>
+                                <div className="font-mono text-green-600">KES {selectedValuation.assessmentValue}</div>
+
+                                <div className="font-semibold text-orange-600">Forced Sale Value:</div>
+                                <div className="font-mono text-orange-600">KES {selectedValuation.forcedValue}</div>
+                                
+                                <div className="font-semibold">Noted Value (WS):</div>
+                                <div className="font-mono">KES {selectedValuation.wsValue}</div>
+                                
+                                <div className="font-semibold">Noted Value (RS):</div>
+                                <div className="font-mono">KES {selectedValuation.rsValue}</div>
+                            </div>
+                            {selectedValuation.comments && (
+                                 <div className="pt-4">
+                                    <h4 className="font-semibold text-lg mb-2">Valuer's Comments</h4>
+                                    <p className="text-sm p-4 bg-muted rounded-md border">{selectedValuation.comments}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                     <DialogFooter className="!mt-8 gap-2 sm:gap-0 pt-4 border-t">
+                        <DialogClose asChild>
+                          <Button variant="outline">Cancel</Button>
+                        </DialogClose>
+                        <Button variant="destructive" onClick={handleRejection} disabled={isSubmitting || !rejectionReason}>
+                          {isSubmitting ? 'Rejecting...' : <><ThumbsDown className="mr-2 h-4 w-4" /> Reject</>}
+                        </Button>
+                        <Button variant="default" onClick={handleApproval} disabled={isSubmitting}>
+                          {isSubmitting ? 'Approving...' : <><ThumbsUp className="mr-2 h-4 w-4" /> Approve</>}
+                        </Button>
+                    </DialogFooter>
+                    </>
+                ) : (
+                    <div className="text-center p-8">No valuation data found.</div>
+                )}
+              </DialogContent>
             </Dialog>
 
             <Dialog open={isReportModalOpen} onOpenChange={setReportModalOpen}>
@@ -1012,7 +1019,7 @@ function AdminDashboard() {
                     </DialogHeader>
                     {selectedBookingForReports && (
                         <Tabs defaultValue="booking-report" className="w-full">
-                            <TabsList>
+                            <TabsList className="w-full grid grid-cols-2">
                                 <TabsTrigger value="booking-report">Booking Report</TabsTrigger>
                                 <TabsTrigger 
                                     value="valuation-report"
@@ -1021,7 +1028,13 @@ function AdminDashboard() {
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="booking-report">
-                                <div className="max-h-[70vh] overflow-y-auto p-1">
+                                <div className="mt-4 flex justify-end">
+                                     <Button onClick={handlePrintBookingReport}>
+                                        <Printer className="mr-2 h-4 w-4" />
+                                        Print / Save PDF
+                                    </Button>
+                                </div>
+                                <div className="max-h-[70vh] overflow-y-auto p-1 mt-2" ref={bookingReportRef}>
                                     <Suspense fallback={<div>Loading...</div>}>
                                        <BookingReport bookingId={selectedBookingForReports.id}/>
                                     </Suspense>
