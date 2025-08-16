@@ -61,4 +61,47 @@ async function runCleanup() {
     console.log('Firestore cleanup finished.');
 }
 
-runCleanup();
+async function logUsage() {
+  console.log("\nChecking usage statistics...");
+
+  try {
+    // Count docs in collections
+    const bookingsSnap = await db.collection("bookings").get();
+    console.log(`Firestore - Bookings collection documents count: ${bookingsSnap.size}`);
+
+    const valuationsSnap = await db.collection("valuations").get();
+    console.log(`Firestore - Valuations collection documents count: ${valuationsSnap.size}`);
+
+    const insurersSnap = await db.collection("insurers").get();
+    console.log(`Firestore - Insurers collection documents count: ${insurersSnap.size}`);
+
+    const valuersSnap = await db.collection("valuers").get();
+    console.log(`Firestore - Valuers collection documents count: ${valuersSnap.size}`);
+  } catch (error) {
+    console.error('Error counting Firestore documents:', error);
+  }
+
+  try {
+    // Check Storage usage
+    const { Storage } = require('@google-cloud/storage');
+    const storage = new Storage();
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+    
+    if (!bucketName) {
+      console.log('FIREBASE_STORAGE_BUCKET environment variable not set. Skipping storage usage check.');
+      return;
+    }
+
+    const [files] = await storage.bucket(bucketName).getFiles();
+
+    let totalSize = 0;
+    files.forEach(file => totalSize += file.metadata.size ? Number(file.metadata.size) : 0);
+
+    console.log(`Firebase Storage - Total usage: ${(totalSize / (1024 * 1024)).toFixed(2)} MB`);
+  } catch (error) {
+     console.error('Error calculating Firebase Storage usage:', error);
+  }
+}
+
+
+runCleanup().then(() => logUsage());
