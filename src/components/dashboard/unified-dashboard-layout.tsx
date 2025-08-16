@@ -157,7 +157,7 @@ export default function UnifiedDashboardLayout({
                                 <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
                                     <div className="flex items-center gap-2">
                                         <BookCopy/>
-                                        <span>View Bookings</span>
+                                        <span>Approvals</span>
                                     </div>
                                     <ChevronDown className="h-4 w-4" />
                                 </div>
