@@ -1,3 +1,4 @@
+
 name: Firestore Daily Cleanup
 
 # This workflow runs on a schedule (every day at midnight UTC)

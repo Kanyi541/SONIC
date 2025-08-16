@@ -1,3 +1,4 @@
+
 // This script is designed to be run in a secure server environment (like a GitHub Action), not in a browser.
 // It uses the Firebase Admin SDK to delete old documents from Firestore.
 
