@@ -496,7 +496,7 @@ export default function ValuerDashboardPage() {
                            {renderBookingsTable(pendingBookings, "Pending Bookings", "A list of all new vehicle valuations.")}
                         </TabsContent>
                         <TabsContent value="bookings">
-                           {renderBookingsTable(pendingApprovalBookings, "Pending Approval", "A list of all valuations awaiting approval from clients.")}
+                           {renderBookingsTable(completedBookings, "Completed & Rejected Reports", "A list of all valuations that have been approved or rejected by clients.")}
                         </TabsContent>
                     </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
