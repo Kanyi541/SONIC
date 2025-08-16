@@ -623,19 +623,22 @@ function AdminDashboard() {
                      <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                   </TableCell>
                    <TableCell className="text-right space-x-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenReports(booking)}
-                        >
-                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">Reports</span>
-                        </Button>
+                        
                       {booking.status === 'Pending Approval' && (
                          <Button variant="default" size="sm" onClick={() => handleViewReport(booking.id)}>
                            <CheckCircle className="mr-2 h-4 w-4" />
-                           <span className="hidden sm:inline">Review</span>
+                           <span className="hidden sm:inline">Confirm</span>
                          </Button>
+                      )}
+                      {(booking.status === 'Completed' || booking.status === 'Rejected') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenReports(booking)}
+                          >
+                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            <span className="hidden sm:inline">Reports</span>
+                          </Button>
                       )}
                     </TableCell>
                 </TableRow>
