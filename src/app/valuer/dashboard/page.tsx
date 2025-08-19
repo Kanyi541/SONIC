@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
-import { collection, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -124,7 +124,7 @@ export default function ValuerDashboardPage() {
               if (bookingDate >= firstDayOfMonth && bookingDate <= lastDayOfMonth) {
                   const dayOfMonth = getDate(bookingDate) - 1; 
                   if (monthlyData[dayOfMonth]) {
-                      if (booking.status === 'Pending') monthlyData[dayOfMonth].Pending++;
+                      if (booking.status === 'Pending Valuation') monthlyData[dayOfMonth].Pending++;
                       if (booking.status === 'Completed') monthlyData[dayOfMonth].Approved++;
                       if (booking.status === 'Rejected') monthlyData[dayOfMonth].Rejected++;
                   }
@@ -144,7 +144,8 @@ export default function ValuerDashboardPage() {
     useEffect(() => {
         if (loggedInUser) {
             setLoading(true);
-            const bookingsUnsubscribe = onSnapshot(collection(db, "bookings"), (snapshot) => {
+            const q = query(collection(db, "bookings"), where("status", "in", ["Pending Valuation", "Pending Approval", "Completed", "Rejected"]));
+            const bookingsUnsubscribe = onSnapshot(q, (snapshot) => {
                 const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
                 setBookings(bookingsData);
                 generateChartData(bookingsData);
@@ -269,13 +270,13 @@ export default function ValuerDashboardPage() {
         );
     });
 
-    const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
-    const completedBookings = filteredBookings.filter(b => b.status === "Completed" || b.status === "Rejected");
+    const pendingBookings = filteredBookings.filter(b => b.status === "Pending Valuation");
+    const completedBookings = filteredBookings.filter(b => b.status === "Completed" || b.status === "Rejected" || b.status === "Pending Approval");
 
     const stats = {
         total: bookings.length,
         pending: bookings.filter(b => b.status === 'Pending').length,
-        pendingValuation: bookings.filter(b => b.status === 'Pending').length,
+        pendingValuation: bookings.filter(b => b.status === 'Pending Valuation').length,
         pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
         rejected: bookings.filter(b => b.status === 'Rejected').length,
@@ -359,7 +360,7 @@ export default function ValuerDashboardPage() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => openValuationDialog(booking)}
-                                    disabled={booking.status !== 'Pending'}
+                                    disabled={booking.status !== 'Pending Valuation'}
                                 >
                                     <FilePen className="mr-2 h-4 w-4" />
                                     <span className="hidden sm:inline">Valuate</span>
@@ -387,7 +388,7 @@ export default function ValuerDashboardPage() {
             userEmail={loggedInUser?.email || ""}
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
-                { name: 'Pending Approval', view: 'pending-bookings', notificationCount: stats.pending },
+                { name: 'Pending Valuations', view: 'pending-bookings', notificationCount: stats.pendingValuation },
                 { name: 'Finalized Reports', view: 'bookings' },
             ]}
         >
@@ -482,7 +483,7 @@ export default function ValuerDashboardPage() {
                                                 <YAxis domain={[0, 1000]} />
                                                 <Tooltip content={<ChartTooltipContent />} />
                                                 <Legend />
-                                                {activeChartToggles.includes('Pending') && <Line type="monotone" dataKey="Pending" stroke={chartConfig.Pending.color} strokeWidth={2} />}
+                                                {activeChartToggles.includes('Pending') && <Line type="monotone" dataKey="Pending" stroke={chartConfig.Pending.color} strokeWidth={2} name="Pending Valuation"/>}
                                                 {activeChartToggles.includes('Approved') && <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />}
                                                 {activeChartToggles.includes('Rejected') && <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />}
                                             </LineChart>
@@ -492,7 +493,7 @@ export default function ValuerDashboardPage() {
                             </div>
                         </TabsContent>
                         <TabsContent value="pending-bookings">
-                           {renderBookingsTable(pendingBookings, "Pending Approval", "A list of all new vehicle valuations.")}
+                           {renderBookingsTable(pendingBookings, "Pending Valuations", "A list of all new vehicle valuations.")}
                         </TabsContent>
                         <TabsContent value="bookings">
                            {renderBookingsTable(completedBookings, "Finalized Reports", "A list of all valuations that have been approved or rejected by clients.")}
@@ -693,7 +694,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
-    
-
-    

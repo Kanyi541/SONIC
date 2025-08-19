@@ -6,10 +6,10 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -30,6 +30,7 @@ import {
   DialogTrigger,
   DialogClose
 } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from '@/components/ui/input';
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -125,6 +126,7 @@ function AdminDashboard() {
   const [insurers, setInsurers] = useState<Insurer[]>([]);
   const [valuers, setValuers] = useState<Valuer[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [pendingBookingsForNotif, setPendingBookingsForNotif] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddInsurerOpen, setAddInsurerOpen] = useState(false);
   const [isAddValuerOpen, setAddValuerOpen] = useState(false);
@@ -191,6 +193,14 @@ function AdminDashboard() {
   useEffect(() => {
     setLoading(true);
     const subscriptions: (() => void)[] = [];
+
+    // Subscription for notifications (latest 5 pending bookings)
+    const notifQuery = query(collection(db, "bookings"), where("status", "==", "Pending"), orderBy("createdAt", "desc"), limit(5));
+    const notifUnsubscribe = onSnapshot(notifQuery, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Booking }));
+        setPendingBookingsForNotif(data);
+    });
+    subscriptions.push(notifUnsubscribe);
 
     const subscribeToCollection = (
         collectionName: string, 
@@ -341,6 +351,28 @@ function AdminDashboard() {
       setLoadingValuation(false);
     }
   };
+
+  const handleInitialBookingApproval = async (bookingId: string) => {
+    const bookingDocRef = doc(db, "bookings", bookingId);
+    try {
+        await updateDoc(bookingDocRef, {
+            status: "Pending Valuation",
+            approvedAt: serverTimestamp(),
+            approvedBy: user?.email,
+        });
+        toast({
+            title: "Booking Approved",
+            description: "The booking is now available for valuers to process.",
+        });
+    } catch (error) {
+        console.error("Error approving booking:", error);
+        toast({
+            variant: "destructive",
+            title: "Approval Failed",
+            description: "An error occurred while approving the booking.",
+        });
+    }
+};
   
   const handleApproval = async () => {
     if (!selectedValuation) return;
@@ -566,13 +598,14 @@ function AdminDashboard() {
     );
   });
   
+  const allBookings = filteredBookings;
   const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
-  const completedBookings = filteredBookings.filter(b => b.status === "Completed" || b.status === "Rejected");
   
   const renderBookingsTable = (
     bookingsData: Booking[],
     title: string,
-    description: string
+    description: string,
+    showInitialApproval: boolean = false
   ) => (
      <Card className="shadow-lg border-primary/20">
       <CardHeader>
@@ -628,7 +661,12 @@ function AdminDashboard() {
                      <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                   </TableCell>
                    <TableCell className="text-right space-x-2">
-                        
+                      {showInitialApproval && booking.status === 'Pending' && (
+                         <Button variant="default" size="sm" onClick={() => handleInitialBookingApproval(booking.id)}>
+                           <FileCheck className="mr-2 h-4 w-4" />
+                           <span className="hidden sm:inline">Approve</span>
+                         </Button>
+                      )}
                       {booking.status === 'Pending Approval' && (
                          <Button variant="default" size="sm" onClick={() => handleViewReport(booking.id)}>
                            <CheckCircle className="mr-2 h-4 w-4" />
@@ -761,30 +799,64 @@ function AdminDashboard() {
                     <SidebarTrigger />
                     <h1 className="text-2xl font-headline font-bold text-primary">CASA DASH</h1>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-secondary text-secondary-foreground">{getInitials(user?.email)}</AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">Admin</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user?.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center gap-4">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="relative">
+                                <Bell className="h-5 w-5" />
+                                {pendingBookingsForNotif.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                                        {pendingBookingsForNotif.length}
+                                    </span>
+                                )}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-0">
+                            <div className="p-4 font-semibold border-b">Notifications</div>
+                            <div className="p-2 max-h-80 overflow-y-auto">
+                                {pendingBookingsForNotif.length > 0 ? (
+                                    pendingBookingsForNotif.map(booking => (
+                                        <div key={booking.id} className="p-2 hover:bg-muted rounded-md text-sm">
+                                            <p className="font-semibold">{booking.customerName}</p>
+                                            <p className="text-muted-foreground">New booking for {booking.carMake} {booking.carModel}</p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="p-4 text-center text-sm text-muted-foreground">No new notifications.</p>
+                                )}
+                            </div>
+                            <div className="p-2 border-t">
+                                <Button className="w-full" size="sm" onClick={() => setActiveView('bookings')}>
+                                    See All Bookings
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback className="bg-secondary text-secondary-foreground">{getInitials(user?.email)}</AvatarFallback>
+                          </Avatar>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-56" align="end" forceMount>
+                        <DropdownMenuLabel className="font-normal">
+                          <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">Admin</p>
+                            <p className="text-xs leading-none text-muted-foreground">
+                              {user?.email}
+                            </p>
+                          </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout}>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Log out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
         </header>
         <main className="flex-1 container py-8">
@@ -894,7 +966,7 @@ function AdminDashboard() {
             {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuers")}
             {renderUserDialog(isAddInsurerOpen, setAddInsurerOpen, 'insurer')}
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
-            {activeView === 'bookings' && renderBookingsTable(completedBookings, "Completed & Rejected Bookings", "View all completed and rejected vehicle booking reports.")}
+            {activeView === 'bookings' && renderBookingsTable(allBookings, "All Bookings", "View and manage all vehicle bookings, including initial approvals.", true)}
             {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Admin Valuation Approval", "These reports are awaiting your review and approval.")}
             {activeView === 'storage' && (
                 <Card>
