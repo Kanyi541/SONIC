@@ -195,10 +195,13 @@ function AdminDashboard() {
     const subscriptions: (() => void)[] = [];
 
     // Subscription for notifications (latest 5 pending bookings)
-    const notifQuery = query(collection(db, "bookings"), where("status", "==", "Pending"), orderBy("createdAt", "desc"), limit(5));
+    const notifQuery = query(collection(db, "bookings"), where("status", "==", "Pending"));
     const notifUnsubscribe = onSnapshot(notifQuery, (snapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Booking }));
-        setPendingBookingsForNotif(data);
+        const sortedData = data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        setPendingBookingsForNotif(sortedData.slice(0, 5));
+    }, (error) => {
+        console.error("Error in notification listener:", error);
     });
     subscriptions.push(notifUnsubscribe);
 
@@ -212,6 +215,8 @@ function AdminDashboard() {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setter(data);
                 setLoading(false);
+            }, (error) => {
+                 console.error(`Error in ${collectionName} listener:`, error);
             });
             subscriptions.push(unsubscribe);
         }
@@ -229,6 +234,8 @@ function AdminDashboard() {
               generateChartData(bookingsData);
             }
             setLoading(false);
+        }, (error) => {
+            console.error("Error in bookings listener:", error);
         });
         subscriptions.push(unsubscribe);
     }
@@ -1169,3 +1176,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
