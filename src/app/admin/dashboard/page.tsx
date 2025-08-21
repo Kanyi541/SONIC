@@ -141,7 +141,6 @@ function AdminDashboard() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [activeChartToggles, setActiveChartToggles] = useState<string[]>(['PendingApproval', 'Approved', 'Rejected']);
   const [isReportModalOpen, setReportModalOpen] = useState(false);
   const [selectedBookingForReports, setSelectedBookingForReports] = useState<Booking | null>(null);
   
@@ -183,12 +182,6 @@ function AdminDashboard() {
         });
         
         setChartData(monthlyData);
-    };
-
-    const handleToggle = (status: string) => {
-        setActiveChartToggles(prev => 
-            prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
-        );
     };
 
   useEffect(() => {
@@ -1026,37 +1019,6 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                     <CardHeader>
                         <CardTitle>Booking Statistics ({format(new Date(), 'MMMM')})</CardTitle>
                         <CardDescription>Daily trends for report statuses this month.</CardDescription>
-                         <div className="flex justify-end gap-2 mt-4">
-                            <Button 
-                                variant={activeChartToggles.length === 3 ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setActiveChartToggles(['PendingApproval', 'Approved', 'Rejected'])}
-                            >
-                                All
-                            </Button>
-                            <Button 
-                                variant={activeChartToggles.includes('PendingApproval') ? 'destructive' : 'outline'}
-                                size="sm" 
-                                onClick={() => handleToggle('PendingApproval')}
-                            >
-                                Pending Approval
-                            </Button>
-                            <Button 
-                                variant={activeChartToggles.includes('Approved') ? 'secondary' : 'outline'}
-                                className="bg-green-500 text-white hover:bg-green-600"
-                                size="sm" 
-                                onClick={() => handleToggle('Approved')}
-                            >
-                                Approved
-                            </Button>
-                            <Button 
-                                variant={activeChartToggles.includes('Rejected') ? 'default' : 'outline'}
-                                size="sm" 
-                                onClick={() => handleToggle('Rejected')}
-                            >
-                                Rejected
-                            </Button>
-                        </div>
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
@@ -1066,9 +1028,9 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                                 <YAxis domain={[0, 1000]} />
                                 <Tooltip content={<ChartTooltipContent />} />
                                 <Legend />
-                                {activeChartToggles.includes('PendingApproval') && <Line type="monotone" dataKey="PendingApproval" stroke={chartConfig.PendingApproval.color} strokeWidth={2} name="Pending Approval" />}
-                                {activeChartToggles.includes('Approved') && <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />}
-                                {activeChartToggles.includes('Rejected') && <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />}
+                                <Line type="monotone" dataKey="PendingApproval" stroke={chartConfig.PendingApproval.color} strokeWidth={2} name="Pending Approval" />
+                                <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />
+                                <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />
                             </LineChart>
                         </ChartContainer>
                     </CardContent>
