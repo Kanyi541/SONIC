@@ -32,6 +32,7 @@ type DashboardLayoutProps = {
     userEmail: string;
     menuItems: MenuItem[];
     children: (activeView: string) => React.ReactNode;
+    footerContent?: React.ReactNode;
 };
 
 const getIconForView = (view: string) => {
@@ -63,6 +64,7 @@ export default function UnifiedDashboardLayout({
     userEmail,
     menuItems,
     children,
+    footerContent,
 }: DashboardLayoutProps) {
     const { toast } = useToast();
     const router = useRouter();
@@ -215,7 +217,7 @@ export default function UnifiedDashboardLayout({
                     <div className="container flex h-16 items-center justify-between">
                         <div className="flex items-center gap-4">
                             <SidebarTrigger />
-                            <h1 className="text-2xl font-headline font-bold text-primary">{title}</h1>
+                            <h1 className="text-xl font-headline font-bold text-primary">{title}</h1>
                         </div>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -248,9 +250,11 @@ export default function UnifiedDashboardLayout({
                 </main>
                 <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
                     <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
-                        <p className="text-sm text-center text-muted-foreground">
+                       {footerContent || (
+                         <p className="text-sm text-center text-muted-foreground">
                             © {new Date().getFullYear()} Casa Motor Valuers & Assessors. All rights reserved.
                         </p>
+                       )}
                     </div>
                 </footer>
             </SidebarInset>

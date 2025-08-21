@@ -6,10 +6,10 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -30,6 +30,7 @@ import {
   DialogTrigger,
   DialogClose
 } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from '@/components/ui/input';
 import { Label } from "@/components/ui/label";
@@ -240,7 +241,7 @@ function AdminDashboard() {
         subscriptions.push(unsubscribe);
     }
 
-    if (!['insurers', 'valuers', 'bookings', 'pending-approval', 'dashboard', 'storage'].includes(activeView)) {
+    if (!['insurers', 'valuers', 'bookings', 'pending-approval', 'dashboard'].includes(activeView)) {
         setLoading(false);
     }
     
@@ -325,6 +326,18 @@ function AdminDashboard() {
     } catch (error) {
       console.error("Error updating status: ", error);
       toast({ variant: "destructive", title: "Update Failed", description: "Could not update status."});
+    }
+  };
+
+  const handleDeleteUser = async (id: string, name: string, collectionName: string) => {
+    const docRef = doc(db, collectionName, id);
+    try {
+        await deleteDoc(docRef);
+        const userTypeDisplay = collectionName === 'insurers' ? 'Client' : 'Valuer';
+        toast({ title: `${userTypeDisplay} Deleted`, description: `${name} has been successfully deleted.` });
+    } catch (error) {
+        console.error("Error deleting user: ", error);
+        toast({ variant: "destructive", title: "Deletion Failed", description: "Could not delete user." });
     }
   };
   
@@ -503,7 +516,8 @@ function AdminDashboard() {
               <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
               <TableHead className="hidden sm:table-cell font-semibold text-left">Email</TableHead>
               <TableHead className="hidden md:table-cell font-semibold text-left">Phone</TableHead>
-              <TableHead className="text-right font-semibold">Status</TableHead>
+              <TableHead className="font-semibold text-center">Status</TableHead>
+              <TableHead className="text-right font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -518,8 +532,8 @@ function AdminDashboard() {
                 <TableCell className="hidden sm:table-cell">{item.username}</TableCell>
                 <TableCell className="hidden sm:table-cell">{item.email}</TableCell>
                 <TableCell className="hidden md:table-cell">{item.phone}</TableCell>
-                <TableCell className="text-right">
-                   <div className="flex items-center justify-end gap-2">
+                <TableCell className="text-center">
+                   <div className="flex items-center justify-center gap-2">
                       <span className={`text-sm font-medium ${item.active ? 'text-green-500' : 'text-red-500'}`}>
                         {item.active ? 'Active' : 'Inactive'}
                       </span>
@@ -529,6 +543,29 @@ function AdminDashboard() {
                         aria-label={`Toggle status for ${item.name}`}
                       />
                     </div>
+                </TableCell>
+                <TableCell className="text-right">
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon">
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the user {item.name}.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteUser(item.id, item.name, collectionName)}>
+                                    Continue
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </TableCell>
               </TableRow>
             ))}
@@ -714,7 +751,7 @@ function AdminDashboard() {
             <div className="bg-primary text-primary-foreground rounded-lg p-2 flex items-center justify-center">
               <Settings className="h-6 w-6" />
             </div>
-            <h2 className="text-xl font-semibold text-primary">CASA DASH</h2>
+            <h2 className="text-lg font-semibold text-primary">Admin Panel</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -790,12 +827,6 @@ function AdminDashboard() {
                     )}
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('storage')} isActive={activeView === 'storage'} tooltip="Storage">
-                <Database />
-                Storage
-              </SidebarMenuButton>
-            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -804,7 +835,7 @@ function AdminDashboard() {
             <div className="container flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
                     <SidebarTrigger />
-                    <h1 className="text-2xl font-headline font-bold text-primary">CASA DASH</h1>
+                    <h1 className="text-xl font-headline font-bold text-primary">CASA Motor Valuers & Assessors Ltd</h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <Popover>
@@ -975,40 +1006,6 @@ function AdminDashboard() {
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
             {activeView === 'bookings' && renderBookingsTable(allBookings, "All Bookings", "View and manage all vehicle bookings, including initial approvals.", true)}
             {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Admin Valuation Approval", "These reports are awaiting your review and approval.")}
-            {activeView === 'storage' && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Storage Usage</CardTitle>
-                        <CardDescription>
-                            An overview of your Firebase Storage usage. This is an illustrative chart based on the standard free tier.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col items-center justify-center">
-                       <div className="h-[300px] w-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie data={storageData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={120} label>
-                                        {storageData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.fill} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
-                       </div>
-                       <p className="mt-4 text-center text-muted-foreground max-w-md">
-                           The chart above shows an example usage of 1.5GB out of a 10GB total. For real-time, accurate storage data, please visit your Firebase Console.
-                       </p>
-                       <Button asChild variant="default" className="mt-4">
-                           <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer">
-                               Go to Firebase Console
-                               <ExternalLink className="ml-2 h-4 w-4" />
-                           </a>
-                       </Button>
-                    </CardContent>
-                </Card>
-            )}
             
             <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
               <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
@@ -1160,7 +1157,7 @@ function AdminDashboard() {
         <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
             <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
                 <p className="text-sm text-center text-muted-foreground">
-                    Casa Motor Valuers & Assessors
+                    Designed by <a href="https://elvisdev.netlify.app/" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4">Tekivo Technologies</a>
                 </p>
             </div>
         </footer>
@@ -1176,5 +1173,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    

@@ -547,7 +547,7 @@ export default function ClientDashboardPage() {
 
   return (
     <UnifiedDashboardLayout
-      title="CASA DASH"
+      title="CASA Motor Valuers & Assessors Ltd"
       userRole={loggedInUser?.name || "Client"}
       userEmail={loggedInUser?.email || ""}
       menuItems={[
@@ -559,6 +559,11 @@ export default function ClientDashboardPage() {
         { name: "Pending Bookings", view: "pending-bookings", notificationCount: stats.pending },
         { name: "Pending Approval", view: "pending-approval", notificationCount: stats.pendingApproval },
       ]}
+      footerContent={(
+        <p className="text-sm text-center text-muted-foreground">
+            Designed by <a href="https://elvisdev.netlify.app/" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4">Tekivo Technologies</a>
+        </p>
+      )}
     >
       {(activeView) => (
           <>
