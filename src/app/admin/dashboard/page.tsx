@@ -5,7 +5,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2 } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
@@ -225,7 +225,16 @@ function AdminDashboard() {
     subscribeToCollection("insurers", setInsurers, ["insurers"]);
     subscribeToCollection("valuers", setValuers, ["valuers"]);
     const bookingsQuery = query(collection(db, "bookings"), where("status", "!=", "Archived"));
-    if (["dashboard", "bookings", "pending-approval"].includes(activeView)) {
+    
+    const requiredBookingViews = [
+        'dashboard', 
+        'bookings-awaiting-approval', 
+        'pending-valuation-approval', 
+        'completed-bookings', 
+        'rejected-bookings'
+    ];
+
+    if (requiredBookingViews.includes(activeView)) {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const bookingsData = data as Booking[];
@@ -240,7 +249,7 @@ function AdminDashboard() {
         subscriptions.push(unsubscribe);
     }
 
-    if (!['insurers', 'valuers', 'bookings', 'pending-approval', 'dashboard'].includes(activeView)) {
+    if (!['insurers', 'valuers', ...requiredBookingViews].includes(activeView)) {
         setLoading(false);
     }
     
@@ -389,6 +398,24 @@ function AdminDashboard() {
             variant: "destructive",
             title: "Approval Failed",
             description: "An error occurred while approving the booking.",
+        });
+    }
+};
+
+const handleInitialBookingRejection = async (bookingId: string) => {
+    const bookingDocRef = doc(db, "bookings", bookingId);
+    try {
+        await deleteDoc(bookingDocRef);
+        toast({
+            title: "Booking Rejected",
+            description: "The booking has been successfully deleted.",
+        });
+    } catch (error) {
+        console.error("Error rejecting booking:", error);
+        toast({
+            variant: "destructive",
+            title: "Rejection Failed",
+            description: "An error occurred while deleting the booking.",
         });
     }
 };
@@ -641,14 +668,16 @@ function AdminDashboard() {
     );
   });
   
-  const allBookings = filteredBookings;
-  const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
+  const bookingsAwaitingApproval = filteredBookings.filter(b => b.status === "Pending");
+  const pendingValuationApproval = filteredBookings.filter(b => b.status === "Pending Approval");
+  const completedBookings = filteredBookings.filter(b => b.status === "Completed");
+  const rejectedBookings = filteredBookings.filter(b => b.status === "Rejected");
   
   const renderBookingsTable = (
     bookingsData: Booking[],
     title: string,
     description: string,
-    showInitialApproval: boolean = false
+    viewType: 'awaiting-approval' | 'pending-valuation' | 'completed' | 'rejected' | 'default'
   ) => (
      <Card className="shadow-lg border-primary/20">
       <CardHeader>
@@ -704,19 +733,43 @@ function AdminDashboard() {
                      <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                   </TableCell>
                    <TableCell className="text-right space-x-2">
-                      {showInitialApproval && booking.status === 'Pending' && (
-                         <Button variant="default" size="sm" onClick={() => handleInitialBookingApproval(booking.id)}>
-                           <FileCheck className="mr-2 h-4 w-4" />
-                           <span className="hidden sm:inline">Approve</span>
-                         </Button>
+                      {viewType === 'awaiting-approval' && (
+                         <>
+                            <Button variant="default" size="sm" onClick={() => handleInitialBookingApproval(booking.id)}>
+                               <FileCheck className="mr-2 h-4 w-4" />
+                               <span className="hidden sm:inline">Approve</span>
+                            </Button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm">
+                                        <FileX className="mr-2 h-4 w-4" />
+                                        <span className="hidden sm:inline">Reject</span>
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Reject and Delete Booking?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete the booking.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleInitialBookingRejection(booking.id)}>
+                                            Continue
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                         </>
                       )}
-                      {booking.status === 'Pending Approval' && (
+                      {viewType === 'pending-valuation' && (
                          <Button variant="default" size="sm" onClick={() => handleViewReport(booking.id)}>
                            <CheckCircle className="mr-2 h-4 w-4" />
                            <span className="hidden sm:inline">Confirm</span>
                          </Button>
                       )}
-                      {(booking.status === 'Completed' || booking.status === 'Rejected') && (
+                      {(viewType === 'completed' || viewType === 'rejected') && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -732,7 +785,7 @@ function AdminDashboard() {
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="text-center h-24">
-                  No bookings found.
+                  No bookings found in this category.
                 </TableCell>
               </TableRow>
             )}
@@ -788,44 +841,67 @@ function AdminDashboard() {
                 </CollapsibleContent>
             </Collapsible>
 
-            <Collapsible>
-                 <CollapsibleTrigger className="w-full">
+            <Collapsible defaultOpen>
+                <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
-                         <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <BookOpen/>
-                             <span>View Bookings</span>
+                            <span>View Bookings</span>
                         </div>
                         <ChevronDown className="h-4 w-4" />
                     </div>
                 </CollapsibleTrigger>
-                 <CollapsibleContent className="ml-4">
+                <CollapsibleContent className="ml-4">
                     <SidebarMenuItem>
-                        <SidebarMenuButton onClick={() => setActiveView('bookings')} isActive={activeView === 'bookings'} tooltip="All Bookings">
-                            <FileText />
-                            All Bookings
+                        <SidebarMenuButton 
+                            onClick={() => setActiveView('bookings-awaiting-approval')} 
+                            isActive={activeView === 'bookings-awaiting-approval'} 
+                            tooltip="Bookings Awaiting Approval"
+                            className="flex items-center justify-between"
+                        >
+                            <div className="flex items-center gap-2">
+                                <FileClock />
+                                Bookings Awaiting Approval
+                            </div>
+                            {!loading && stats.pending > 0 && (
+                                <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
+                                    {stats.pending}
+                                </span>
+                            )}
                         </SidebarMenuButton>
                     </SidebarMenuItem>
-                 </CollapsibleContent>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton 
+                            onClick={() => setActiveView('pending-valuation-approval')} 
+                            isActive={activeView === 'pending-valuation-approval'} 
+                            tooltip="Pending Valuation Approval"
+                            className="flex items-center justify-between"
+                        >
+                            <div className="flex items-center gap-2">
+                                <Hourglass />
+                                Pending Valuation Approval
+                            </div>
+                            {!loading && stats.pendingApproval > 0 && (
+                                <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
+                                    {stats.pendingApproval}
+                                </span>
+                            )}
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton onClick={() => setActiveView('completed-bookings')} isActive={activeView === 'completed-bookings'} tooltip="Completed Bookings">
+                            <FileCheck />
+                            Completed Bookings
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <SidebarMenuButton onClick={() => setActiveView('rejected-bookings')} isActive={activeView === 'rejected-bookings'} tooltip="Rejected Bookings">
+                            <FileX />
+                            Rejected Bookings
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </CollapsibleContent>
             </Collapsible>
-            
-            <SidebarMenuItem>
-                <SidebarMenuButton 
-                onClick={() => setActiveView('pending-approval')} 
-                isActive={activeView === 'pending-approval'} 
-                tooltip="Admin Valuation Approval"
-                className="flex items-center justify-between"
-                >
-                    <div className="flex items-center gap-2">
-                        <Hourglass />
-                        Admin Valuation Approval
-                    </div>
-                    {!loading && stats.pendingApproval > 0 && (
-                        <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
-                            {stats.pendingApproval}
-                        </span>
-                    )}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -863,7 +939,7 @@ function AdminDashboard() {
                                 )}
                             </div>
                             <div className="p-2 border-t">
-                                <Button className="w-full" size="sm" onClick={() => setActiveView('bookings')}>
+                                <Button className="w-full" size="sm" onClick={() => setActiveView('bookings-awaiting-approval')}>
                                     See All Bookings
                                 </Button>
                             </div>
@@ -1003,8 +1079,11 @@ function AdminDashboard() {
             {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuers")}
             {renderUserDialog(isAddInsurerOpen, setAddInsurerOpen, 'insurer')}
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
-            {activeView === 'bookings' && renderBookingsTable(allBookings, "All Bookings", "View and manage all vehicle bookings, including initial approvals.", true)}
-            {activeView === 'pending-approval' && renderBookingsTable(pendingApprovalBookings, "Admin Valuation Approval", "These reports are awaiting your review and approval.")}
+
+            {activeView === 'bookings-awaiting-approval' && renderBookingsTable(bookingsAwaitingApproval, "Bookings Awaiting Approval", "These new bookings need to be approved or rejected.", 'awaiting-approval')}
+            {activeView === 'pending-valuation-approval' && renderBookingsTable(pendingValuationApproval, "Pending Valuation Approval", "These reports are awaiting your review and final approval.", 'pending-valuation')}
+            {activeView === 'completed-bookings' && renderBookingsTable(completedBookings, "Completed Bookings", "View all completed and approved booking reports.", 'completed')}
+            {activeView === 'rejected-bookings' && renderBookingsTable(rejectedBookings, "Rejected Bookings", "View all rejected booking reports.", 'rejected')}
             
             <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
               <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
