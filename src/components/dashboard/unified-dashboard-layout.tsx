@@ -104,10 +104,10 @@ export default function UnifiedDashboardLayout({
             <Sidebar variant="inset" side="left">
                 <SidebarHeader>
                     <div className="flex items-center gap-2 p-2">
-                        <div className="bg-primary text-primary-foreground rounded-lg p-2 flex items-center justify-center">
+                        <div className="bg-sidebar-primary text-sidebar-primary-foreground rounded-lg p-2 flex items-center justify-center">
                             <Settings className="h-6 w-6" />
                         </div>
-                        <h2 className="text-xl font-semibold text-primary">{userRole} Panel</h2>
+                        <h2 className="text-xl font-semibold text-sidebar-primary">{userRole} Panel</h2>
                     </div>
                 </SidebarHeader>
                 <SidebarContent>
@@ -131,7 +131,7 @@ export default function UnifiedDashboardLayout({
                             <>
                                <Collapsible>
                                     <CollapsibleTrigger className="w-full">
-                                        <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
+                                        <div className="flex items-center justify-between p-2 rounded-md hover:bg-sidebar-accent w-full">
                                             <div className="flex items-center gap-2">
                                                 <FolderCog/>
                                                 <span>Management</span>
@@ -155,7 +155,7 @@ export default function UnifiedDashboardLayout({
                         
                         <Collapsible>
                             <CollapsibleTrigger className="w-full">
-                                <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
+                                <div className="flex items-center justify-between p-2 rounded-md hover:bg-sidebar-accent w-full">
                                     <div className="flex items-center gap-2">
                                         <BookCopy/>
                                         <span>Approvals</span>

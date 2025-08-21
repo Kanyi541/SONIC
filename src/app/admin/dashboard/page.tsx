@@ -803,7 +803,7 @@ const handleInitialBookingRejection = async (bookingId: string) => {
             <div className="bg-primary text-primary-foreground rounded-lg p-2 flex items-center justify-center">
               <Settings className="h-6 w-6" />
             </div>
-            <h2 className="text-lg font-semibold text-primary">Admin Panel</h2>
+            <h2 className="text-lg font-semibold text-sidebar-primary">Admin Panel</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -817,7 +817,7 @@ const handleInitialBookingRejection = async (bookingId: string) => {
             
             <Collapsible>
                 <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
+                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-sidebar-accent w-full">
                          <div className="flex items-center gap-2">
                              <FolderCog/>
                              <span>Management</span>
@@ -843,7 +843,7 @@ const handleInitialBookingRejection = async (bookingId: string) => {
 
             <Collapsible defaultOpen>
                 <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-200 w-full">
+                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-sidebar-accent w-full">
                         <div className="flex items-center gap-2">
                             <BookOpen/>
                             <span>View Bookings</span>

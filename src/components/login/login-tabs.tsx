@@ -99,9 +99,9 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
   };
 
   return (
-    <Card>
+    <Card className="bg-white/90 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="font-headline">Admin Login</CardTitle>
+        <CardTitle className="font-headline text-primary">Admin Login</CardTitle>
         <CardDescription>
           Enter your credentials to access the admin dashboard.
         </CardDescription>
@@ -213,9 +213,9 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   };
 
   return (
-    <Card>
+    <Card className="bg-white/90 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="font-headline">Client Login</CardTitle>
+        <CardTitle className="font-headline text-primary">Client Login</CardTitle>
         <CardDescription>
           Enter your credentials to access the client dashboard.
         </CardDescription>
@@ -326,9 +326,9 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   };
 
   return (
-    <Card>
+    <Card className="bg-white/90 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="font-headline">Valuer Login</CardTitle>
+        <CardTitle className="font-headline text-primary">Valuer Login</CardTitle>
         <CardDescription>
           Enter your credentials to access the valuer dashboard.
         </CardDescription>
@@ -399,9 +399,9 @@ export default function LoginTabs() {
 
   return (
     <Tabs defaultValue="Admin" className="w-full">
-      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto sm:h-10">
+      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto sm:h-10 bg-black/20 text-white">
         {roles.map((role) => (
-          <TabsTrigger key={role} value={role}>{role}</TabsTrigger>
+          <TabsTrigger key={role} value={role} className="data-[state=active]:bg-primary/80 data-[state=active]:text-black">{role}</TabsTrigger>
         ))}
       </TabsList>
       {roles.map((role) => (
