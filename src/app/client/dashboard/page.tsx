@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -560,9 +558,14 @@ export default function ClientDashboardPage() {
         { name: "Pending Approval", view: "pending-approval", notificationCount: stats.pendingApproval },
       ]}
       footerContent={(
-        <p className="text-sm text-center text-muted-foreground">
-            Designed by <a href="https://elvisdev.netlify.app/" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4">Tekivo Technologies</a>
-        </p>
+        <>
+            <p className="text-sm text-muted-foreground">
+                &copy; {new Date().getFullYear()} CASA Motor Valuers & Assessors Ltd. All rights reserved.
+            </p>
+            <p className="text-sm text-muted-foreground">
+                Designed by <a href="https://elvisdev.netlify.app/" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4">Tekivo Technologies</a>
+            </p>
+        </>
       )}
     >
       {(activeView) => (
@@ -958,7 +961,7 @@ export default function ClientDashboardPage() {
             </TabsContent>
 
             <TabsContent value="pending-approval">
-              {renderBookingsTable(pendingApprovalBookings, "Pending Approval", "These reports from valuers are awaiting your approval.")}
+              {renderBookingsTable(pendingApprovalBookings, "These reports from valuers are awaiting your approval.")}
             </TabsContent>
 
             <TabsContent value="customers">

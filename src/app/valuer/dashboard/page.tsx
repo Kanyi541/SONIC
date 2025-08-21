@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -392,9 +391,14 @@ export default function ValuerDashboardPage() {
                 { name: 'Finalized Reports', view: 'bookings' },
             ]}
             footerContent={(
-                <p className="text-sm text-center text-muted-foreground">
-                    Designed by <a href="https://elvisdev.netlify.app/" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4">Tekivo Technologies</a>
-                </p>
+                 <>
+                    <p className="text-sm text-muted-foreground">
+                        &copy; {new Date().getFullYear()} CASA Motor Valuers & Assessors Ltd. All rights reserved.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                        Designed by <a href="https://elvisdev.netlify.app/" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4">Tekivo Technologies</a>
+                    </p>
+                </>
             )}
         >
             {(activeView) => (
