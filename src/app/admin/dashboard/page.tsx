@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
@@ -663,7 +664,6 @@ const handleInitialBookingRejection = async (bookingId: string) => {
     return (
       booking.bookingNumber.toLowerCase().includes(searchTermLower) ||
       booking.customerName.toLowerCase().includes(searchTermLower) ||
-      `${booking.carMake} ${booking.carModel}`.toLowerCase().includes(searchTermLower) ||
       booking.plateNumber.toLowerCase().includes(searchTermLower)
     );
   });
@@ -727,7 +727,7 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                 <TableRow key={booking.id}>
                   <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
                   <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
-                  <TableCell className="hidden md:table-cell">{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
+                  <TableCell className="hidden md:table-cell">{booking.plateNumber}</TableCell>
                   <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
                   <TableCell>
                      <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
@@ -1254,3 +1254,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    

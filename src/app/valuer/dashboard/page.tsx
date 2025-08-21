@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -263,7 +264,6 @@ export default function ValuerDashboardPage() {
         return (
             booking.bookingNumber.toLowerCase().includes(searchTermLower) ||
             booking.customerName.toLowerCase().includes(searchTermLower) ||
-            `${booking.carMake} ${booking.carModel}`.toLowerCase().includes(searchTermLower) ||
             booking.plateNumber.toLowerCase().includes(searchTermLower) ||
             booking.insurerName.toLowerCase().includes(searchTermLower)
         );
@@ -349,7 +349,7 @@ export default function ValuerDashboardPage() {
                         <TableRow key={booking.id}>
                             <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
                             <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
-                            <TableCell className="hidden md:table-cell">{`${booking.carMake} ${booking.carModel} (${booking.plateNumber})`}</TableCell>
+                            <TableCell className="hidden md:table-cell">{booking.plateNumber}</TableCell>
                             <TableCell className="hidden md:table-cell">{booking.insurerName}</TableCell>
                             <TableCell>
                             <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
@@ -703,3 +703,5 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    
