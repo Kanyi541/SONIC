@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -212,17 +213,17 @@ export default function UnifiedDashboardLayout({
                 </SidebarContent>
             </Sidebar>
             <SidebarInset>
-                <header className="sticky top-0 z-40 w-full border-b bg-card shadow-sm">
+                <header className="sticky top-0 z-40 w-full border-b bg-black shadow-sm">
                     <div className="container flex h-16 items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <SidebarTrigger />
-                            <h1 className="text-xl font-headline font-bold text-black">{title}</h1>
+                            <SidebarTrigger className="text-white hover:text-white/80" />
+                            <h1 className="text-xl font-headline font-bold text-white">{title}</h1>
                         </div>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                                 <Avatar className="h-10 w-10">
-                                    <AvatarFallback className="bg-secondary text-secondary-foreground">{getInitials(userEmail)}</AvatarFallback>
+                                    <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(userEmail)}</AvatarFallback>
                                 </Avatar>
                                 </Button>
                             </DropdownMenuTrigger>
@@ -256,3 +257,5 @@ export default function UnifiedDashboardLayout({
         </SidebarProvider>
     );
 }
+
+    

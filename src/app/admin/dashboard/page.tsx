@@ -899,16 +899,16 @@ const handleInitialBookingRejection = async (bookingId: string) => {
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-40 w-full border-b bg-card shadow-sm">
+        <header className="sticky top-0 z-40 w-full border-b bg-black shadow-sm">
             <div className="container flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <SidebarTrigger />
-                    <h1 className="text-xl font-headline font-bold text-black">CASA Motor Valuers & Assessors Ltd</h1>
+                    <SidebarTrigger className="text-white hover:text-white/80" />
+                    <h1 className="text-xl font-headline font-bold text-white">CASA Motor Valuers & Assessors Ltd</h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="relative">
+                            <Button variant="ghost" size="icon" className="relative text-white hover:text-white/80">
                                 <Bell className="h-5 w-5" />
                                 {pendingBookingsForNotif.length > 0 && (
                                     <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
@@ -942,7 +942,7 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                           <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-secondary text-secondary-foreground">{getInitials(user?.email)}</AvatarFallback>
+                            <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(user?.email)}</AvatarFallback>
                           </Avatar>
                         </Button>
                       </DropdownMenuTrigger>
@@ -1216,3 +1216,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
