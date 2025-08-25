@@ -903,7 +903,7 @@ const handleInitialBookingRejection = async (bookingId: string) => {
             <div className="container flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
                     <SidebarTrigger />
-                    <h1 className="text-xl font-headline font-bold text-primary">CASA Motor Valuers & Assessors Ltd</h1>
+                    <h1 className="text-xl font-headline font-bold text-black">CASA Motor Valuers & Assessors Ltd</h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <Popover>
@@ -1216,5 +1216,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    

@@ -216,7 +216,7 @@ export default function UnifiedDashboardLayout({
                     <div className="container flex h-16 items-center justify-between">
                         <div className="flex items-center gap-4">
                             <SidebarTrigger />
-                            <h1 className="text-xl font-headline font-bold text-primary">{title}</h1>
+                            <h1 className="text-xl font-headline font-bold text-black">{title}</h1>
                         </div>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
