@@ -1,17 +1,12 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { doc, getDocs, collection, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { XCircle, Loader2, Download } from 'lucide-react';
-import ReactToPrint from 'react-to-print';
-import { Button } from '@/components/ui/button';
+import { XCircle, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 interface Valuation {
     id: string;
@@ -145,7 +140,6 @@ const ValuationReportView = ({ bookingId }: { bookingId: string }) => {
     const [valuation, setValuation] = useState<Valuation | null>(null);
     const [booking, setBooking] = useState<Booking | null>(null);
     const [loading, setLoading] = useState(true);
-    const componentRef = useRef<ReportToPrint>(null);
 
     useEffect(() => {
         const fetchReports = async () => {
@@ -189,20 +183,8 @@ const ValuationReportView = ({ bookingId }: { bookingId: string }) => {
     
     return (
         <div className="bg-gray-100 font-sans">
-             <div className="flex justify-end mb-4 gap-4 sticky top-0 bg-gray-100 py-2 z-10">
-                <ReactToPrint
-                    trigger={() => (
-                        <Button className="bg-black hover:bg-black/90 text-white">
-                            <Download className="mr-2 h-5 w-5" />
-                            Download
-                        </Button>
-                    )}
-                    content={() => componentRef.current}
-                    documentTitle={`Valuation_Report_${booking?.bookingNumber}`}
-                />
-            </div>
             <div>
-                <ReportToPrint ref={componentRef} valuation={valuation} booking={booking} />
+                <ReportToPrint valuation={valuation} booking={booking} />
             </div>
         </div>
     );

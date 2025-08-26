@@ -1,13 +1,12 @@
 
 "use client";
 
-import React, { useRef, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Download } from 'lucide-react';
-import ReactToPrint from 'react-to-print';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 
 interface BookingData {
@@ -144,12 +143,8 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
   }
 }
 
-class BookingReport extends React.Component<{}, ReportState> {
-  private componentRef = React.createRef<ReportToPrint>();
-  private router: any;
-  private searchParams: any;
-
-  constructor(props: {}) {
+class BookingReport extends React.Component<{ router: any; searchParams: any }, ReportState> {
+  constructor(props: { router: any; searchParams: any }) {
     super(props);
     this.state = {
       booking: null,
@@ -158,9 +153,7 @@ class BookingReport extends React.Component<{}, ReportState> {
   }
 
   componentDidMount() {
-    this.router = this.props.router;
-    this.searchParams = this.props.searchParams;
-    const bookingId = this.searchParams.get('id');
+    const bookingId = this.props.searchParams.get('id');
 
     if (bookingId) {
       const fetchBooking = async () => {
@@ -193,22 +186,12 @@ class BookingReport extends React.Component<{}, ReportState> {
       <div className="bg-gray-200 min-h-screen p-4 sm:p-8 font-sans">
         <div className="max-w-5xl mx-auto">
           <div className="flex justify-end mb-6 gap-4">
-            <Button onClick={() => this.router.back()} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
+            <Button onClick={() => this.props.router.back()} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
               <ArrowLeft className="mr-2 h-5 w-5" />
               Go Back
             </Button>
-            <ReactToPrint
-              trigger={() => (
-                <Button className="bg-black hover:bg-black/90 text-white">
-                  <Download className="mr-2 h-5 w-5" />
-                  Download
-                </Button>
-              )}
-              content={() => this.componentRef.current}
-              documentTitle={`Assessment_Authorization_Letter_${this.state.booking?.bookingNumber}`}
-            />
           </div>
-          <ReportToPrint ref={this.componentRef} booking={this.state.booking} />
+          <ReportToPrint booking={this.state.booking} />
         </div>
       </div>
     );

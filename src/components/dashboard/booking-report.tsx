@@ -1,12 +1,10 @@
 
 "use client";
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Button } from '@/components/ui/button';
-import { Loader2, Download } from 'lucide-react';
-import ReactToPrint from 'react-to-print';
+import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
 interface BookingData {
@@ -26,11 +24,7 @@ interface BookingData {
   insurerName?: string;
 }
 
-interface ReportToPrintProps {
-  booking: BookingData | null;
-}
-
-class ReportToPrint extends React.Component<ReportToPrintProps> {
+class ReportToPrint extends React.Component<{ booking: BookingData | null }> {
   render() {
     const { booking } = this.props;
     if (!booking) return null;
@@ -139,11 +133,9 @@ class ReportToPrint extends React.Component<ReportToPrintProps> {
   }
 }
 
-
 export default function BookingReport({ bookingId }: { bookingId: string }) {
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [loading, setLoading] = useState(true);
-  const componentRef = useRef<ReportToPrint>(null);
 
   useEffect(() => {
     if (bookingId) {
@@ -179,20 +171,8 @@ export default function BookingReport({ bookingId }: { bookingId: string }) {
   return (
     <div className="bg-gray-100 font-sans">
        <div className="max-w-5xl mx-auto">
-        <div className="flex justify-end mb-4 gap-4 sticky top-0 bg-gray-100 py-2 z-10">
-          <ReactToPrint
-            trigger={() => (
-              <Button className="bg-black hover:bg-black/90 text-white">
-                <Download className="mr-2 h-5 w-5" />
-                Download
-              </Button>
-            )}
-            content={() => componentRef.current}
-            documentTitle={`Assessment_Authorization_Letter_${booking?.bookingNumber}`}
-          />
-        </div>
         <div>
-            <ReportToPrint ref={componentRef} booking={booking}/>
+            <ReportToPrint booking={booking}/>
         </div>
       </div>
     </div>
