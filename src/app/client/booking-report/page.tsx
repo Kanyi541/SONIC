@@ -183,7 +183,7 @@ class BookingReportPageContent extends React.Component<{ router: any; searchPara
     }
     
     return (
-      <div className="bg-gray-200 min-h-screen p-4 sm:p-8 font-sans">
+      <div className="bg-gray-200 min-h-screen p-4 sm:p-8 font-sans print:bg-white print:p-0">
         <div className="max-w-5xl mx-auto">
           <div className="flex justify-end mb-6 gap-4 print:hidden">
             <Button onClick={() => window.print()} variant="default">
