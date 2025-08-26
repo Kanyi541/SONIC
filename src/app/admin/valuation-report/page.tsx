@@ -72,7 +72,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
             </div>
             <div className="text-right text-base text-gray-700">
             <p><span className="font-semibold">Phone:</span> +254 712 345 678</p>
-            <p><span className="font-semibold">Email:</span> casamotorvaluer@gmail.com</p>
+            <p><span className="font-semibold">Email:</span> casamotorvaluers@gmail.com</p>
             </div>
         </header>
 
@@ -93,7 +93,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
             <section className="mb-8">
                 <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Client & Vehicle Details</h3>
-                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-base">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-base">
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Client Name:</span><span className="text-gray-900 font-medium">{booking.customerName}</span></div>
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Vehicle Make:</span><span className="text-gray-900 font-medium">{booking.carMake}</span></div>
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Client Phone:</span><span className="text-gray-900 font-medium">{booking.customerPhone}</span></div>
@@ -107,7 +107,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
             <section className="mb-8">
                 <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Valuation Summary</h3>
-                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-base">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-base">
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Valued By:</span><span>{valuation.valuedBy}</span></div>
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Assessment Date:</span><span>{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</span></div>
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Report Date:</span><span>{new Date(valuation.valuedAt?.toDate()).toLocaleString()}</span></div>
@@ -194,6 +194,10 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
       fetchReports();
     }
   }
+  
+  handleGoBack = () => {
+    this.props.router.push('/admin/dashboard');
+  };
 
   render() {
     if (this.state.loading) {
@@ -211,7 +215,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
             <Button onClick={() => window.print()} variant="default">
               Print / Save PDF
             </Button>
-            <Button onClick={() => this.props.router.push('/admin/dashboard')} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
+            <Button onClick={this.handleGoBack} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
               <ArrowLeft className="mr-2 h-5 w-5" />
               Go Back
             </Button>
@@ -240,3 +244,5 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
+
+    
