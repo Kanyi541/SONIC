@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { doc, getDocs, collection, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,7 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { XCircle } from 'lucide-react';
+import { XCircle, Loader2, Printer } from 'lucide-react';
+import { useReactToPrint } from 'react-to-print';
+import { Button } from '@/components/ui/button';
 
 interface Valuation {
     id: string;
@@ -31,18 +33,28 @@ interface Booking {
   id: string;
   bookingNumber: string;
   customerName: string;
-  customerEmail: string;
+  customerEmail:string;
+  customerPhone: string;
   plateNumber: string;
   carMake: string;
   carModel: string;
+  policyNumber?: string;
+  authorisedBy?: string;
   createdAt: any;
-  status: string;
+  branch?: string; 
+  insurerName?: string;
 }
 
 const ValuationReportView = ({ bookingId }: { bookingId: string }) => {
     const [valuation, setValuation] = useState<Valuation | null>(null);
     const [booking, setBooking] = useState<Booking | null>(null);
     const [loading, setLoading] = useState(true);
+    const componentRef = useRef(null);
+
+    const handlePrint = useReactToPrint({
+      content: () => componentRef.current,
+      documentTitle: `Valuation_Report_${booking?.bookingNumber}`,
+    });
 
     useEffect(() => {
         const fetchReports = async () => {
@@ -60,7 +72,7 @@ const ValuationReportView = ({ bookingId }: { bookingId: string }) => {
 
                 // Fetch Booking
                 const bookingRef = doc(db, "bookings", bookingId);
-                const bookingSnap = await getDocs(query(collection(db, "bookings"), where("__name__", "==", bookingId)));
+                 const bookingSnap = await getDocs(query(collection(db, "bookings"), where("__name__", "==", bookingId)));
 
                 if (!bookingSnap.empty) {
                     const bookingDoc = bookingSnap.docs[0];
@@ -79,116 +91,111 @@ const ValuationReportView = ({ bookingId }: { bookingId: string }) => {
 
     if (loading) {
         return (
-            <div className="p-4 space-y-4">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-64 w-full" />
+            <div className="flex justify-center items-center h-96">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
             </div>
         );
     }
 
-    if (!valuation) {
+    if (!valuation || !booking) {
         return <div className="p-4 text-center text-muted-foreground">No valuation report found for this booking.</div>;
     }
     
     return (
-        <div className="p-1">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <div className="lg:col-span-3 space-y-6">
-                   {valuation.status === 'Rejected' && (
-                        <Alert variant="destructive">
+        <div className="bg-gray-100 font-sans">
+             <div className="flex justify-end mb-4 gap-4 sticky top-0 bg-gray-100 py-2 z-10">
+                <Button onClick={handlePrint} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Printer className="mr-2 h-5 w-5" />
+                    Print / Save PDF
+                </Button>
+            </div>
+            <div ref={componentRef} className="bg-white p-14 shadow-lg rounded-lg" id="valuation-report">
+                 <header className="flex justify-between items-center pb-6 border-b-2 border-primary">
+                    <div>
+                        <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
+                    </div>
+                    <div className="text-left">
+                    <h1 className="text-4xl font-extrabold text-black">CASA Motor Valuers & Assessors</h1>
+                    <p className="text-base text-gray-700 mt-1">
+                        Highway Mall, Uhuru Highway<br />
+                        Nairobi, Kenya
+                    </p>
+                    </div>
+                    <div className="text-right text-base text-gray-700">
+                    <p><span className="font-semibold">Phone:</span> +254 712 345 678</p>
+                    <p><span className="font-semibold">Email:</span> casamotorvaluer@gmail.com</p>
+                    </div>
+                </header>
+
+                <main className="mt-10">
+                    <h2 className="text-2xl font-bold text-center text-black uppercase tracking-widest mb-8">
+                        Motor Vehicle Valuation Report
+                    </h2>
+
+                    {valuation.status === 'Rejected' && (
+                        <Alert variant="destructive" className="mb-8">
                             <XCircle className="h-4 w-4" />
-                            <AlertTitle>Report Rejected</AlertTitle>
+                            <AlertTitle>Report Rejected by {booking.insurerName}</AlertTitle>
                             <AlertDescription>
                                 {valuation.rejectionReason || "This valuation report was rejected."}
                             </AlertDescription>
                         </Alert>
                     )}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Valuation Images</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <Carousel className="w-full">
-                                <CarouselContent>
-                                {valuation.imageUrls.map((url, index) => (
-                                    <CarouselItem key={index}>
-                                    <Image src={url} alt={`Valuation Image ${index + 1}`} width={800} height={600} className="rounded-lg object-cover w-full aspect-[4/3]" />
-                                    </CarouselItem>
-                                ))}
-                                </CarouselContent>
-                                {valuation.imageUrls.length > 1 && (
-                                <>
-                                    <CarouselPrevious />
-                                    <CarouselNext />
-                                </>
-                                )}
-                            </Carousel>
-                        </CardContent>
-                    </Card>
-                </div>
 
-                <div className="lg:col-span-2 space-y-6">
-                    {booking && (
-                        <Card>
-                             <CardHeader>
-                                <CardTitle>Client & Booking Details</CardTitle>
-                             </CardHeader>
-                             <CardContent className="text-sm">
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                                    <div className="font-semibold">Customer Name:</div>
-                                    <div>{booking.customerName}</div>
-                                    <div className="font-semibold">Customer Email:</div>
-                                    <div>{booking.customerEmail}</div>
-                                    <div className="font-semibold">Vehicle:</div>
-                                    <div>{`${booking.carMake} ${booking.carModel}`}</div>
-                                    <div className="font-semibold">Booking Number:</div>
-                                    <div className="font-mono text-xs">{booking.bookingNumber}</div>
-                                    <div className="font-semibold">Plate Number:</div>
-                                    <div className="font-mono">{booking.plateNumber}</div>
-                                </div>
-                             </CardContent>
-                        </Card>
+                    <section className="mb-8">
+                        <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Client & Vehicle Details</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-base">
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Client Name:</span><span className="text-gray-900 font-medium">{booking.customerName}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Vehicle Make:</span><span className="text-gray-900 font-medium">{booking.carMake}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Client Phone:</span><span className="text-gray-900 font-medium">{booking.customerPhone}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Vehicle Model:</span><span className="text-gray-900 font-medium">{booking.carModel}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Client Email:</span><span className="text-gray-900 font-medium">{booking.customerEmail}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Registration No:</span><span className="text-gray-900 font-medium">{booking.plateNumber}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Insurance Co:</span><span className="text-gray-900 font-medium">{booking.insurerName}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Policy Number:</span><span className="text-gray-900 font-medium">{booking.policyNumber}</span></div>
+                        </div>
+                    </section>
+
+                     <section className="mb-8">
+                        <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Valuation Summary</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-base">
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Valued By:</span><span>{valuation.valuedBy}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Assessment Date:</span><span>{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Report Date:</span><span>{new Date(valuation.valuedAt?.toDate()).toLocaleString()}</span></div>
+                             <div className="flex justify-between"><span className="font-semibold text-green-600">Assessment Value:</span><span className="font-mono text-green-600">KES {valuation.assessmentValue}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-orange-600">Forced Sale Value:</span><span className="font-mono text-orange-600">KES {valuation.forcedValue}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Noted Value (WS):</span><span className="font-mono">KES {valuation.wsValue}</span></div>
+                            <div className="flex justify-between"><span className="font-semibold text-gray-700">Noted Value (RS):</span><span className="font-mono">KES {valuation.rsValue}</span></div>
+                        </div>
+                    </section>
+
+                    {valuation.comments && (
+                         <section className="mb-8">
+                            <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Valuer's Comments</h3>
+                            <p className="text-base text-gray-700 p-4 bg-gray-50 rounded-md border">{valuation.comments}</p>
+                        </section>
                     )}
-                    <Card>
-                         <CardHeader>
-                            <CardTitle>Valuation Summary</CardTitle>
-                         </CardHeader>
-                         <CardContent className="text-sm">
-                             <div className="grid grid-cols-2 gap-4">
-                                <div className="font-semibold">Valued By:</div>
-                                <div>{valuation.valuedBy}</div>
-                                
-                                <div className="font-semibold">Valuation Date:</div>
-                                <div>{new Date(valuation.valuedAt?.toDate()).toLocaleString()}</div>
 
-                                <div className="font-semibold">Assessment Date:</div>
-                                <div>{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</div>
-                                
-                                <div className="font-semibold text-green-600">Assessment Value:</div>
-                                <div className="font-mono text-green-600">KES {valuation.assessmentValue}</div>
-
-                                <div className="font-semibold text-orange-600">Forced Sale Value:</div>
-                                <div className="font-mono text-orange-600">KES {valuation.forcedValue}</div>
-                                
-                                <div className="font-semibold">Noted Value (WS):</div>
-                                <div className="font-mono">KES {valuation.wsValue}</div>
-                                
-                                <div className="font-semibold">Noted Value (RS):</div>
-                                <div className="font-mono">KES {valuation.rsValue}</div>
-                            </div>
-                            {valuation.comments && (
-                                <div className="pt-4 mt-4 border-t">
-                                    <h4 className="font-semibold mb-2">Valuer's Comments</h4>
-                                    <p className="text-sm p-3 bg-muted rounded-md">{valuation.comments}</p>
+                    <section>
+                        <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Vehicle Images</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {valuation.imageUrls.map((url, index) => (
+                                <div key={index} className="border rounded-lg overflow-hidden shadow-sm">
+                                    <Image src={url} alt={`Valuation Image ${index + 1}`} width={800} height={600} className="object-cover w-full aspect-[4/3]" />
                                 </div>
-                            )}
-                         </CardContent>
-                    </Card>
-                </div>
+                            ))}
+                        </div>
+                    </section>
+                </main>
+
+                <footer className="text-center text-sm text-gray-500 mt-16 pt-6 border-t border-gray-300">
+                    © {new Date().getFullYear()} Casa Motor Valuers & Assessors. This is a computer-generated document and does not require a signature.
+                </footer>
             </div>
         </div>
     );
 };
 
 export default ValuationReportView;
+
+    
