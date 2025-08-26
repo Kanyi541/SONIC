@@ -166,17 +166,24 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
             // Fetch Valuation
             const q = query(collection(db, "valuations"), where("bookingId", "==", bookingId));
             const valuationSnapshot = await getDocs(q);
+            let valuationData: Valuation | null = null;
             if (!valuationSnapshot.empty) {
                 const valuationDoc = valuationSnapshot.docs[0];
-                this.setState({ valuation: { id: valuationDoc.id, ...valuationDoc.data() } as Valuation });
+                valuationData = { id: valuationDoc.id, ...valuationDoc.data() } as Valuation;
+                this.setState({ valuation: valuationData });
             }
 
             // Fetch Booking
             const bookingDocRef = doc(db, 'bookings', bookingId as string);
             const bookingSnap = await getDoc(bookingDocRef);
-
+            let bookingData: Booking | null = null;
             if (bookingSnap.exists()) {
-                 this.setState({ booking: { id: bookingSnap.id, ...bookingSnap.data() } as Booking });
+                 bookingData = { id: bookingSnap.id, ...bookingSnap.data() } as Booking;
+                 this.setState({ booking: bookingData });
+            }
+
+             if (bookingData) {
+                document.title = `Valuation Report - ${bookingData.bookingNumber}`;
             }
 
         } catch (error) {
@@ -234,3 +241,5 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
+
+    

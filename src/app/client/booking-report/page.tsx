@@ -162,7 +162,11 @@ class BookingReportPageContent extends React.Component<{ router: any; searchPara
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          this.setState({ booking: { id: docSnap.id, ...docSnap.data() } as BookingData });
+          const bookingData = { id: docSnap.id, ...docSnap.data() } as BookingData;
+          this.setState({ booking: bookingData });
+          if (bookingData.bookingNumber) {
+            document.title = `Booking Report - ${bookingData.bookingNumber}`;
+          }
         } else {
           console.log('No such document!');
         }
@@ -218,3 +222,5 @@ export default function BookingReportPage() {
     </Suspense>
   );
 }
+
+    
