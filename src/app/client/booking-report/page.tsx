@@ -2,7 +2,7 @@
 "use client";
 
 import React, { Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
@@ -143,8 +143,8 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
   }
 }
 
-class BookingReportPageContent extends React.Component<{ router: any; searchParams: any }, ReportState> {
-  constructor(props: { router: any; searchParams: any }) {
+class BookingReportPageContent extends React.Component<{ router: any; searchParams: any; pathname: string; }, ReportState> {
+  constructor(props: { router: any; searchParams: any; pathname: string; }) {
     super(props);
     this.state = {
       booking: null,
@@ -177,6 +177,12 @@ class BookingReportPageContent extends React.Component<{ router: any; searchPara
     }
   }
 
+  handleGoBack = () => {
+    const isAdmin = this.props.pathname.includes('/admin/');
+    const destination = isAdmin ? '/admin/dashboard' : '/client/dashboard';
+    this.props.router.push(destination);
+  };
+
   render() {
     if (this.state.loading) {
       return (
@@ -193,7 +199,7 @@ class BookingReportPageContent extends React.Component<{ router: any; searchPara
             <Button onClick={() => window.print()} variant="default">
                 Print / Save PDF
             </Button>
-            <Button onClick={() => this.props.router.back()} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
+            <Button onClick={this.handleGoBack} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
               <ArrowLeft className="mr-2 h-5 w-5" />
               Go Back
             </Button>
@@ -208,7 +214,8 @@ class BookingReportPageContent extends React.Component<{ router: any; searchPara
 function BookingReportWrapper() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    return <BookingReportPageContent router={router} searchParams={searchParams} />;
+    const pathname = usePathname();
+    return <BookingReportPageContent router={router} searchParams={searchParams} pathname={pathname} />;
 }
 
 export default function BookingReportPage() {

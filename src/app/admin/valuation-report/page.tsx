@@ -212,7 +212,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
             <Button onClick={() => window.print()} variant="default">
               Print / Save PDF
             </Button>
-            <Button onClick={() => this.props.router.back()} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
+            <Button onClick={() => this.props.router.push('/admin/dashboard')} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
               <ArrowLeft className="mr-2 h-5 w-5" />
               Go Back
             </Button>
