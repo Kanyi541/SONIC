@@ -567,7 +567,7 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                 <TableCell className="text-right">
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon">
+                           <Button variant="outline" size="icon" className="bg-black text-primary hover:bg-black/90 hover:text-primary/90">
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         </AlertDialogTrigger>
@@ -1025,7 +1025,7 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="day" />
-                                <YAxis domain={[0, 1000]} />
+                                <YAxis/>
                                 <Tooltip content={<ChartTooltipContent />} />
                                 <Legend />
                                 <Line type="monotone" dataKey="PendingApproval" stroke={chartConfig.PendingApproval.color} strokeWidth={2} name="Pending Approval" />
