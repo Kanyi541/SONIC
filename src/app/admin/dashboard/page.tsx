@@ -54,9 +54,6 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import BookingReport from '@/components/dashboard/booking-report';
-import ValuationReportView from '@/components/dashboard/valuation-report-view';
-import { useReactToPrint } from 'react-to-print';
 
 
 interface Insurer {
@@ -136,8 +133,6 @@ function AdminDashboard() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [isReportModalOpen, setReportModalOpen] = useState(false);
-  const [selectedBookingForReports, setSelectedBookingForReports] = useState<Booking | null>(null);
   
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -332,9 +327,11 @@ function AdminDashboard() {
     }
   };
   
-  const handleOpenReports = (booking: Booking) => {
-    setSelectedBookingForReports(booking);
-    setReportModalOpen(true);
+  const handleOpenReportInNewTab = (reportType: 'booking' | 'valuation', bookingId: string) => {
+    const url = reportType === 'booking' 
+      ? `/client/booking-report?id=${bookingId}`
+      : `/admin/valuation-report?id=${bookingId}`;
+    window.open(url, '_blank');
   };
 
   const handleViewReport = async (bookingId: string) => {
@@ -752,14 +749,33 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                          </Button>
                       )}
                       {(viewType === 'completed' || viewType === 'rejected') && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenReports(booking)}
-                          >
-                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">Reports</span>
-                          </Button>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <FileSpreadsheet className="mr-2 h-4 w-4" />
+                              <span className="hidden sm:inline">Reports</span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-56 p-2">
+                            <div className="grid gap-2">
+                              <Button
+                                variant="ghost"
+                                className="justify-start"
+                                onClick={() => handleOpenReportInNewTab('booking', booking.id)}
+                              >
+                                Booking Report
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                className="justify-start"
+                                onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
+                                disabled={booking.status === 'Pending' || booking.status === 'Pending Valuation'}
+                              >
+                                Valuation Report
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       )}
                     </TableCell>
                 </TableRow>
@@ -1141,41 +1157,6 @@ const handleInitialBookingRejection = async (bookingId: string) => {
               </DialogContent>
             </Dialog>
 
-            <Dialog open={isReportModalOpen} onOpenChange={setReportModalOpen}>
-                <DialogContent className="max-w-5xl">
-                    <DialogHeader>
-                        <DialogTitle>View Reports</DialogTitle>
-                        <DialogDescription>
-                            Toggle between the booking authorization letter and the valuation report.
-                        </DialogDescription>
-                    </DialogHeader>
-                    {selectedBookingForReports && (
-                        <Tabs defaultValue="booking-report" className="w-full">
-                            <TabsList className="w-full grid grid-cols-2">
-                                <TabsTrigger value="booking-report">Booking Report</TabsTrigger>
-                                <TabsTrigger 
-                                    value="valuation-report"
-                                    disabled={selectedBookingForReports.status === 'Pending' || selectedBookingForReports.status === 'Pending Valuation'}>
-                                    Valuation Report
-                                </TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="booking-report">
-                                <div className="max-h-[70vh] overflow-y-auto p-1 mt-2">
-                                    <Suspense fallback={<div>Loading...</div>}>
-                                       <BookingReport bookingId={selectedBookingForReports.id}/>
-                                    </Suspense>
-                                </div>
-                            </TabsContent>
-                            <TabsContent value="valuation-report">
-                                <div className="max-h-[70vh] overflow-y-auto p-1">
-                                    <ValuationReportView bookingId={selectedBookingForReports.id} />
-                                </div>
-                            </TabsContent>
-                        </Tabs>
-                    )}
-                </DialogContent>
-            </Dialog>
-
         </main>
         <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
             <div className="container flex flex-col items-center justify-center gap-2 md:h-24 md:flex-row">
@@ -1199,6 +1180,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    
-    
