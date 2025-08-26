@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useEffect, useState, useRef, Suspense } from 'react';
+import React, { useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Loader2, Printer, ArrowLeft } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
+import { Loader2, ArrowLeft, Download } from 'lucide-react';
+import ReactToPrint from 'react-to-print';
 import Image from 'next/image';
 
 interface BookingData {
@@ -27,71 +27,27 @@ interface BookingData {
   insurerName?: string;
 }
 
-function BookingReport() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const bookingId = searchParams.get('id');
-  const [booking, setBooking] = useState<BookingData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const componentRef = useRef(null);
+interface ReportState {
+  booking: BookingData | null;
+  loading: boolean;
+}
 
-  const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
-    documentTitle: `Assessment_Authorization_Letter_${booking?.bookingNumber}`,
-  });
+class ReportToPrint extends React.Component<{booking: BookingData | null}> {
+  render() {
+    const { booking } = this.props;
 
-  useEffect(() => {
-    if (bookingId) {
-      const fetchBooking = async () => {
-        setLoading(true);
-        const docRef = doc(db, 'bookings', bookingId as string);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          setBooking({ id: docSnap.id, ...docSnap.data() } as BookingData);
-        } else {
-          console.log('No such document!');
-        }
-        setLoading(false);
-      };
-
-      fetchBooking();
+    if (!booking) {
+      return <div className="text-center py-12 font-semibold text-lg">Booking not found.</div>;
     }
-  }, [bookingId]);
 
-  if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!booking) {
-    return <div className="text-center py-12 font-semibold text-lg">Booking not found.</div>;
-  }
-
-  return (
-    <div className="bg-gray-200 min-h-screen p-4 sm:p-8 font-sans">
-       <div className="max-w-5xl mx-auto">
-        <div className="flex justify-end mb-6 gap-4">
-            <Button onClick={() => router.back()} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
-                <ArrowLeft className="mr-2 h-5 w-5" />
-                Go Back
-            </Button>
-            <Button onClick={handlePrint} className="bg-black hover:bg-black/90 text-white">
-                <Printer className="mr-2 h-5 w-5" />
-                Print / Save PDF
-            </Button>
-        </div>
-        <div ref={componentRef}>
-          <div className="bg-white p-8 sm:p-14 shadow-2xl rounded-lg" id="report">
+        <div className="bg-white p-14 shadow-2xl rounded-lg" id="report">
             <header className="flex justify-between items-center pb-6 border-b-2 border-primary">
               <div>
                   <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
               </div>
               <div className="text-left">
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-black">CASA Motor Valuers & Assessors</h1>
+                <h1 className="text-4xl font-extrabold text-black">CASA Motor Valuers & Assessors</h1>
                 <p className="text-base text-gray-700 mt-1">
                   Highway Mall, Uhuru Highway<br />
                   Nairobi, Kenya
@@ -182,12 +138,87 @@ function BookingReport() {
             </main>
             <footer className="text-center text-sm text-gray-500 mt-16 pt-6 border-t border-gray-300">
                   © {new Date().getFullYear()} Casa Motor Valuers & Assessors. This is a computer-generated document and does not require a signature.
-              </footer>
+            </footer>
+        </div>
+    );
+  }
+}
+
+class BookingReport extends React.Component<{}, ReportState> {
+  private componentRef = React.createRef<ReportToPrint>();
+  private router: any;
+  private searchParams: any;
+
+  constructor(props: {}) {
+    super(props);
+    this.state = {
+      booking: null,
+      loading: true,
+    };
+  }
+
+  componentDidMount() {
+    this.router = this.props.router;
+    this.searchParams = this.props.searchParams;
+    const bookingId = this.searchParams.get('id');
+
+    if (bookingId) {
+      const fetchBooking = async () => {
+        this.setState({ loading: true });
+        const docRef = doc(db, 'bookings', bookingId as string);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          this.setState({ booking: { id: docSnap.id, ...docSnap.data() } as BookingData });
+        } else {
+          console.log('No such document!');
+        }
+        this.setState({ loading: false });
+      };
+
+      fetchBooking();
+    }
+  }
+
+  render() {
+    if (this.state.loading) {
+      return (
+        <div className="flex justify-center items-center h-screen bg-gray-100">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      );
+    }
+    
+    return (
+      <div className="bg-gray-200 min-h-screen p-4 sm:p-8 font-sans">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex justify-end mb-6 gap-4">
+            <Button onClick={() => this.router.back()} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
+              <ArrowLeft className="mr-2 h-5 w-5" />
+              Go Back
+            </Button>
+            <ReactToPrint
+              trigger={() => (
+                <Button className="bg-black hover:bg-black/90 text-white">
+                  <Download className="mr-2 h-5 w-5" />
+                  Download
+                </Button>
+              )}
+              content={() => this.componentRef.current}
+              documentTitle={`Assessment_Authorization_Letter_${this.state.booking?.bookingNumber}`}
+            />
           </div>
+          <ReportToPrint ref={this.componentRef} booking={this.state.booking} />
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+}
+
+function BookingReportWrapper() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    return <BookingReport router={router} searchParams={searchParams} />;
 }
 
 export default function BookingReportPage() {
@@ -197,7 +228,7 @@ export default function BookingReportPage() {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
     }>
-      <BookingReport />
+      <BookingReportWrapper />
     </Suspense>
   );
 }
