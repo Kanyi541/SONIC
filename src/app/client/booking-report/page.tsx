@@ -68,7 +68,7 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
               
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8">
                 <h3 className="text-xl font-semibold text-black mb-4">Booking Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-base">
+                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-base">
                     <div className="flex justify-between py-2 border-b border-gray-100">
                         <span className="font-semibold text-gray-700">Client Name:</span>
                         <span className="text-gray-900 font-medium">{booking.customerName}</span>
@@ -109,7 +109,7 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
                         <span className="font-semibold text-gray-700">Branch:</span>
                         <span className="text-gray-900 font-medium">{booking.branch}</span>
                     </div>
-                    <div className="flex justify-between py-2 border-b border-gray-100 col-span-1 md:col-span-2">
+                    <div className="flex justify-between py-2 border-b border-gray-100 col-span-2">
                         <span className="font-semibold text-gray-700">Comments:</span>
                         <span className="text-gray-900 font-medium text-right">{booking.comments || 'N/A'}</span>
                     </div>
@@ -229,5 +229,3 @@ export default function BookingReportPage() {
     </Suspense>
   );
 }
-
-    

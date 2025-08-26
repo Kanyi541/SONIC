@@ -93,7 +93,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
             <section className="mb-8">
                 <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Client & Vehicle Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-base">
+                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-base">
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Client Name:</span><span className="text-gray-900 font-medium">{booking.customerName}</span></div>
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Vehicle Make:</span><span className="text-gray-900 font-medium">{booking.carMake}</span></div>
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Client Phone:</span><span className="text-gray-900 font-medium">{booking.customerPhone}</span></div>
@@ -107,7 +107,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
             <section className="mb-8">
                 <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Valuation Summary</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-base">
+                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-base">
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Valued By:</span><span>{valuation.valuedBy}</span></div>
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Assessment Date:</span><span>{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</span></div>
                     <div className="flex justify-between"><span className="font-semibold text-gray-700">Report Date:</span><span>{new Date(valuation.valuedAt?.toDate()).toLocaleString()}</span></div>
@@ -127,7 +127,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
             <section>
                 <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Vehicle Images</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-6">
                     {valuation.imageUrls.map((url, index) => (
                         <div key={index} className="border rounded-lg overflow-hidden shadow-sm">
                             <Image src={url} alt={`Valuation Image ${index + 1}`} width={800} height={600} className="object-cover w-full aspect-[4/3]" />
@@ -170,7 +170,6 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
             if (!valuationSnapshot.empty) {
                 const valuationDoc = valuationSnapshot.docs[0];
                 valuationData = { id: valuationDoc.id, ...valuationDoc.data() } as Valuation;
-                this.setState({ valuation: valuationData });
             }
 
             // Fetch Booking
@@ -179,11 +178,11 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
             let bookingData: Booking | null = null;
             if (bookingSnap.exists()) {
                  bookingData = { id: bookingSnap.id, ...bookingSnap.data() } as Booking;
-                 this.setState({ booking: bookingData });
             }
 
              if (bookingData) {
                 document.title = `Valuation Report - ${bookingData.bookingNumber}`;
+                this.setState({ booking: bookingData, valuation: valuationData });
             }
 
         } catch (error) {
@@ -241,5 +240,3 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
-
-    
