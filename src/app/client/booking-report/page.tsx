@@ -87,7 +87,7 @@ function BookingReport() {
         <div ref={componentRef} className="bg-white p-8 sm:p-14 shadow-2xl rounded-lg" id="report">
           <header className="flex justify-between items-center pb-6 border-b-2 border-blue-900">
              <div>
-                <Image src="https://placehold.co/200x80" alt="Company Logo" width={200} height={80} data-ai-hint="logo" />
+                <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
             </div>
             <div className="text-left">
               <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-900">CASA Motor Valuers & Assessors</h1>
@@ -199,5 +199,3 @@ export default function BookingReportPage() {
     </Suspense>
   );
 }
-
-    
