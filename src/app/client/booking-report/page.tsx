@@ -143,7 +143,7 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
   }
 }
 
-class BookingReport extends React.Component<{ router: any; searchParams: any }, ReportState> {
+class BookingReportPageContent extends React.Component<{ router: any; searchParams: any }, ReportState> {
   constructor(props: { router: any; searchParams: any }) {
     super(props);
     this.state = {
@@ -185,7 +185,10 @@ class BookingReport extends React.Component<{ router: any; searchParams: any }, 
     return (
       <div className="bg-gray-200 min-h-screen p-4 sm:p-8 font-sans">
         <div className="max-w-5xl mx-auto">
-          <div className="flex justify-end mb-6 gap-4">
+          <div className="flex justify-end mb-6 gap-4 print:hidden">
+            <Button onClick={() => window.print()} variant="default">
+                Print / Save PDF
+            </Button>
             <Button onClick={() => this.props.router.back()} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
               <ArrowLeft className="mr-2 h-5 w-5" />
               Go Back
@@ -201,7 +204,7 @@ class BookingReport extends React.Component<{ router: any; searchParams: any }, 
 function BookingReportWrapper() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    return <BookingReport router={router} searchParams={searchParams} />;
+    return <BookingReportPageContent router={router} searchParams={searchParams} />;
 }
 
 export default function BookingReportPage() {
