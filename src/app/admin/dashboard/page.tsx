@@ -113,11 +113,6 @@ type ChartDataPoint = {
     Rejected: number;
 };
 
-const storageData = [
-    { name: 'Used', value: 1.5, fill: 'hsl(var(--primary))' },
-    { name: 'Free', value: 8.5, fill: 'hsl(var(--muted))' }
-];
-
 
 function AdminDashboard() {
   const { user } = useAuth();
@@ -144,12 +139,6 @@ function AdminDashboard() {
   const [isReportModalOpen, setReportModalOpen] = useState(false);
   const [selectedBookingForReports, setSelectedBookingForReports] = useState<Booking | null>(null);
   
-  const bookingReportRef = React.useRef(null);
-  
-  const handlePrintBookingReport = useReactToPrint({
-    content: () => bookingReportRef.current,
-  });
-
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
   };
@@ -1171,13 +1160,7 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="booking-report">
-                                <div className="mt-4 flex justify-end">
-                                     <Button onClick={handlePrintBookingReport}>
-                                        <Printer className="mr-2 h-4 w-4" />
-                                        Print / Save PDF
-                                    </Button>
-                                </div>
-                                <div className="max-h-[70vh] overflow-y-auto p-1 mt-2" ref={bookingReportRef}>
+                                <div className="max-h-[70vh] overflow-y-auto p-1 mt-2">
                                     <Suspense fallback={<div>Loading...</div>}>
                                        <BookingReport bookingId={selectedBookingForReports.id}/>
                                     </Suspense>
@@ -1217,4 +1200,5 @@ export default function AdminDashboardPage() {
   );
 }
 
+    
     

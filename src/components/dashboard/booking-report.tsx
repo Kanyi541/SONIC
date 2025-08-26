@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Loader2, Printer, ArrowLeft } from 'lucide-react';
+import { Loader2, Printer, Download } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -74,8 +74,8 @@ export default function BookingReport({ bookingId }: { bookingId: string }) {
        <div className="max-w-5xl mx-auto">
         <div className="flex justify-end mb-4 gap-4 sticky top-0 bg-gray-100 py-2 z-10">
             <Button onClick={handlePrint} className="bg-black hover:bg-black/90 text-white">
-                <Printer className="mr-2 h-5 w-5" />
-                Print / Save PDF
+                <Download className="mr-2 h-5 w-5" />
+                Download
             </Button>
         </div>
         <div ref={componentRef} className="bg-white p-14 shadow-lg rounded-lg" id="report">
@@ -181,5 +181,5 @@ export default function BookingReport({ bookingId }: { bookingId: string }) {
     </div>
   );
 }
-
+    
     
