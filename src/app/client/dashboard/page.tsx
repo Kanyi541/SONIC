@@ -138,7 +138,7 @@ const bookingSchema = z.object({
   carModel: z.string().min(1, "Car model is required"),
   branch: z.string().min(1, "Branch is required"),
   maxValuationDays: z.string().min(1, "Maximum valuation days are required"),
-  agentId: z.string().min(1, "An agent must be selected"),
+  authorisedBy: z.string().min(1, "Authorising agent is required"),
   comments: z.string().optional(),
 });
 
@@ -187,7 +187,7 @@ export default function ClientDashboardPage() {
         carModel: "",
         branch: "",
         maxValuationDays: "",
-        agentId: "",
+        authorisedBy: "",
         comments: "",
     }
   });
@@ -354,13 +354,11 @@ export default function ClientDashboardPage() {
             });
             return;
         }
-
-        const selectedAgent = agents.find(agent => agent.id === data.agentId);
+        
         const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
         await addDoc(collection(db, "bookings"), {
             ...data,
-            authorisedBy: selectedAgent ? selectedAgent.name : "N/A",
             bookingNumber,
             createdAt: new Date(),
             status: "Pending",
@@ -644,30 +642,19 @@ export default function ClientDashboardPage() {
                                       </FormItem>
                                   )}
                               />
-                                <FormField
+                               <FormField
                                   control={bookingControl}
                                   name="branch"
                                   render={({ field }) => (
                                       <FormItem>
                                       <FormLabel>Branch</FormLabel>
-                                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                          <FormControl>
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Select a branch" />
-                                            </SelectTrigger>
-                                          </FormControl>
-                                          <SelectContent>
-                                            {branches.map((branch) => (
-                                              <SelectItem key={branch.id} value={branch.name}>
-                                                {branch.name}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
+                                      <FormControl>
+                                          <Input {...field} placeholder="Enter branch" />
+                                      </FormControl>
                                       <FormMessage />
                                       </FormItem>
                                   )}
-                              />
+                               />
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -736,29 +723,18 @@ export default function ClientDashboardPage() {
                                   )}
                               />
                               <FormField
-                                  control={bookingControl}
-                                  name="agentId"
-                                  render={({ field }) => (
-                                      <FormItem>
-                                      <FormLabel>Agent</FormLabel>
-                                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                              <FormControl>
-                                                  <SelectTrigger>
-                                                      <SelectValue placeholder="Select an agent" />
-                                                  </SelectTrigger>
-                                              </FormControl>
-                                              <SelectContent>
-                                                  {agents.map((agent) => (
-                                                      <SelectItem key={agent.id} value={agent.id}>
-                                                          {agent.name}
-                                                      </SelectItem>
-                                                  ))}
-                                              </SelectContent>
-                                          </Select>
-                                      <FormMessage />
-                                      </FormItem>
-                                  )}
-                              />
+                                control={bookingControl}
+                                name="authorisedBy"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Authorised By (Agent)</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} placeholder="Enter agent name" />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
                           </div>
 
                             <FormField
@@ -1165,3 +1141,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
