@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog, PlusCircle, FileText, Clock, CheckCircle, Building2 } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog, PlusCircle, FileText, Clock, CheckCircle, Building2, Briefcase } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -49,6 +49,8 @@ const getIconForView = (view: string) => {
             return <Users />;
         case 'agents':
             return <UserCog />;
+        case 'staff':
+            return <Briefcase />;
         case 'pending-approval':
             return <Hourglass />;
         case 'pending-bookings':
@@ -97,7 +99,7 @@ export default function UnifiedDashboardLayout({
     const isValuerDashboard = userRole !== "Admin" && !menuItems.some(item => item.view === 'customers');
 
     const topLevelItems = menuItems.filter(item => ['dashboard', 'create-booking'].includes(item.view));
-    const managementItems = menuItems.filter(item => ['customers', 'agents'].includes(item.view));
+    const managementItems = menuItems.filter(item => ['customers', 'agents', 'staff'].includes(item.view));
     const bookingItems = menuItems.filter(item => ['bookings', 'pending-bookings'].includes(item.view));
     const otherItems = menuItems.filter(item => !topLevelItems.map(i=>i.view).includes(item.view) && !managementItems.map(i=>i.view).includes(item.view) && !bookingItems.map(i=>i.view).includes(item.view));
 
@@ -262,3 +264,5 @@ export default function UnifiedDashboardLayout({
         </SidebarProvider>
     );
 }
+
+    

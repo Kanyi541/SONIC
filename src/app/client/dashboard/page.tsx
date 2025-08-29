@@ -48,7 +48,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2 } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +76,15 @@ interface Customer {
 }
 
 interface Agent {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  username: string;
+  clientId: string;
+}
+
+interface Staff {
   id: string;
   name: string;
   email: string;
@@ -127,6 +136,16 @@ const agentSchema = z.object({
 
 type AgentFormValues = z.infer<typeof agentSchema>;
 
+const staffSchema = z.object({
+    name: z.string().min(1, "Staff name is required"),
+    username: z.string().min(1, "Username is required"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    email: z.string().email("Invalid email address"),
+    phone: z.string().min(1, "Staff phone is required"),
+});
+
+type StaffFormValues = z.infer<typeof staffSchema>;
+
 
 const bookingSchema = z.object({
   customerName: z.string().min(1, "Customer name is required."),
@@ -148,14 +167,17 @@ export default function ClientDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [loadingAgents, setLoadingAgents] = useState(true);
+  const [loadingStaff, setLoadingStaff] = useState(true);
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [isCustomerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [isAgentDialogOpen, setAgentDialogOpen] = useState(false);
+  const [isStaffDialogOpen, setStaffDialogOpen] = useState(false);
   const [isComboboxOpen, setComboboxOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -163,6 +185,7 @@ export default function ClientDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [agentSearchTerm, setAgentSearchTerm] = useState("");
+  const [staffSearchTerm, setStaffSearchTerm] = useState("");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
 
   const customerForm = useForm<CustomerFormValues>({
@@ -172,6 +195,11 @@ export default function ClientDashboardPage() {
 
   const agentForm = useForm<AgentFormValues>({
     resolver: zodResolver(agentSchema),
+    defaultValues: { name: "", email: "", phone: "", username: "", password: "" },
+  });
+
+  const staffForm = useForm<StaffFormValues>({
+    resolver: zodResolver(staffSchema),
     defaultValues: { name: "", email: "", phone: "", username: "", password: "" },
   });
 
@@ -270,6 +298,14 @@ export default function ClientDashboardPage() {
             setAgents(agentsData);
             setLoadingAgents(false);
         });
+
+        setLoadingStaff(true);
+        const staffQuery = query(collection(db, "staff"), where("clientId", "==", loggedInUser.username));
+        const staffUnsubscribe = onSnapshot(staffQuery, (snapshot) => {
+            const staffData: Staff[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
+            setStaff(staffData);
+            setLoadingStaff(false);
+        });
         
         setLoadingBranches(true);
         const branchesQuery = query(collection(db, "branches"));
@@ -283,6 +319,7 @@ export default function ClientDashboardPage() {
             bookingsUnsubscribe();
             customersUnsubscribe();
             agentsUnsubscribe();
+            staffUnsubscribe();
             branchesUnsubscribe();
         };
     }
@@ -319,14 +356,30 @@ export default function ClientDashboardPage() {
         toast({ variant: "destructive", title: "Error", description: "Failed to add agent." });
     }
   };
-  
-  const handleDeleteAgent = async (agentId: string) => {
+
+  const handleAddStaff = async (data: StaffFormValues) => {
+    if (!loggedInUser) return;
     try {
-        await deleteDoc(doc(db, "agents", agentId));
-        toast({ title: "Agent Deleted", description: "The agent has been successfully removed." });
+        await addDoc(collection(db, "staff"), {
+            ...data,
+            clientId: loggedInUser.username,
+        });
+        toast({ title: "Staff Added", description: `${data.name} has been successfully registered.` });
+        setStaffDialogOpen(false);
+        staffForm.reset();
     } catch (error) {
-        console.error("Error deleting agent:", error);
-        toast({ variant: "destructive", title: "Error", description: "Failed to delete agent." });
+        console.error("Error adding staff:", error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to add staff." });
+    }
+  };
+  
+  const handleDeleteUser = async (userId: string, collectionName: 'agents' | 'staff') => {
+    try {
+        await deleteDoc(doc(db, collectionName, userId));
+        toast({ title: "User Deleted", description: `The ${collectionName.slice(0, -1)} has been successfully removed.` });
+    } catch (error) {
+        console.error(`Error deleting ${collectionName.slice(0, -1)}:`, error);
+        toast({ variant: "destructive", title: "Error", description: `Failed to delete ${collectionName.slice(0, -1)}.` });
     }
   };
 
@@ -435,6 +488,15 @@ export default function ClientDashboardPage() {
             agent.name.toLowerCase().includes(searchTermLower) ||
             agent.email.toLowerCase().includes(searchTermLower) ||
             agent.phone.toLowerCase().includes(searchTermLower)
+        );
+    });
+
+    const filteredStaff = staff.filter(staffMember => {
+        const searchTermLower = staffSearchTerm.toLowerCase();
+        return (
+            staffMember.name.toLowerCase().includes(searchTermLower) ||
+            staffMember.email.toLowerCase().includes(searchTermLower) ||
+            staffMember.phone.toLowerCase().includes(searchTermLower)
         );
     });
   
@@ -546,8 +608,10 @@ export default function ClientDashboardPage() {
       userEmail={loggedInUser?.email || ""}
       menuItems={[
         { name: "Dashboard", view: "dashboard" },
-        { name: "Create Booking", view: "create-booking", action: () => setBookingDialogOpen(true) },
-        { name: "Manage Customers", view: "customers" },
+        { name: "New Booking", view: "create-booking", action: () => setBookingDialogOpen(true) },
+        { name: "Customers", view: "customers" },
+        { name: "Agents", view: "agents" },
+        { name: "Staff", view: "staff" },
         { name: "CASA Branches", view: "branches"},
       ]}
       footerContent={(
@@ -1072,7 +1136,7 @@ export default function ClientDashboardPage() {
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDeleteAgent(agent.id)}>Continue</AlertDialogAction>
+                                                        <AlertDialogAction onClick={() => handleDeleteUser(agent.id, 'agents')}>Continue</AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
@@ -1083,6 +1147,127 @@ export default function ClientDashboardPage() {
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center h-24">
                                             No agents found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+
+            <TabsContent value="staff">
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle className="font-headline text-3xl text-primary">Manage Staff</CardTitle>
+                                <CardDescription>Register new staff and view existing ones.</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="relative w-full max-w-sm">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        type="search"
+                                        placeholder="Search staff..."
+                                        className="w-full rounded-lg bg-background pl-8"
+                                        value={staffSearchTerm}
+                                        onChange={(e) => setStaffSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <Dialog open={isStaffDialogOpen} onOpenChange={setStaffDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button><Briefcase className="mr-2" /> Register Staff</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                    <DialogHeader>
+                                        <DialogTitle>Register New Staff</DialogTitle>
+                                        <DialogDescription>
+                                            Fill in the details to add a new staff member.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                        <Form {...staffForm}>
+                                            <form onSubmit={staffForm.handleSubmit(handleAddStaff)} className="space-y-6 pt-4">
+                                                <FormField control={staffForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Alex Ray" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={staffForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. alexray" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={staffForm.control} name="password" render={({ field }) => (<FormItem><FormLabel>Password</FormLabel><FormControl><Input {...field} type="password" placeholder="••••••••" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={staffForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. alex@example.com" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={staffForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" /></FormControl><FormMessage /></FormItem>)} />
+                                                <DialogFooter>
+                                                    <Button type="button" variant="outline" onClick={() => setStaffDialogOpen(false)}>Cancel</Button>
+                                                    <Button type="submit" disabled={staffForm.formState.isSubmitting}>
+                                                         {staffForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                                        Save Staff
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </Form>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/50">
+                                    <TableHead className="font-semibold text-left">Name</TableHead>
+                                    <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
+                                    <TableHead className="font-semibold text-left">Email</TableHead>
+                                    <TableHead className="font-semibold text-left">Phone</TableHead>
+                                    <TableHead className="font-semibold text-right">Action</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loadingStaff ? (
+                                    Array.from({ length: 3 }).map((_, index) => (
+                                      <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+                                      </TableRow>
+                                    ))
+                                ) : filteredStaff.length > 0 ? (
+                                    filteredStaff.map(staffMember => (
+                                        <TableRow key={staffMember.id}>
+                                            <TableCell className="font-medium flex items-center gap-3">
+                                                <div className="p-2 bg-muted rounded-full hidden sm:flex">
+                                                    <Briefcase className="h-5 w-5 text-primary" />
+                                                </div>
+                                                {staffMember.name}
+                                            </TableCell>
+                                            <TableCell className="hidden sm:table-cell">{staffMember.username}</TableCell>
+                                            <TableCell>{staffMember.email}</TableCell>
+                                            <TableCell>{staffMember.phone}</TableCell>
+                                            <TableCell className="text-right">
+                                                 <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="destructive" size="icon">
+                                                          <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This action cannot be undone. This will permanently delete the staff member {staffMember.name}.
+                                                        </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteUser(staffMember.id, 'staff')}>Continue</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center h-24">
+                                            No staff found.
                                         </TableCell>
                                     </TableRow>
                                 )}
