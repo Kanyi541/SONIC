@@ -394,20 +394,38 @@ const AgentLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
     try {
       const insurersRef = collection(db, "insurers");
       
-      const agentQuery = query(insurersRef, 
-        where("username", "==", data.username),
+      const clientQuery = query(insurersRef, where("username", "==", data.clientUsername));
+      const clientSnapshot = await getDocs(clientQuery);
+
+      if (clientSnapshot.empty) {
+        toast({ variant: "destructive", title: "Login Failed", description: "Could not find the specified institution/client." });
+        setIsLoading(false);
+        return;
+      }
+      
+      const clientData = clientSnapshot.docs[0].data();
+
+      // Fetch all agents for the client and filter in code
+      const agentsQuery = query(insurersRef, 
         where("clientId", "==", data.clientUsername),
         where("role", "==", "Agent")
       );
-      const agentSnapshot = await getDocs(agentQuery);
-
-      if (agentSnapshot.empty) {
-        toast({ variant: "destructive", title: "Login Failed", description: "Invalid agent credentials for this client." });
+      const agentsSnapshot = await getDocs(agentsQuery);
+      
+      if (agentsSnapshot.empty) {
+        toast({ variant: "destructive", title: "Login Failed", description: "No agents found for this client." });
         setIsLoading(false);
         return;
       }
 
-      const agentDoc = agentSnapshot.docs[0];
+      const agentDoc = agentsSnapshot.docs.find(doc => doc.data().username === data.username);
+
+      if (!agentDoc) {
+        toast({ variant: "destructive", title: "Login Failed", description: "Invalid agent username for this client." });
+        setIsLoading(false);
+        return;
+      }
+      
       const agentData = agentDoc.data();
 
       if (agentData.password !== data.password) {
@@ -415,16 +433,6 @@ const AgentLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
         setIsLoading(false);
         return;
       }
-      
-      const clientQuery = query(insurersRef, where("username", "==", data.clientUsername), where("role", "!=", "Agent"));
-      const clientSnapshot = await getDocs(clientQuery);
-
-       if (clientSnapshot.empty) {
-        toast({ variant: "destructive", title: "Login Failed", description: "Could not find associated client account." });
-        setIsLoading(false);
-        return;
-      }
-      const clientData = clientSnapshot.docs[0].data();
 
       sessionStorage.setItem('loggedInUser', JSON.stringify({ 
         name: clientData.name,
