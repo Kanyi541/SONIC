@@ -564,9 +564,6 @@ export default function ClientDashboardPage() {
       menuItems={[
         { name: "Dashboard", view: "dashboard" },
         { name: "Create Booking", view: "create-booking", action: () => setBookingDialogOpen(true) },
-        { name: "Bookings", view: "bookings" },
-        { name: "Manage Customers", view: "customers"},
-        { name: "Manage Agents", view: "agents"},
         { name: "CASA Branches", view: "branches"},
         { name: "Pending Bookings", view: "pending-bookings", notificationCount: stats.pending },
       ]}
