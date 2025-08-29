@@ -607,12 +607,15 @@ export default function ClientDashboardPage() {
     const userDisplayRole = loggedInUser?.agentName 
         ? `${loggedInUser.agentName} (Agent)` 
         : loggedInUser?.name || "Client";
+    
+    const institutionName = loggedInUser?.agentName ? loggedInUser?.name : undefined;
 
   return (
     <UnifiedDashboardLayout
       title="CASA Motor Valuers & Assessors Ltd"
       userRole={userDisplayRole}
       userEmail={loggedInUser?.email || ""}
+      institutionName={institutionName}
       menuItems={[
         { name: "Dashboard", view: "dashboard" },
         { name: "New Booking", view: "create-booking", action: () => setBookingDialogOpen(true) },

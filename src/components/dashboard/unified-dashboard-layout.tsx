@@ -30,6 +30,7 @@ type DashboardLayoutProps = {
     title: string;
     userRole: string;
     userEmail: string;
+    institutionName?: string;
     menuItems: MenuItem[];
     children: (activeView: string) => React.ReactNode;
     footerContent?: React.ReactNode;
@@ -66,6 +67,7 @@ export default function UnifiedDashboardLayout({
     title,
     userRole,
     userEmail,
+    institutionName,
     menuItems,
     children,
     footerContent,
@@ -228,6 +230,12 @@ export default function UnifiedDashboardLayout({
                         <div className="flex items-center gap-4">
                             <SidebarTrigger className="text-white hover:text-white/80" />
                             <h1 className="text-xl font-headline font-bold text-white">{title}</h1>
+                            {institutionName && (
+                                <>
+                                 <div className="h-6 w-px bg-gray-600"></div>
+                                 <span className="text-base font-medium text-gray-300">{institutionName}</span>
+                                </>
+                            )}
                         </div>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
