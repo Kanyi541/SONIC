@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
@@ -94,6 +95,7 @@ interface Booking {
   carModel: string;
   createdAt: any;
   status: string;
+  insurerName?: string;
 }
 
 interface Valuation {
@@ -641,7 +643,7 @@ function AdminDashboard() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                     type="search"
-                    placeholder="Search bookings..."
+                    placeholder="Search valuations..."
                     className="w-full rounded-lg bg-background pl-8"
                     value={bookingSearchTerm}
                     onChange={(e) => setBookingSearchTerm(e.target.value)}
@@ -653,10 +655,13 @@ function AdminDashboard() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold text-left">Booking ID</TableHead>
-              <TableHead className="hidden sm:table-cell font-semibold text-left">Customer</TableHead>
-              <TableHead className="hidden md:table-cell font-semibold text-left">Vehicle</TableHead>
-              <TableHead className="hidden sm:table-cell font-semibold text-left">Valuation Date</TableHead>
+              <TableHead className="font-semibold">Booking No.</TableHead>
+              <TableHead className="font-semibold hidden md:table-cell">Customer</TableHead>
+              <TableHead className="font-semibold hidden lg:table-cell">Institution</TableHead>
+              <TableHead className="font-semibold hidden sm:table-cell">Vehicle</TableHead>
+              <TableHead className="font-semibold hidden md:table-cell">Plate No.</TableHead>
+              <TableHead className="font-semibold hidden xl:table-cell">Assessment Value (KES)</TableHead>
+              <TableHead className="font-semibold hidden xl:table-cell">Forced Value (KES)</TableHead>
               <TableHead className="font-semibold text-left">Status</TableHead>
               <TableHead className="text-right font-semibold">Action</TableHead>
             </TableRow>
@@ -666,9 +671,12 @@ function AdminDashboard() {
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
-                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
+                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                   <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                 </TableRow>
@@ -679,9 +687,12 @@ function AdminDashboard() {
                 return (
                     <TableRow key={valuation.id}>
                     <TableCell className="font-mono text-xs truncate">{booking?.bookingNumber}</TableCell>
-                    <TableCell className="font-medium hidden sm:table-cell">{booking?.customerName}</TableCell>
-                    <TableCell className="hidden md:table-cell">{booking?.plateNumber}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{new Date(valuation.valuedAt?.toDate()).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-medium hidden md:table-cell">{booking?.customerName}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{booking?.insurerName}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{booking?.carMake}</TableCell>
+                    <TableCell className="font-mono hidden md:table-cell">{booking?.plateNumber}</TableCell>
+                    <TableCell className="font-mono hidden xl:table-cell">{valuation.assessmentValue}</TableCell>
+                    <TableCell className="font-mono hidden xl:table-cell">{valuation.forcedValue}</TableCell>
                     <TableCell>
                         <Badge variant={getStatusVariant(valuation.status || 'Pending Approval')}>{valuation.status || 'Pending Approval'}</Badge>
                     </TableCell>
@@ -726,8 +737,8 @@ function AdminDashboard() {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center h-24">
-                  No valuations found in this category.
+                <TableCell colSpan={9} className="text-center h-24">
+                  No valuations found.
                 </TableCell>
               </TableRow>
             )}
@@ -788,6 +799,13 @@ function AdminDashboard() {
                     </SidebarMenuItem>
                 </CollapsibleContent>
             </Collapsible>
+            
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setActiveView('valuations')} isActive={activeView === 'valuations'} tooltip="Valuations">
+                <FileSpreadsheet />
+                Valuations
+              </SidebarMenuButton>
+            </SidebarMenuItem>
 
           </SidebarMenu>
         </SidebarContent>
