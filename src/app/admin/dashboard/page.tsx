@@ -789,13 +789,6 @@ function AdminDashboard() {
                 </CollapsibleContent>
             </Collapsible>
 
-            <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('valuations')} isActive={activeView === 'valuations'} tooltip="Valuations">
-                    <BookOpen/>
-                    Valuations
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
