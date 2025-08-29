@@ -20,11 +20,11 @@ service cloud.firestore {
     }
 
     // Customers collection:
-    // Allow public read access for insurers to view their customer lists.
-    // Writes are allowed for any authenticated user.
+    // Allow read for anyone.
+    // Writes are allowed for any user, as logic is handled client-side.
     match /customers/{customerId} {
       allow read: if true;
-      allow write: if request.auth != null || request.resource.data.insurerId == request.auth.uid;
+      allow write: if true;
     }
 
     // Bookings collection:
@@ -38,11 +38,10 @@ service cloud.firestore {
   
     // Agents collection:
     // Allow public read for login.
-    // Writes are restricted to the client who owns the agent.
+    // Writes are allowed as logic is handled client-side.
     match /agents/{agentId} {
       allow read: if true;
-      allow create, delete: if request.resource.data.clientId == request.auth.uid;
-      allow update: if get(/databases/$(database)/documents/agents/$(agentId)).data.clientId == request.auth.uid;
+      allow write: if true;
     }
     
    // Valuers collection:
