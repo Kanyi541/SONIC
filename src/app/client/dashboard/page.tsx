@@ -65,6 +65,7 @@ interface LoggedInUser {
     username: string;
     email: string;
     role: string;
+    agentName?: string;
 }
 
 interface Customer {
@@ -606,7 +607,7 @@ export default function ClientDashboardPage() {
   return (
     <UnifiedDashboardLayout
       title="CASA Motor Valuers & Assessors Ltd"
-      userRole={loggedInUser?.name || "Client"}
+      userRole={loggedInUser?.agentName || loggedInUser?.name || "Client"}
       userEmail={loggedInUser?.email || ""}
       menuItems={[
         { name: "Dashboard", view: "dashboard" },
@@ -840,7 +841,7 @@ export default function ClientDashboardPage() {
             <TabsContent value="dashboard">
                <div className="grid gap-8">
                 <div>
-                    <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, {loggedInUser?.name}!</h1>
+                    <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, {loggedInUser?.agentName || loggedInUser?.name}!</h1>
                     <p className="text-muted-foreground mt-2">Here's a summary of your recent activity.</p>
                 </div>
                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
