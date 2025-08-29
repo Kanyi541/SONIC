@@ -249,11 +249,12 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     if (loggedInUser) {
         setLoading(true);
-        const bookingsQuery = query(collection(db, "bookings"), where("insurerId", "==", loggedInUser.username), orderBy("createdAt", "desc"));
+        const bookingsQuery = query(collection(db, "bookings"), where("insurerId", "==", loggedInUser.username));
         const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
-            setBookings(bookingsData);
-            generateChartData(bookingsData);
+            const sortedBookings = bookingsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+            setBookings(sortedBookings);
+            generateChartData(sortedBookings);
             setLoading(false);
         });
 
