@@ -4,19 +4,23 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     // Insurers collection:
-    // Allow public read for login verification.
-    // Only authenticated admins can create, update, or delete insurers.
+    // Allow public read for login.
+    // Allow admin to write anything.
+    // Allow non-admins to create new users (agents/clients) but not update existing ones.
     match /insurers/{insurerId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null; // Admin can do anything
+      allow create: if request.auth == null; // Client-side logic handles user creation
     }
     
     // Staff collection:
-    // Allow public read for login verification.
-    // Only authenticated admins can write.
+    // Allow public read for login.
+    // Allow admin to write anything.
+    // Allow non-admins to create new staff.
     match /staff/{staffId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null; // Admin can do anything
+      allow create: if request.auth == null; // Client-side logic handles staff creation
     }
 
     // Customers collection:
@@ -28,23 +32,14 @@ service cloud.firestore {
     }
 
     // Bookings collection:
-    // Allow public read for all roles.
+    // Allow public read access for all roles.
     // Writes (create, update) are allowed for any user.
     match /bookings/{bookingId} {
       allow read: if true;
       allow write: if true;
     }
 
-  
-    // Agents collection:
-    // Allow public read for login.
-    // Writes are allowed as logic is handled client-side.
-    match /agents/{agentId} {
-      allow read: if true;
-      allow write: if true;
-    }
-    
-   // Valuers collection:
+    // Valuers collection:
     // Allow public read for login verification.
     // Only authenticated admins can write.
     match /valuers/{valuerId} {
