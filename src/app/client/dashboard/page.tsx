@@ -1060,21 +1060,22 @@ export default function ClientDashboardPage() {
                                     <DialogTrigger asChild>
                                         <Button><UserCog className="mr-2" /> Register Agent</Button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-[425px]">
-                                    <DialogHeader>
-                                        <DialogTitle>Register New Agent</DialogTitle>
-                                        <DialogDescription>
-                                            Fill in the details to add a new agent.
-                                        </DialogDescription>
-                                    </DialogHeader>
+                                    <DialogContent className="sm:max-w-[425px] grid-rows-[auto_1fr_auto] max-h-[90vh]">
+                                      <DialogHeader>
+                                          <DialogTitle>Register New Agent</DialogTitle>
+                                          <DialogDescription>
+                                              Fill in the details to add a new agent.
+                                          </DialogDescription>
+                                      </DialogHeader>
+                                      <div className="overflow-y-auto pr-4 -mr-4">
                                         <Form {...agentForm}>
-                                            <form onSubmit={agentForm.handleSubmit(handleAddAgent)} className="space-y-6 pt-4">
+                                            <form onSubmit={agentForm.handleSubmit(handleAddAgent)} className="space-y-4">
                                                 <FormField control={agentForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Jane Smith" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. janesmith" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="password" render={({ field }) => (<FormItem><FormLabel>Password</FormLabel><FormControl><Input {...field} type="password" placeholder="••••••••" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. jane@example.com" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" /></FormControl><FormMessage /></FormItem>)} />
-                                                <DialogFooter>
+                                                <DialogFooter className="pt-4">
                                                     <Button type="button" variant="outline" onClick={() => setAgentDialogOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={agentForm.formState.isSubmitting}>
                                                          {agentForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -1083,6 +1084,7 @@ export default function ClientDashboardPage() {
                                                 </DialogFooter>
                                             </form>
                                         </Form>
+                                      </div>
                                     </DialogContent>
                                 </Dialog>
                             </div>
