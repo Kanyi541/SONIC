@@ -869,7 +869,7 @@ function AdminDashboard() {
                     <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Valuers & Assessors.</p>
                 </div>
                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                   <Card>
+                   <Card onClick={() => setActiveView('staff')} className="cursor-pointer hover:bg-muted transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Staff</CardTitle>
                             <Briefcase className="h-4 w-4 text-muted-foreground" />
@@ -879,7 +879,7 @@ function AdminDashboard() {
                             <p className="text-xs text-muted-foreground">Total registered staff</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card onClick={() => setActiveView('institutions')} className="cursor-pointer hover:bg-muted transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Institutions</CardTitle>
                             <Building className="h-4 w-4 text-muted-foreground" />
@@ -889,7 +889,7 @@ function AdminDashboard() {
                             <p className="text-xs text-muted-foreground">Total partner institutions</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card onClick={() => setActiveView('valuations')} className="cursor-pointer hover:bg-muted transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Cars</CardTitle>
                             <Car className="h-4 w-4 text-muted-foreground" />
@@ -899,7 +899,7 @@ function AdminDashboard() {
                             <p className="text-xs text-muted-foreground">Total cars booked</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card onClick={() => setActiveView('valuations')} className="cursor-pointer hover:bg-muted transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Valuated</CardTitle>
                             <CheckCircle className="h-4 w-4 text-muted-foreground" />
