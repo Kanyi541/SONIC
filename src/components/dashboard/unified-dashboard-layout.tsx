@@ -130,7 +130,7 @@ export default function UnifiedDashboardLayout({
                             </SidebarMenuItem>
                          ))}
 
-                        {!isValuerDashboard && (
+                        {managementItems.length > 0 && !isValuerDashboard && (
                             <>
                                <Collapsible>
                                     <CollapsibleTrigger className="w-full">
@@ -156,39 +156,42 @@ export default function UnifiedDashboardLayout({
                             </>
                         )}
                         
-                        <Collapsible>
-                            <CollapsibleTrigger className="w-full">
-                                <div className="flex items-center justify-between p-2 rounded-md hover:bg-sidebar-accent w-full">
-                                    <div className="flex items-center gap-2">
-                                        <BookCopy/>
-                                        <span>Bookings</span>
+                        {bookingItems.length > 0 && (
+                            <Collapsible>
+                                <CollapsibleTrigger className="w-full">
+                                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-sidebar-accent w-full">
+                                        <div className="flex items-center gap-2">
+                                            <BookCopy/>
+                                            <span>Bookings</span>
+                                        </div>
+                                        <ChevronDown className="h-4 w-4" />
                                     </div>
-                                    <ChevronDown className="h-4 w-4" />
-                                </div>
-                            </CollapsibleTrigger>
-                                <CollapsibleContent className="ml-4">
-                                {bookingItems.map(item => (
-                                    <SidebarMenuItem key={item.view}>
-                                        <SidebarMenuButton 
-                                            onClick={() => setActiveView(item.view)} 
-                                            isActive={activeView === item.view} 
-                                            tooltip={item.name}
-                                            className="flex items-center justify-between"
-                                        >
-                                           <div className="flex items-center gap-2">
-                                                {getIconForView(item.view)}
-                                                {item.name}
-                                            </div>
-                                             {item.notificationCount && item.notificationCount > 0 && (
-                                                <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
-                                                    {item.notificationCount}
-                                                </span>
-                                            )}
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                ))}
-                                </CollapsibleContent>
-                        </Collapsible>
+                                </CollapsibleTrigger>
+                                    <CollapsibleContent className="ml-4">
+                                    {bookingItems.map(item => (
+                                        <SidebarMenuItem key={item.view}>
+                                            <SidebarMenuButton 
+                                                onClick={() => setActiveView(item.view)} 
+                                                isActive={activeView === item.view} 
+                                                tooltip={item.name}
+                                                className="flex items-center justify-between"
+                                            >
+                                            <div className="flex items-center gap-2">
+                                                    {getIconForView(item.view)}
+                                                    {item.name}
+                                                </div>
+                                                {item.notificationCount && item.notificationCount > 0 && (
+                                                    <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
+                                                        {item.notificationCount}
+                                                    </span>
+                                                )}
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    ))}
+                                    </CollapsibleContent>
+                            </Collapsible>
+                        )}
+
 
                          {otherItems.map(item => (
                             <SidebarMenuItem key={item.view}>

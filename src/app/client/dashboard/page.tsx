@@ -129,10 +129,9 @@ type AgentFormValues = z.infer<typeof agentSchema>;
 
 
 const bookingSchema = z.object({
-  customerId: z.string().min(1, "Please select a customer"),
-  customerName: z.string(),
-  customerEmail: z.string(),
-  customerPhone: z.string(),
+  customerName: z.string().min(1, "Customer name is required."),
+  customerEmail: z.string().email("Invalid email address."),
+  customerPhone: z.string().min(1, "Customer phone is required."),
   plateNumber: z.string().min(1, "Plate number is required"),
   policyNumber: z.string().min(1, "Policy number is required"),
   carMake: z.string().min(1, "Car make is required"),
@@ -179,7 +178,6 @@ export default function ClientDashboardPage() {
   const bookingForm = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
-        customerId: "",
         customerName: "",
         customerEmail: "",
         customerPhone: "",
@@ -204,7 +202,6 @@ export default function ClientDashboardPage() {
   } = bookingForm;
 
   const selectedCarMake = watchBooking("carMake");
-  const selectedCustomerId = watchBooking("customerId");
   const carModels = useMemo(() => {
     return selectedCarMake ? carData.find(make => make.brand === selectedCarMake)?.models || [] : [];
   }, [selectedCarMake]);
@@ -291,17 +288,6 @@ export default function ClientDashboardPage() {
     }
 }, [loggedInUser]);
 
-  useEffect(() => {
-      if (selectedCustomerId) {
-          const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
-          if (selectedCustomer) {
-              setBookingValue("customerName", selectedCustomer.name);
-              setBookingValue("customerEmail", selectedCustomer.email);
-              setBookingValue("customerPhone", selectedCustomer.phone);
-          }
-      }
-  }, [selectedCustomerId, customers, setBookingValue]);
-
   const handleAddCustomer = async (data: CustomerFormValues) => {
       if (!loggedInUser) return;
       try {
@@ -369,12 +355,11 @@ export default function ClientDashboardPage() {
             return;
         }
 
-        const { customerId, ...bookingData } = data;
         const selectedAgent = agents.find(agent => agent.id === data.agentId);
         const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
         await addDoc(collection(db, "bookings"), {
-            ...bookingData,
+            ...data,
             authorisedBy: selectedAgent ? selectedAgent.name : "N/A",
             bookingNumber,
             createdAt: new Date(),
@@ -564,8 +549,8 @@ export default function ClientDashboardPage() {
       menuItems={[
         { name: "Dashboard", view: "dashboard" },
         { name: "Create Booking", view: "create-booking", action: () => setBookingDialogOpen(true) },
+        { name: "Manage Customers", view: "customers" },
         { name: "CASA Branches", view: "branches"},
-        { name: "Pending Bookings", view: "pending-bookings", notificationCount: stats.pending },
       ]}
       footerContent={(
         <>
@@ -585,74 +570,12 @@ export default function ClientDashboardPage() {
                 <DialogHeader>
                   <DialogTitle>Make a New Booking</DialogTitle>
                   <DialogDescription>
-                    Select a customer and fill out the form to create a new booking.
+                    Fill out the form to create a new booking.
                   </DialogDescription>
                 </DialogHeader>
                   <div className="overflow-y-auto pr-6 -mr-6">
                     <Form {...bookingForm}>
                       <form onSubmit={handleBookingSubmit(handleSaveBooking)} className="space-y-4">
-                          <FormField
-                            control={bookingControl}
-                            name="customerId"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-col">
-                                <FormLabel>Select Customer</FormLabel>
-                                  <Popover open={isComboboxOpen} onOpenChange={setComboboxOpen}>
-                                  <PopoverTrigger asChild>
-                                    <FormControl>
-                                      <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        className={cn(
-                                          "w-full justify-between",
-                                          !field.value && "text-muted-foreground"
-                                        )}
-                                      >
-                                        {field.value
-                                          ? customers.find(
-                                              (customer) => customer.id === field.value
-                                            )?.name
-                                          : "Select a customer"}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                      </Button>
-                                    </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                    <Command>
-                                      <CommandInput placeholder="Search customer..." />
-                                      <CommandEmpty>No customer found.</CommandEmpty>
-                                      <CommandList>
-                                          <CommandGroup>
-                                          {customers.map((customer) => (
-                                              <CommandItem
-                                              value={customer.name}
-                                              key={customer.id}
-                                              onSelect={() => {
-                                                  bookingForm.setValue("customerId", customer.id)
-                                                  setComboboxOpen(false)
-                                              }}
-                                              >
-                                              <Check
-                                                  className={cn(
-                                                  "mr-2 h-4 w-4",
-                                                  customer.id === field.value
-                                                      ? "opacity-100"
-                                                      : "opacity-0"
-                                                  )}
-                                              />
-                                              {customer.name} ({customer.email})
-                                              </CommandItem>
-                                          ))}
-                                          </CommandGroup>
-                                      </CommandList>
-                                    </Command>
-                                  </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <FormField
                                   control={bookingControl}
@@ -661,7 +584,7 @@ export default function ClientDashboardPage() {
                                       <FormItem>
                                       <FormLabel>Customer Name</FormLabel>
                                       <FormControl>
-                                          <Input {...field} readOnly placeholder="Selected customer name" />
+                                          <Input {...field} placeholder="Enter customer name" />
                                       </FormControl>
                                       <FormMessage />
                                       </FormItem>
@@ -674,7 +597,7 @@ export default function ClientDashboardPage() {
                                       <FormItem>
                                       <FormLabel>Customer Email</FormLabel>
                                       <FormControl>
-                                          <Input {...field} readOnly placeholder="Selected customer email" />
+                                          <Input {...field} placeholder="Enter customer email" />
                                       </FormControl>
                                         <FormMessage />
                                       </FormItem>
@@ -687,7 +610,7 @@ export default function ClientDashboardPage() {
                                       <FormItem>
                                       <FormLabel>Customer Phone</FormLabel>
                                       <FormControl>
-                                          <Input {...field} readOnly placeholder="Selected customer phone" />
+                                          <Input {...field} placeholder="Enter customer phone" />
                                       </FormControl>
                                         <FormMessage />
                                       </FormItem>
@@ -942,14 +865,7 @@ export default function ClientDashboardPage() {
                 </Card>
               </div>
             </TabsContent>
-            <TabsContent value="bookings">
-                {renderBookingsTable(completedBookings, "Completed & Rejected Bookings", "View all completed and rejected vehicle booking reports.")}
-            </TabsContent>
             
-            <TabsContent value="pending-bookings">
-              {renderBookingsTable(pendingBookings, "Pending Bookings", "View all new vehicle booking requests.")}
-            </TabsContent>
-
             <TabsContent value="customers">
                 <Card>
                     <CardHeader>
