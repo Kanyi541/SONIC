@@ -28,7 +28,7 @@ service cloud.firestore {
     }
 
     // Bookings collection:
-    // Allow public read access for all roles.
+    // Allow public read for all roles.
     // Writes (create, update) are allowed for any user.
     match /bookings/{bookingId} {
       allow read: if true;
