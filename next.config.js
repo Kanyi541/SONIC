@@ -15,11 +15,10 @@ const cspHeader = `
       https://securetoken.googleapis.com
       https://firebaseinstallations.googleapis.com
       https://firebasestorage.googleapis.com;
-    frame-src 'self' https://www.gstatic.com;
+    frame-src 'self' https://www.gstatic.com https://6000-firebase-studio-1754982161283.cluster-cbeiita7rbe7iuwhvjs5zww2i4.cloudworkstations.dev;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
-    frame-ancestors 'none';
     block-all-mixed-content;
     upgrade-insecure-requests;
 `;
@@ -59,10 +58,6 @@ const nextConfig = {
           {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
           },
           {
             key: 'X-XSS-Protection',
