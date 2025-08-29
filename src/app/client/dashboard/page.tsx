@@ -292,7 +292,7 @@ export default function ClientDashboardPage() {
         });
         
         setLoadingAgents(true);
-        const agentsQuery = query(collection(db, "agents"), where("clientId", "==", loggedInUser.username));
+        const agentsQuery = query(collection(db, "insurers"), where("clientId", "==", loggedInUser.username), where("role", "==", "Agent"));
         const agentsUnsubscribe = onSnapshot(agentsQuery, (snapshot) => {
             const agentsData: Agent[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Agent));
             setAgents(agentsData);
@@ -328,7 +328,7 @@ export default function ClientDashboardPage() {
   const handleAddCustomer = async (data: CustomerFormValues) => {
       if (!loggedInUser) return;
       try {
-          await addDoc(collection(db, "customers"), {
+          await addDoc(collection(db, "insurers"), {
               ...data,
               insurerId: loggedInUser.username,
           });
@@ -344,9 +344,11 @@ export default function ClientDashboardPage() {
   const handleAddAgent = async (data: AgentFormValues) => {
     if (!loggedInUser) return;
     try {
-        await addDoc(collection(db, "agents"), {
+        await addDoc(collection(db, "insurers"), {
             ...data,
             clientId: loggedInUser.username,
+            role: 'Agent',
+            active: true
         });
         toast({ title: "Agent Added", description: `${data.name} has been successfully registered.` });
         setAgentDialogOpen(false);
@@ -373,13 +375,13 @@ export default function ClientDashboardPage() {
     }
   };
   
-  const handleDeleteUser = async (userId: string, collectionName: 'agents' | 'staff') => {
+  const handleDeleteUser = async (userId: string, collectionName: 'insurers' | 'staff') => {
     try {
         await deleteDoc(doc(db, collectionName, userId));
-        toast({ title: "User Deleted", description: `The ${collectionName.slice(0, -1)} has been successfully removed.` });
+        toast({ title: "User Deleted", description: `The user has been successfully removed.` });
     } catch (error) {
-        console.error(`Error deleting ${collectionName.slice(0, -1)}:`, error);
-        toast({ variant: "destructive", title: "Error", description: `Failed to delete ${collectionName.slice(0, -1)}.` });
+        console.error(`Error deleting user:`, error);
+        toast({ variant: "destructive", title: "Error", description: `Failed to delete user.` });
     }
   };
 
@@ -1136,7 +1138,7 @@ export default function ClientDashboardPage() {
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDeleteUser(agent.id, 'agents')}>Continue</AlertDialogAction>
+                                                        <AlertDialogAction onClick={() => handleDeleteUser(agent.id, 'insurers')}>Continue</AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
@@ -1326,5 +1328,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    

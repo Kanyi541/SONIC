@@ -392,47 +392,46 @@ const AgentLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
   const onSubmit = async (data: AgentLoginFormValues) => {
     setIsLoading(true);
     try {
-      // 1. Find the client (insurer) by their username
       const insurersRef = collection(db, "insurers");
-      const clientQuery = query(insurersRef, where("username", "==", data.clientUsername));
-      const clientSnapshot = await getDocs(clientQuery);
-
-      if (clientSnapshot.empty) {
-        toast({ variant: "destructive", title: "Login Failed", description: "Invalid client username." });
-        return;
-      }
-      const clientData = clientSnapshot.docs[0].data();
-
-      // 2. Find the agent with the matching username AND clientId
-      const agentsRef = collection(db, "agents");
-      const agentQuery = query(agentsRef, 
+      
+      const agentQuery = query(insurersRef, 
         where("username", "==", data.username),
-        where("clientId", "==", data.clientUsername)
+        where("clientId", "==", data.clientUsername),
+        where("role", "==", "Agent")
       );
       const agentSnapshot = await getDocs(agentQuery);
 
       if (agentSnapshot.empty) {
         toast({ variant: "destructive", title: "Login Failed", description: "Invalid agent credentials for this client." });
+        setIsLoading(false);
         return;
       }
 
       const agentDoc = agentSnapshot.docs[0];
       const agentData = agentDoc.data();
 
-      // 3. Check password
       if (agentData.password !== data.password) {
         toast({ variant: "destructive", title: "Login Failed", description: "Invalid agent password." });
+        setIsLoading(false);
         return;
       }
+      
+      const clientQuery = query(insurersRef, where("username", "==", data.clientUsername), where("role", "!=", "Agent"));
+      const clientSnapshot = await getDocs(clientQuery);
 
-      // If all checks pass, log the user in as the Client, but maybe with a note that they are an agent?
-      // For now, let's log them in as the client.
+       if (clientSnapshot.empty) {
+        toast({ variant: "destructive", title: "Login Failed", description: "Could not find associated client account." });
+        setIsLoading(false);
+        return;
+      }
+      const clientData = clientSnapshot.docs[0].data();
+
       sessionStorage.setItem('loggedInUser', JSON.stringify({ 
-        name: clientData.name, // Logged in as the institution
+        name: clientData.name,
         username: clientData.username, 
         email: clientData.email,
         role: 'Client',
-        agentName: agentData.name // Keep track of the agent
+        agentName: agentData.name 
       }));
       
       router.push('/client/dashboard');
