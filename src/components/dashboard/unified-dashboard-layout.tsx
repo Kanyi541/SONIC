@@ -103,6 +103,9 @@ export default function UnifiedDashboardLayout({
     const bookingItems = menuItems.filter(item => ['bookings', 'pending-bookings'].includes(item.view));
     const otherItems = menuItems.filter(item => !topLevelItems.map(i=>i.view).includes(item.view) && !managementItems.map(i=>i.view).includes(item.view) && !bookingItems.map(i=>i.view).includes(item.view));
 
+    const sidebarPanelTitle = userRole.includes('(Agent)')
+        ? userRole.replace(/\s*\(Agent\)\s*/, ' Panel - Agent')
+        : `${userRole} Panel`;
 
     return (
         <SidebarProvider>
@@ -112,7 +115,7 @@ export default function UnifiedDashboardLayout({
                         <div className="bg-sidebar-primary text-sidebar-primary-foreground rounded-lg p-2 flex items-center justify-center">
                             <Settings className="h-6 w-6" />
                         </div>
-                        <h2 className="text-xl font-semibold text-sidebar-primary">{userRole} Panel</h2>
+                        <h2 className="text-xl font-semibold text-sidebar-primary">{sidebarPanelTitle}</h2>
                     </div>
                 </SidebarHeader>
                 <SidebarContent>
@@ -264,5 +267,3 @@ export default function UnifiedDashboardLayout({
         </SidebarProvider>
     );
 }
-
-    

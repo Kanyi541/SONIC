@@ -604,10 +604,14 @@ export default function ClientDashboardPage() {
         </Card>
     );
 
+    const userDisplayRole = loggedInUser?.agentName 
+        ? `${loggedInUser.agentName} (Agent)` 
+        : loggedInUser?.name || "Client";
+
   return (
     <UnifiedDashboardLayout
       title="CASA Motor Valuers & Assessors Ltd"
-      userRole={loggedInUser?.agentName || loggedInUser?.name || "Client"}
+      userRole={userDisplayRole}
       userEmail={loggedInUser?.email || ""}
       menuItems={[
         { name: "Dashboard", view: "dashboard" },
