@@ -42,10 +42,17 @@ const userLoginSchema = z.object({
   password: z.string().min(1, { message: "Password is required." }),
 });
 
+const agentLoginSchema = z.object({
+  clientUsername: z.string().min(1, { message: "Client username is required." }),
+  username: z.string().min(1, { message: "Your username is required." }),
+  password: z.string().min(1, { message: "Password is required." }),
+});
+
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 type UserLoginFormValues = z.infer<typeof userLoginSchema>;
-type Role = "Admin" | "Client" | "Valuer";
+type AgentLoginFormValues = z.infer<typeof agentLoginSchema>;
+type Role = "Admin" | "Client" | "Valuer" | "Agent";
 
 const PasswordInput = ({ field, ...props }: { field: any, [key: string]: any }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -215,7 +222,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   return (
     <Card className="bg-white/90 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="font-headline text-primary">Client Login</CardTitle>
+        <CardTitle className="font-headline text-primary">Client/Institution Login</CardTitle>
         <CardDescription>
           Enter your credentials to access the client dashboard.
         </CardDescription>
@@ -230,7 +237,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                 <FormItem>
                   <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="Client Username" {...field} />
+                    <Input placeholder="Institution Username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -373,14 +380,137 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   );
 };
 
+const AgentLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const form = useForm<AgentLoginFormValues>({
+    resolver: zodResolver(agentLoginSchema),
+    defaultValues: { clientUsername: "", username: "", password: "" },
+  });
+
+  const onSubmit = async (data: AgentLoginFormValues) => {
+    setIsLoading(true);
+    try {
+      // 1. Find the client (insurer) by their username
+      const insurersRef = collection(db, "insurers");
+      const clientQuery = query(insurersRef, where("username", "==", data.clientUsername));
+      const clientSnapshot = await getDocs(clientQuery);
+
+      if (clientSnapshot.empty) {
+        toast({ variant: "destructive", title: "Login Failed", description: "Invalid client username." });
+        return;
+      }
+      const clientData = clientSnapshot.docs[0].data();
+
+      // 2. Find the agent with the matching username AND clientId
+      const agentsRef = collection(db, "agents");
+      const agentQuery = query(agentsRef, 
+        where("username", "==", data.username),
+        where("clientId", "==", data.clientUsername)
+      );
+      const agentSnapshot = await getDocs(agentQuery);
+
+      if (agentSnapshot.empty) {
+        toast({ variant: "destructive", title: "Login Failed", description: "Invalid agent credentials for this client." });
+        return;
+      }
+
+      const agentDoc = agentSnapshot.docs[0];
+      const agentData = agentDoc.data();
+
+      // 3. Check password
+      if (agentData.password !== data.password) {
+        toast({ variant: "destructive", title: "Login Failed", description: "Invalid agent password." });
+        return;
+      }
+
+      // If all checks pass, log the user in as the Client, but maybe with a note that they are an agent?
+      // For now, let's log them in as the client.
+      sessionStorage.setItem('loggedInUser', JSON.stringify({ 
+        name: clientData.name, // Logged in as the institution
+        username: clientData.username, 
+        email: clientData.email,
+        role: 'Client',
+        agentName: agentData.name // Keep track of the agent
+      }));
+      
+      router.push('/client/dashboard');
+      toast({ title: "Agent Login Successful", description: `Welcome back, ${agentData.name}!` });
+
+    } catch (error) {
+      console.error("Agent login error:", error);
+      toast({ variant: "destructive", title: "Login Failed", description: "An unexpected error occurred." });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Card className="bg-white/90 backdrop-blur-sm">
+      <CardHeader>
+        <CardTitle className="font-headline text-primary">Agent Login</CardTitle>
+        <CardDescription>
+          Enter your credentials to access your client's dashboard.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="clientUsername"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Institution/Client Username</FormLabel>
+                  <FormControl><Input placeholder="Your institution's username" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Your Username</FormLabel>
+                  <FormControl><Input placeholder="Your agent username" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Your Password</FormLabel>
+                  <FormControl><PasswordInput field={field} placeholder="••••••••" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign In
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+};
+
+
 export default function LoginTabs() {
   const [loadingStates, setLoadingStates] = useState<Record<Role, boolean>>({
     Admin: false,
     Client: false,
     Valuer: false,
+    Agent: false,
   });
 
-  const roles: Role[] = ["Admin", "Client", "Valuer"];
+  const roles: Role[] = ["Admin", "Client", "Valuer", "Agent"];
   
   const getFormComponent = (role: Role) => {
     const setIsLoading = (loading: boolean) => setLoadingStates(prev => ({ ...prev, [role]: loading }));
@@ -392,6 +522,8 @@ export default function LoginTabs() {
         return <ClientLoginForm setIsLoading={setIsLoading} />;
       case 'Valuer':
         return <ValuerLoginForm setIsLoading={setIsLoading} />;
+      case 'Agent':
+        return <AgentLoginForm setIsLoading={setIsLoading} />;
       default:
         return null;
     }
@@ -399,7 +531,7 @@ export default function LoginTabs() {
 
   return (
     <Tabs defaultValue="Admin" className="w-full">
-      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto sm:h-10 bg-black/20 text-white">
+      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto sm:h-10 bg-black/20 text-white">
         {roles.map((role) => (
           <TabsTrigger key={role} value={role} className="data-[state=active]:bg-primary/80 data-[state=active]:text-black">{role}</TabsTrigger>
         ))}
@@ -412,5 +544,3 @@ export default function LoginTabs() {
     </Tabs>
   );
 }
-
-    

@@ -45,10 +45,10 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2 } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -80,7 +80,14 @@ interface Agent {
   name: string;
   email: string;
   phone: string;
+  username: string;
   clientId: string;
+}
+
+interface Branch {
+  id: string;
+  name: string;
+  location: string;
 }
 
 interface Booking {
@@ -112,6 +119,8 @@ type CustomerFormValues = z.infer<typeof customerSchema>;
 
 const agentSchema = z.object({
     name: z.string().min(1, "Agent name is required"),
+    username: z.string().min(1, "Username is required"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
     email: z.string().email("Invalid email address"),
     phone: z.string().min(1, "Agent phone is required"),
 });
@@ -140,9 +149,11 @@ export default function ClientDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [loadingAgents, setLoadingAgents] = useState(true);
+  const [loadingBranches, setLoadingBranches] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [isCustomerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [isAgentDialogOpen, setAgentDialogOpen] = useState(false);
@@ -162,7 +173,7 @@ export default function ClientDashboardPage() {
 
   const agentForm = useForm<AgentFormValues>({
     resolver: zodResolver(agentSchema),
-    defaultValues: { name: "", email: "", phone: "" },
+    defaultValues: { name: "", email: "", phone: "", username: "", password: "" },
   });
 
   const bookingForm = useForm<BookingFormValues>({
@@ -238,7 +249,7 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     if (loggedInUser) {
         setLoading(true);
-        const bookingsQuery = query(collection(db, "bookings"), where("insurerId", "==", loggedInUser.username));
+        const bookingsQuery = query(collection(db, "bookings"), where("insurerId", "==", loggedInUser.username), orderBy("createdAt", "desc"));
         const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
             setBookings(bookingsData);
@@ -261,11 +272,20 @@ export default function ClientDashboardPage() {
             setAgents(agentsData);
             setLoadingAgents(false);
         });
+        
+        setLoadingBranches(true);
+        const branchesQuery = query(collection(db, "branches"));
+        const branchesUnsubscribe = onSnapshot(branchesQuery, (snapshot) => {
+            const branchesData: Branch[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Branch));
+            setBranches(branchesData);
+            setLoadingBranches(false);
+        });
 
         return () => {
             bookingsUnsubscribe();
             customersUnsubscribe();
             agentsUnsubscribe();
+            branchesUnsubscribe();
         };
     }
 }, [loggedInUser]);
@@ -414,7 +434,6 @@ export default function ClientDashboardPage() {
     });
     
     const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
-    const pendingApprovalBookings = filteredBookings.filter(b => b.status === "Pending Approval");
     const completedBookings = filteredBookings.filter(b => b.status === "Completed" || b.status === "Rejected");
 
     const filteredCustomers = customers.filter(customer => {
@@ -547,8 +566,8 @@ export default function ClientDashboardPage() {
         { name: "Bookings", view: "bookings" },
         { name: "Manage Customers", view: "customers"},
         { name: "Manage Agents", view: "agents"},
+        { name: "CASA Branches", view: "branches"},
         { name: "Pending Bookings", view: "pending-bookings", notificationCount: stats.pending },
-        { name: "Pending Approval", view: "pending-approval", notificationCount: stats.pendingApproval },
       ]}
       footerContent={(
         <>
@@ -710,9 +729,20 @@ export default function ClientDashboardPage() {
                                   render={({ field }) => (
                                       <FormItem>
                                       <FormLabel>Branch</FormLabel>
-                                      <FormControl>
-                                          <Input {...field} placeholder="e.g. Nairobi" />
-                                      </FormControl>
+                                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select a branch" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {branches.map((branch) => (
+                                              <SelectItem key={branch.id} value={branch.name}>
+                                                {branch.name}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
                                       <FormMessage />
                                       </FormItem>
                                   )}
@@ -902,7 +932,7 @@ export default function ClientDashboardPage() {
                            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="day" />
-                                <YAxis domain={[0, 1000]} />
+                                <YAxis domain={[0, 'dataMax + 5']} />
                                 <Tooltip content={<ChartTooltipContent />} />
                                 <Legend />
                                 <Line type="monotone" dataKey="Pending" stroke={chartConfig.Pending.color} strokeWidth={2} />
@@ -920,10 +950,6 @@ export default function ClientDashboardPage() {
             
             <TabsContent value="pending-bookings">
               {renderBookingsTable(pendingBookings, "Pending Bookings", "View all new vehicle booking requests.")}
-            </TabsContent>
-
-            <TabsContent value="pending-approval">
-              {renderBookingsTable(pendingApprovalBookings, "These reports from valuers are awaiting your approval.")}
             </TabsContent>
 
             <TabsContent value="customers">
@@ -1087,45 +1113,11 @@ export default function ClientDashboardPage() {
                                     </DialogHeader>
                                         <Form {...agentForm}>
                                             <form onSubmit={agentForm.handleSubmit(handleAddAgent)} className="space-y-6 pt-4">
-                                                <FormField
-                                                    control={agentForm.control}
-                                                    name="name"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                        <FormLabel>Full Name</FormLabel>
-                                                        <FormControl>
-                                                            <Input {...field} placeholder="e.g. Jane Smith" />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                                <FormField
-                                                    control={agentForm.control}
-                                                    name="email"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                        <FormLabel>Email Address</FormLabel>
-                                                        <FormControl>
-                                                            <Input {...field} type="email" placeholder="e.g. jane@example.com" />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                                <FormField
-                                                    control={agentForm.control}
-                                                    name="phone"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                        <FormLabel>Phone Number</FormLabel>
-                                                        <FormControl>
-                                                            <Input {...field} placeholder="e.g. 0712345678" />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
+                                                <FormField control={agentForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Jane Smith" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={agentForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. janesmith" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={agentForm.control} name="password" render={({ field }) => (<FormItem><FormLabel>Password</FormLabel><FormControl><Input {...field} type="password" placeholder="••••••••" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={agentForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. jane@example.com" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={agentForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" /></FormControl><FormMessage /></FormItem>)} />
                                                 <DialogFooter>
                                                     <Button type="button" variant="outline" onClick={() => setAgentDialogOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={agentForm.formState.isSubmitting}>
@@ -1145,6 +1137,7 @@ export default function ClientDashboardPage() {
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
                                     <TableHead className="font-semibold text-left">Name</TableHead>
+                                    <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
                                     <TableHead className="font-semibold text-left">Email</TableHead>
                                     <TableHead className="font-semibold text-left">Phone</TableHead>
                                     <TableHead className="font-semibold text-right">Action</TableHead>
@@ -1155,6 +1148,7 @@ export default function ClientDashboardPage() {
                                     Array.from({ length: 3 }).map((_, index) => (
                                       <TableRow key={index}>
                                         <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-48" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
@@ -1169,6 +1163,7 @@ export default function ClientDashboardPage() {
                                                 </div>
                                                 {agent.name}
                                             </TableCell>
+                                            <TableCell className="hidden sm:table-cell">{agent.username}</TableCell>
                                             <TableCell>{agent.email}</TableCell>
                                             <TableCell>{agent.phone}</TableCell>
                                             <TableCell className="text-right">
@@ -1182,7 +1177,7 @@ export default function ClientDashboardPage() {
                                                         <AlertDialogHeader>
                                                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            This action cannot be undone. This will permanently delete the agent.
+                                                            This action cannot be undone. This will permanently delete the agent {agent.name}.
                                                         </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
@@ -1196,9 +1191,52 @@ export default function ClientDashboardPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center h-24">
+                                        <TableCell colSpan={5} className="text-center h-24">
                                             No agents found.
                                         </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            
+            <TabsContent value="branches">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline text-3xl text-primary">Our Branches</CardTitle>
+                        <CardDescription>Find a CASA Motor Valuers & Assessors branch near you.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Branch Name</TableHead>
+                                    <TableHead>Location</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loadingBranches ? (
+                                     Array.from({ length: 3 }).map((_, index) => (
+                                      <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                                      </TableRow>
+                                     ))
+                                ) : branches.length > 0 ? (
+                                    branches.map((branch) => (
+                                        <TableRow key={branch.id}>
+                                            <TableCell className="font-medium flex items-center gap-3">
+                                                <Building2 className="h-5 w-5 text-primary" />
+                                                {branch.name}
+                                            </TableCell>
+                                            <TableCell>{branch.location}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={2} className="text-center h-24">No branches found.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -1213,5 +1251,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    

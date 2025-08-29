@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog, PlusCircle, FileText, Clock, CheckCircle } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog, PlusCircle, FileText, Clock, CheckCircle, Building2 } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -53,6 +53,8 @@ const getIconForView = (view: string) => {
             return <Hourglass />;
         case 'pending-bookings':
             return <Clock />;
+        case 'branches':
+            return <Building2 />;
         default:
             return <LayoutDashboard />;
     }
@@ -96,8 +98,8 @@ export default function UnifiedDashboardLayout({
 
     const topLevelItems = menuItems.filter(item => ['dashboard', 'create-booking'].includes(item.view));
     const managementItems = menuItems.filter(item => ['customers', 'agents'].includes(item.view));
-    const bookingItems = menuItems.filter(item => ['bookings', 'valuations', 'pending-bookings'].includes(item.view));
-    const pendingApprovalItem = menuItems.find(item => item.view === 'pending-approval');
+    const bookingItems = menuItems.filter(item => ['bookings', 'pending-bookings'].includes(item.view));
+    const otherItems = menuItems.filter(item => !topLevelItems.map(i=>i.view).includes(item.view) && !managementItems.map(i=>i.view).includes(item.view) && !bookingItems.map(i=>i.view).includes(item.view));
 
 
     return (
@@ -159,7 +161,7 @@ export default function UnifiedDashboardLayout({
                                 <div className="flex items-center justify-between p-2 rounded-md hover:bg-sidebar-accent w-full">
                                     <div className="flex items-center gap-2">
                                         <BookCopy/>
-                                        <span>Approvals</span>
+                                        <span>Bookings</span>
                                     </div>
                                     <ChevronDown className="h-4 w-4" />
                                 </div>
@@ -188,26 +190,26 @@ export default function UnifiedDashboardLayout({
                                 </CollapsibleContent>
                         </Collapsible>
 
-                        {pendingApprovalItem && (
-                             <SidebarMenuItem>
+                         {otherItems.map(item => (
+                            <SidebarMenuItem key={item.view}>
                                 <SidebarMenuButton 
-                                    onClick={() => setActiveView(pendingApprovalItem.view)} 
-                                    isActive={activeView === pendingApprovalItem.view} 
-                                    tooltip={pendingApprovalItem.name}
+                                    onClick={() => item.action ? item.action() : setActiveView(item.view)} 
+                                    isActive={activeView === item.view} 
+                                    tooltip={item.name}
                                     className="flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-2">
-                                        {getIconForView(pendingApprovalItem.view)}
-                                        {pendingApprovalItem.name}
+                                        {getIconForView(item.view)}
+                                        {item.name}
                                     </div>
-                                    {pendingApprovalItem.notificationCount && pendingApprovalItem.notificationCount > 0 && (
+                                    {item.notificationCount && item.notificationCount > 0 && (
                                         <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
-                                            {pendingApprovalItem.notificationCount}
+                                            {item.notificationCount}
                                         </span>
                                     )}
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
-                        )}
+                        ))}
 
                     </SidebarMenu>
                 </SidebarContent>
@@ -257,5 +259,3 @@ export default function UnifiedDashboardLayout({
         </SidebarProvider>
     );
 }
-
-    
