@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
@@ -56,7 +56,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
-interface Insurer {
+interface Institution {
   id: string;
   name: string;
   username: string;
@@ -67,6 +67,15 @@ interface Insurer {
 }
 
 interface Valuer {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+  active: boolean;
+}
+
+interface Staff {
   id: string;
   name: string;
   username: string;
@@ -116,13 +125,16 @@ function AdminDashboard() {
   const { toast } = useToast();
   const router = useRouter();
   const [activeView, setActiveView] = useState('dashboard');
-  const [insurers, setInsurers] = useState<Insurer[]>([]);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [valuers, setValuers] = useState<Valuer[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [valuations, setValuations] = useState<Valuation[]>([]);
   const [pendingBookingsForNotif, setPendingBookingsForNotif] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAddInsurerOpen, setAddInsurerOpen] = useState(false);
+  const [isAddInstitutionOpen, setAddInstitutionOpen] = useState(false);
   const [isAddValuerOpen, setAddValuerOpen] = useState(false);
+  const [isAddStaffOpen, setAddStaffOpen] = useState(false);
   const [isControlActive, setControlActive] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [bookingSearchTerm, setBookingSearchTerm] = useState('');
@@ -188,7 +200,7 @@ function AdminDashboard() {
         setter: React.Dispatch<React.SetStateAction<any[]>>, 
         requiredViews: string[]
     ) => {
-        if (requiredViews.includes(activeView)) {
+        if (requiredViews.includes(activeView) || activeView === 'dashboard') {
             const unsubscribe = onSnapshot(collection(db, collectionName), (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setter(data);
@@ -200,17 +212,13 @@ function AdminDashboard() {
         }
     };
     
-    subscribeToCollection("insurers", setInsurers, ["insurers"]);
+    subscribeToCollection("insurers", setInstitutions, ["institutions"]);
     subscribeToCollection("valuers", setValuers, ["valuers"]);
-    const bookingsQuery = query(collection(db, "bookings"), where("status", "!=", "Archived"));
-    
-    const requiredBookingViews = [
-        'dashboard', 
-        'bookings-awaiting-approval', 
-        'pending-valuation-approval', 
-        'completed-bookings', 
-        'rejected-bookings'
-    ];
+    subscribeToCollection("staff", setStaff, ["staff"]);
+    subscribeToCollection("valuations", setValuations, ["dashboard", "valuations"]);
+
+    const bookingsQuery = query(collection(db, "bookings"));
+    const requiredBookingViews = ['dashboard', 'valuations'];
 
     if (requiredBookingViews.includes(activeView)) {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
@@ -226,11 +234,13 @@ function AdminDashboard() {
         });
         subscriptions.push(unsubscribe);
     }
-
-    if (!['insurers', 'valuers', ...requiredBookingViews].includes(activeView)) {
-        setLoading(false);
-    }
     
+    // Fallback for views that don't subscribe to anything
+    const viewsWithoutSubscriptions = ['dashboard'];
+    if (!['institutions', 'valuers', 'staff', ...requiredBookingViews].includes(activeView) && !viewsWithoutSubscriptions.includes(activeView)) {
+      setLoading(false);
+    }
+
     return () => subscriptions.forEach(unsub => unsub());
   }, [activeView]);
 
@@ -245,7 +255,7 @@ function AdminDashboard() {
     }
   };
   
-  const handleAddUser = async (event: React.FormEvent<HTMLFormElement>, userType: 'insurer' | 'valuer') => {
+  const handleAddUser = async (event: React.FormEvent<HTMLFormElement>, userType: 'institution' | 'valuer' | 'staff') => {
     event.preventDefault();
     const form = event.currentTarget;
     const name = (form.elements.namedItem('name') as HTMLInputElement).value;
@@ -254,26 +264,26 @@ function AdminDashboard() {
     const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
 
-    const collectionName = userType === 'insurer' ? 'insurers' : 'valuers';
-    
-    try {
-      if (userType === 'valuer') {
-        const usernameQuery = query(collection(db, 'valuers'), where("username", "==", username));
-        const emailQuery = query(collection(db, 'valuers'), where("email", "==", email));
-        
-        const [usernameSnapshot, emailSnapshot] = await Promise.all([
-            getDocs(usernameQuery),
-            getDocs(emailQuery)
-        ]);
+    let collectionName = 'insurers';
+    if (userType === 'valuer') collectionName = 'valuers';
+    if (userType === 'staff') collectionName = 'staff';
 
-        if (!usernameSnapshot.empty) {
-            toast({ variant: "destructive", title: "Registration Failed", description: "A valuer with this username already exists." });
-            return;
-        }
-        if (!emailSnapshot.empty) {
-            toast({ variant: "destructive", title: "Registration Failed", description: "A valuer with this email already exists." });
-            return;
-        }
+    try {
+      const usernameQuery = query(collection(db, collectionName), where("username", "==", username));
+      const emailQuery = query(collection(db, collectionName), where("email", "==", email));
+      
+      const [usernameSnapshot, emailSnapshot] = await Promise.all([
+          getDocs(usernameQuery),
+          getDocs(emailQuery)
+      ]);
+
+      if (!usernameSnapshot.empty) {
+          toast({ variant: "destructive", title: "Registration Failed", description: `A user with this username already exists.` });
+          return;
+      }
+      if (!emailSnapshot.empty) {
+          toast({ variant: "destructive", title: "Registration Failed", description: `A user with this email already exists.` });
+          return;
       }
 
       await addDoc(collection(db, collectionName), {
@@ -285,16 +295,24 @@ function AdminDashboard() {
         active: isControlActive,
       });
 
-      if (userType === 'insurer') setAddInsurerOpen(false);
-      else setAddValuerOpen(false);
+      if (userType === 'institution') setAddInstitutionOpen(false);
+      else if (userType === 'valuer') setAddValuerOpen(false);
+      else setAddStaffOpen(false);
 
       form.reset();
       setControlActive(true);
       setShowPassword(false);
-      const userTypeDisplay = userType === 'insurer' ? 'Client' : 'Valuer';
+      let userTypeDisplay = 'User';
+      if (userType === 'institution') userTypeDisplay = 'Institution';
+      if (userType === 'valuer') userTypeDisplay = 'Valuer';
+      if (userType === 'staff') userTypeDisplay = 'Staff';
+
       toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.`});
     } catch (error: any) {
-       const userTypeDisplay = userType === 'insurer' ? 'Client' : 'Valuer';
+       let userTypeDisplay = 'User';
+        if (userType === 'institution') userTypeDisplay = 'Institution';
+        if (userType === 'valuer') userTypeDisplay = 'Valuer';
+        if (userType === 'staff') userTypeDisplay = 'Staff';
        console.error(`Error adding ${userType}: `, error);
        toast({
          variant: "destructive",
@@ -319,7 +337,10 @@ function AdminDashboard() {
     const docRef = doc(db, collectionName, id);
     try {
         await deleteDoc(docRef);
-        const userTypeDisplay = collectionName === 'insurers' ? 'Client' : 'Valuer';
+        let userTypeDisplay = 'User';
+        if (collectionName === 'insurers') userTypeDisplay = 'Institution';
+        if (collectionName === 'valuers') userTypeDisplay = 'Valuer';
+        if (collectionName === 'staff') userTypeDisplay = 'Staff';
         toast({ title: `${userTypeDisplay} Deleted`, description: `${name} has been successfully deleted.` });
     } catch (error) {
         console.error("Error deleting user: ", error);
@@ -334,23 +355,19 @@ function AdminDashboard() {
     window.open(url, '_blank');
   };
 
-  const handleViewReport = async (bookingId: string) => {
+  const handleViewReport = async (valuationId: string) => {
     setLoadingValuation(true);
     setValuationDialogOpen(true);
     try {
-      const q = query(collection(db, "valuations"), where("bookingId", "==", bookingId));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        const valuationDoc = querySnapshot.docs[0];
-        setSelectedValuation({ id: valuationDoc.id, ...valuationDoc.data() } as Valuation);
-
-        const bookingData = bookings.find(b => b.id === bookingId);
-        setSelectedBookingForValuation(bookingData || null);
-
-      } else {
-        toast({ variant: "destructive", title: "Not Found", description: "No valuation report found for this booking." });
-        setValuationDialogOpen(false);
-      }
+        const valuationData = valuations.find(v => v.id === valuationId);
+        if (valuationData) {
+            setSelectedValuation(valuationData);
+            const bookingData = bookings.find(b => b.id === valuationData.bookingId);
+            setSelectedBookingForValuation(bookingData || null);
+        } else {
+             toast({ variant: "destructive", title: "Not Found", description: "No valuation report found for this booking." });
+            setValuationDialogOpen(false);
+        }
     } catch (error) {
       console.error("Error fetching valuation report: ", error);
       toast({ variant: "destructive", title: "Error", description: "Could not fetch the valuation report." });
@@ -360,46 +377,6 @@ function AdminDashboard() {
     }
   };
 
-  const handleInitialBookingApproval = async (bookingId: string) => {
-    const bookingDocRef = doc(db, "bookings", bookingId);
-    try {
-        await updateDoc(bookingDocRef, {
-            status: "Pending Valuation",
-            approvedAt: serverTimestamp(),
-            approvedBy: user?.email,
-        });
-        toast({
-            title: "Booking Approved",
-            description: "The booking is now available for valuers to process.",
-        });
-    } catch (error) {
-        console.error("Error approving booking:", error);
-        toast({
-            variant: "destructive",
-            title: "Approval Failed",
-            description: "An error occurred while approving the booking.",
-        });
-    }
-};
-
-const handleInitialBookingRejection = async (bookingId: string) => {
-    const bookingDocRef = doc(db, "bookings", bookingId);
-    try {
-        await deleteDoc(bookingDocRef);
-        toast({
-            title: "Booking Rejected",
-            description: "The booking has been successfully deleted.",
-        });
-    } catch (error) {
-        console.error("Error rejecting booking:", error);
-        toast({
-            variant: "destructive",
-            title: "Rejection Failed",
-            description: "An error occurred while deleting the booking.",
-        });
-    }
-};
-  
   const handleApproval = async () => {
     if (!selectedValuation) return;
     setIsSubmitting(true);
@@ -458,12 +435,12 @@ const handleInitialBookingRejection = async (bookingId: string) => {
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "Pending":
-        return "secondary";
       case "Pending Valuation":
-        return "outline";
+        return "secondary";
       case "Pending Approval":
-        return "destructive";
+        return "outline";
       case "Completed":
+      case "Approved":
         return "default";
       case "Rejected":
         return "destructive";
@@ -473,12 +450,10 @@ const handleInitialBookingRejection = async (bookingId: string) => {
   };
   
     const stats = {
-        total: bookings.length,
-        pending: bookings.filter(b => b.status === 'Pending').length,
-        pendingValuation: bookings.filter(b => b.status === 'Pending').length,
-        pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
-        completed: bookings.filter(b => b.status === 'Completed').length,
-        rejected: bookings.filter(b => b.status === 'Rejected').length,
+        totalCars: bookings.length,
+        totalValuations: valuations.length,
+        totalInstitutions: institutions.length,
+        totalStaff: staff.length,
     };
 
     const chartConfig = {
@@ -497,11 +472,11 @@ const handleInitialBookingRejection = async (bookingId: string) => {
     } 
 
   const renderUserTable = (
-    data: (Insurer | Valuer)[],
+    data: (Institution | Valuer | Staff)[],
     title: string,
     description: string,
     onAdd: () => void,
-    collectionName: string
+    userType: 'institution' | 'valuer' | 'staff'
   ) => (
     <Card className="shadow-lg border-primary/20">
       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -511,7 +486,7 @@ const handleInitialBookingRejection = async (bookingId: string) => {
         </div>
         <Button onClick={onAdd}>
           <PlusCircle className="mr-2" />
-          Register New {collectionName === 'insurers' ? 'Client' : 'Valuer'}
+          Register New {userType.charAt(0).toUpperCase() + userType.slice(1)}
         </Button>
       </CardHeader>
       <CardContent>
@@ -545,7 +520,13 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                       </span>
                       <Switch
                         checked={item.active}
-                        onCheckedChange={() => toggleStatus(item.id, item.active, collectionName, item.name)}
+                        onCheckedChange={() => {
+                            let collectionName = '';
+                            if (userType === 'institution') collectionName = 'insurers';
+                            else if (userType === 'valuer') collectionName = 'valuers';
+                            else if (userType === 'staff') collectionName = 'staff';
+                            toggleStatus(item.id, item.active, collectionName, item.name);
+                        }}
                         aria-label={`Toggle status for ${item.name}`}
                       />
                     </div>
@@ -566,7 +547,13 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteUser(item.id, item.name, collectionName)}>
+                                <AlertDialogAction onClick={() => {
+                                     let collectionName = '';
+                                     if (userType === 'institution') collectionName = 'insurers';
+                                     else if (userType === 'valuer') collectionName = 'valuers';
+                                     else if (userType === 'staff') collectionName = 'staff';
+                                    handleDeleteUser(item.id, item.name, collectionName)
+                                }}>
                                     Continue
                                 </AlertDialogAction>
                             </AlertDialogFooter>
@@ -584,9 +571,9 @@ const handleInitialBookingRejection = async (bookingId: string) => {
   const renderUserDialog = (
     isOpen: boolean,
     onOpenChange: (open: boolean) => void,
-    userType: 'insurer' | 'valuer'
+    userType: 'institution' | 'valuer' | 'staff'
   ) => {
-    const userTypeDisplay = userType === 'insurer' ? 'Client' : 'Valuer';
+    const userTypeDisplay = userType.charAt(0).toUpperCase() + userType.slice(1);
     return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -637,26 +624,11 @@ const handleInitialBookingRejection = async (bookingId: string) => {
     </Dialog>
   );
 };
-
- const filteredBookings = bookings.filter(booking => {
-    const searchTermLower = bookingSearchTerm.toLowerCase();
-    return (
-      booking.bookingNumber.toLowerCase().includes(searchTermLower) ||
-      booking.customerName.toLowerCase().includes(searchTermLower) ||
-      booking.plateNumber.toLowerCase().includes(searchTermLower)
-    );
-  });
   
-  const bookingsAwaitingApproval = filteredBookings.filter(b => b.status === "Pending");
-  const pendingValuationApproval = filteredBookings.filter(b => b.status === "Pending Approval");
-  const completedBookings = filteredBookings.filter(b => b.status === "Completed");
-  const rejectedBookings = filteredBookings.filter(b => b.status === "Rejected");
-  
-  const renderBookingsTable = (
-    bookingsData: Booking[],
+  const renderValuationsTable = (
+    valuationsData: Valuation[],
     title: string,
     description: string,
-    viewType: 'awaiting-approval' | 'pending-valuation' | 'completed' | 'rejected' | 'default'
   ) => (
      <Card className="shadow-lg border-primary/20">
       <CardHeader>
@@ -684,7 +656,7 @@ const handleInitialBookingRejection = async (bookingId: string) => {
               <TableHead className="font-semibold text-left">Booking ID</TableHead>
               <TableHead className="hidden sm:table-cell font-semibold text-left">Customer</TableHead>
               <TableHead className="hidden md:table-cell font-semibold text-left">Vehicle</TableHead>
-              <TableHead className="hidden sm:table-cell font-semibold text-left">Date</TableHead>
+              <TableHead className="hidden sm:table-cell font-semibold text-left">Valuation Date</TableHead>
               <TableHead className="font-semibold text-left">Status</TableHead>
               <TableHead className="text-right font-semibold">Action</TableHead>
             </TableRow>
@@ -701,89 +673,61 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                   <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                 </TableRow>
               ))
-            ) : bookingsData.length > 0 ? (
-              bookingsData.map((booking) => (
-                <TableRow key={booking.id}>
-                  <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
-                  <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
-                  <TableCell className="hidden md:table-cell">{booking.plateNumber}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                     <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
-                  </TableCell>
-                   <TableCell className="text-right space-x-2">
-                      {viewType === 'awaiting-approval' && (
-                         <>
-                            <Button variant="default" size="sm" onClick={() => handleInitialBookingApproval(booking.id)}>
-                               <FileCheck className="mr-2 h-4 w-4" />
-                               <span className="hidden sm:inline">Approve</span>
-                            </Button>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" size="sm">
-                                        <FileX className="mr-2 h-4 w-4" />
-                                        <span className="hidden sm:inline">Reject</span>
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Reject and Delete Booking?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This action cannot be undone. This will permanently delete the booking.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleInitialBookingRejection(booking.id)}>
-                                            Continue
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                         </>
-                      )}
-                      {viewType === 'pending-valuation' && (
-                         <Button variant="default" size="sm" onClick={() => handleViewReport(booking.id)}>
-                           <CheckCircle className="mr-2 h-4 w-4" />
-                           <span className="hidden sm:inline">Confirm</span>
-                         </Button>
-                      )}
-                      {(viewType === 'completed' || viewType === 'rejected') && (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <FileSpreadsheet className="mr-2 h-4 w-4" />
-                              <span className="hidden sm:inline">Reports</span>
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-56 p-2">
-                            <div className="grid gap-2">
-                              <Button
-                                variant="ghost"
-                                className="justify-start"
-                                onClick={() => handleOpenReportInNewTab('booking', booking.id)}
-                              >
-                                Booking Report
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                className="justify-start"
-                                onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
-                                disabled={booking.status === 'Pending' || booking.status === 'Pending Valuation'}
-                              >
-                                Valuation Report
-                              </Button>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      )}
+            ) : valuationsData.length > 0 ? (
+                valuationsData.map((valuation) => {
+                const booking = bookings.find(b => b.id === valuation.bookingId);
+                return (
+                    <TableRow key={valuation.id}>
+                    <TableCell className="font-mono text-xs truncate">{booking?.bookingNumber}</TableCell>
+                    <TableCell className="font-medium hidden sm:table-cell">{booking?.customerName}</TableCell>
+                    <TableCell className="hidden md:table-cell">{booking?.plateNumber}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{new Date(valuation.valuedAt?.toDate()).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                        <Badge variant={getStatusVariant(valuation.status || 'Pending Approval')}>{valuation.status || 'Pending Approval'}</Badge>
                     </TableCell>
-                </TableRow>
-              ))
+                    <TableCell className="text-right space-x-2">
+                        {(valuation.status === 'Approved' || valuation.status === 'Rejected' || !valuation.status) && (
+                            <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                <span className="hidden sm:inline">Reports</span>
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56 p-2">
+                                <div className="grid gap-2">
+                                <Button
+                                    variant="ghost"
+                                    className="justify-start"
+                                    onClick={() => handleOpenReportInNewTab('booking', valuation.bookingId)}
+                                >
+                                    Booking Report
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="justify-start"
+                                    onClick={() => handleOpenReportInNewTab('valuation', valuation.bookingId)}
+                                >
+                                    Valuation Report
+                                </Button>
+                                </div>
+                            </PopoverContent>
+                            </Popover>
+                        )}
+                        {!valuation.status && (
+                             <Button variant="default" size="sm" onClick={() => handleViewReport(valuation.id)}>
+                                <FileCheck className="mr-2 h-4 w-4" />
+                                <span className="hidden sm:inline">Review</span>
+                             </Button>
+                        )}
+                        </TableCell>
+                    </TableRow>
+                )
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="text-center h-24">
-                  No bookings found in this category.
+                  No valuations found in this category.
                 </TableCell>
               </TableRow>
             )}
@@ -825,9 +769,9 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                 </CollapsibleTrigger>
                 <CollapsibleContent className="ml-4">
                      <SidebarMenuItem>
-                        <SidebarMenuButton onClick={() => setActiveView('insurers')} isActive={activeView === 'insurers'} tooltip="Manage Clients">
-                            <Users />
-                            Manage Clients
+                        <SidebarMenuButton onClick={() => setActiveView('institutions')} isActive={activeView === 'institutions'} tooltip="Manage Institutions">
+                            <Building />
+                            Manage Institutions
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
@@ -836,70 +780,22 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                             Manage Valuers
                         </SidebarMenuButton>
                     </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <SidebarMenuButton onClick={() => setActiveView('staff')} isActive={activeView === 'staff'} tooltip="Manage Staff">
+                            <Briefcase />
+                            Manage Staff
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                 </CollapsibleContent>
             </Collapsible>
 
-            <Collapsible defaultOpen>
-                <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-sidebar-accent w-full">
-                        <div className="flex items-center gap-2">
-                            <BookOpen/>
-                            <span>View Bookings</span>
-                        </div>
-                        <ChevronDown className="h-4 w-4" />
-                    </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="ml-4">
-                    <SidebarMenuItem>
-                        <SidebarMenuButton 
-                            onClick={() => setActiveView('bookings-awaiting-approval')} 
-                            isActive={activeView === 'bookings-awaiting-approval'} 
-                            tooltip="Bookings Awaiting Approval"
-                            className="flex items-center justify-between"
-                        >
-                            <div className="flex items-center gap-2">
-                                <FileClock />
-                                Bookings Awaiting Approval
-                            </div>
-                            {!loading && stats.pending > 0 && (
-                                <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
-                                    {stats.pending}
-                                </span>
-                            )}
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton 
-                            onClick={() => setActiveView('pending-valuation-approval')} 
-                            isActive={activeView === 'pending-valuation-approval'} 
-                            tooltip="Pending Valuation Approval"
-                            className="flex items-center justify-between"
-                        >
-                            <div className="flex items-center gap-2">
-                                <Hourglass />
-                                Pending Valuation Approval
-                            </div>
-                            {!loading && stats.pendingApproval > 0 && (
-                                <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
-                                    {stats.pendingApproval}
-                                </span>
-                            )}
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton onClick={() => setActiveView('completed-bookings')} isActive={activeView === 'completed-bookings'} tooltip="Completed Bookings">
-                            <FileCheck />
-                            Completed Bookings
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                     <SidebarMenuItem>
-                        <SidebarMenuButton onClick={() => setActiveView('rejected-bookings')} isActive={activeView === 'rejected-bookings'} tooltip="Rejected Bookings">
-                            <FileX />
-                            Rejected Bookings
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </CollapsibleContent>
-            </Collapsible>
+            <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView('valuations')} isActive={activeView === 'valuations'} tooltip="Valuations">
+                    <BookOpen/>
+                    Valuations
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -935,11 +831,6 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                                 ) : (
                                     <p className="p-4 text-center text-sm text-muted-foreground">No new notifications.</p>
                                 )}
-                            </div>
-                            <div className="p-2 border-t">
-                                <Button className="w-full" size="sm" onClick={() => setActiveView('bookings-awaiting-approval')}>
-                                    See All Bookings
-                                </Button>
                             </div>
                         </PopoverContent>
                     </Popover>
@@ -980,42 +871,42 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                    <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">All Cars</CardTitle>
+                            <CardTitle className="text-sm font-medium">Staff</CardTitle>
+                            <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.totalStaff}</div>
+                            <p className="text-xs text-muted-foreground">Total registered staff</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Institutions</CardTitle>
+                            <Building className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.totalInstitutions}</div>
+                            <p className="text-xs text-muted-foreground">Total partner institutions</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Cars</CardTitle>
                             <Car className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.total}</div>
-                            <p className="text-xs text-muted-foreground">Total registered plates</p>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.totalCars}</div>
+                            <p className="text-xs text-muted-foreground">Total cars booked</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
-                            <Hourglass className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
-                            <p className="text-xs text-muted-foreground">Awaiting admin approval</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+                            <CardTitle className="text-sm font-medium">Valuated</CardTitle>
                             <CheckCircle className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.completed}</div>
-                            <p className="text-xs text-muted-foreground">Completed and approved</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
-                            <XCircle className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.rejected}</div>
-                            <p className="text-xs text-muted-foreground">Rejected reports</p>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.totalValuations}</div>
+                            <p className="text-xs text-muted-foreground">Total cars valuated</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -1042,15 +933,15 @@ const handleInitialBookingRejection = async (bookingId: string) => {
                 </Card>
               </div>
             )}
-            {activeView === 'insurers' && renderUserTable(insurers, "Manage Clients", "View and manage all registered clients.", () => setAddInsurerOpen(true), "insurers")}
-            {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuers")}
-            {renderUserDialog(isAddInsurerOpen, setAddInsurerOpen, 'insurer')}
+            {activeView === 'institutions' && renderUserTable(institutions, "Manage Institutions", "View and manage all registered institutions.", () => setAddInstitutionOpen(true), "institution")}
+            {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuer")}
+            {activeView === 'staff' && renderUserTable(staff, "Manage Staff", "View and manage all registered staff members.", () => setAddStaffOpen(true), "staff")}
+            
+            {renderUserDialog(isAddInstitutionOpen, setAddInstitutionOpen, 'institution')}
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
-
-            {activeView === 'bookings-awaiting-approval' && renderBookingsTable(bookingsAwaitingApproval, "Bookings Awaiting Approval", "These new bookings need to be approved or rejected.", 'awaiting-approval')}
-            {activeView === 'pending-valuation-approval' && renderBookingsTable(pendingValuationApproval, "Pending Valuation Approval", "These reports are awaiting your review and final approval.", 'pending-valuation')}
-            {activeView === 'completed-bookings' && renderBookingsTable(completedBookings, "Completed Bookings", "View all completed and approved booking reports.", 'completed')}
-            {activeView === 'rejected-bookings' && renderBookingsTable(rejectedBookings, "Rejected Bookings", "View all rejected booking reports.", 'rejected')}
+            {renderUserDialog(isAddStaffOpen, setAddStaffOpen, 'staff')}
+            
+            {activeView === 'valuations' && renderValuationsTable(valuations, "All Valuations", "View and manage all submitted valuation reports.")}
             
             <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
               <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
@@ -1180,3 +1071,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    

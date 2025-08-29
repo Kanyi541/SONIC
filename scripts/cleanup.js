@@ -77,6 +77,10 @@ async function logUsage() {
 
     const valuersSnap = await db.collection("valuers").get();
     console.log(`Firestore - Valuers collection documents count: ${valuersSnap.size}`);
+
+    const staffSnap = await db.collection("staff").get();
+    console.log(`Firestore - Staff collection documents count: ${staffSnap.size}`);
+    
   } catch (error) {
     console.error('Error counting Firestore documents:', error);
   }
@@ -105,3 +109,5 @@ async function logUsage() {
 
 
 runCleanup().then(() => logUsage());
+
+    
