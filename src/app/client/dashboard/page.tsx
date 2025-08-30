@@ -612,19 +612,26 @@ export default function ClientDashboardPage() {
     
     const institutionName = loggedInUser?.agentName ? loggedInUser?.name : undefined;
 
+    const allMenuItems = [
+        { name: "Dashboard", view: "dashboard" },
+        { name: "Customers", view: "customers", action: () => setBookingDialogOpen(true) },
+        { name: "Agents", view: "agents" },
+        { name: "Staff", view: "staff" },
+        { name: "CASA Branches", view: "branches"},
+      ];
+    
+    const filteredMenuItems = loggedInUser?.agentName 
+        ? allMenuItems.filter(item => item.view !== 'agents' && item.view !== 'staff') 
+        : allMenuItems;
+
   return (
     <UnifiedDashboardLayout
       title="CASA Motor Valuers & Assessors Ltd"
       userRole={userDisplayRole}
       userEmail={loggedInUser?.email || ""}
       institutionName={institutionName}
-      menuItems={[
-        { name: "Dashboard", view: "dashboard" },
-        { name: "Customers", view: "customers", action: () => setBookingDialogOpen(true) },
-        { name: "Agents", view: "agents" },
-        { name: "Staff", view: "staff" },
-        { name: "CASA Branches", view: "branches"},
-      ]}
+      menuItems={filteredMenuItems}
+      isAgent={!!loggedInUser?.agentName}
       footerContent={(
         <>
             <p className="text-sm text-muted-foreground">

@@ -34,6 +34,7 @@ type DashboardLayoutProps = {
     menuItems: MenuItem[];
     children: (activeView: string, setActiveView: React.Dispatch<React.SetStateAction<string>>) => React.ReactNode;
     footerContent?: React.ReactNode;
+    isAgent?: boolean;
 };
 
 const getIconForView = (view: string) => {
@@ -69,6 +70,7 @@ export default function UnifiedDashboardLayout({
     menuItems,
     children,
     footerContent,
+    isAgent = false,
 }: DashboardLayoutProps) {
     const { toast } = useToast();
     const router = useRouter();
@@ -102,6 +104,24 @@ export default function UnifiedDashboardLayout({
         ? userRole
         : `${userRole} Panel`;
 
+    const handleMenuItemClick = (item: MenuItem) => {
+        const restrictedViews = ['agents', 'staff'];
+        if (isAgent && restrictedViews.includes(item.view)) {
+            toast({
+                variant: 'destructive',
+                title: 'Access Denied',
+                description: 'You do not have the rights to open this page.',
+            });
+            return;
+        }
+
+        if (item.action) {
+            item.action();
+        } else {
+            setActiveView(item.view);
+        }
+    };
+
 
     return (
         <SidebarProvider>
@@ -119,7 +139,7 @@ export default function UnifiedDashboardLayout({
                          {menuItems.map(item => (
                             <SidebarMenuItem key={item.view}>
                                 <SidebarMenuButton 
-                                    onClick={() => item.action ? item.action() : setActiveView(item.view)} 
+                                    onClick={() => handleMenuItemClick(item)} 
                                     isActive={activeView === item.view} 
                                     tooltip={item.name}
                                     className="flex items-center justify-between"
