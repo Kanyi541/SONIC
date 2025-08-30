@@ -239,7 +239,8 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     const storedUser = sessionStorage.getItem('loggedInUser');
     if (storedUser) {
-        setLoggedInUser(JSON.parse(storedUser));
+        const user = JSON.parse(storedUser);
+        setLoggedInUser(user);
     }
   }, []);
 
@@ -330,7 +331,7 @@ export default function ClientDashboardPage() {
   const handleAddCustomer = async (data: CustomerFormValues) => {
       if (!loggedInUser) return;
       try {
-          await addDoc(collection(db, "insurers"), {
+          await addDoc(collection(db, "customers"), {
               ...data,
               insurerId: loggedInUser.username,
           });
@@ -626,10 +627,8 @@ export default function ClientDashboardPage() {
     const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick: () => void, progress: number, colorClass: string }) => (
         <Card onClick={onClick} className="cursor-pointer hover:bg-muted transition-colors p-4 flex flex-col justify-between">
             <div className="flex items-start justify-between">
-                <div className="flex flex-col items-center gap-2">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${colorClass} bg-opacity-20`}>
-                        {icon}
-                    </div>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-muted`}>
+                    {icon}
                 </div>
                 <div className="text-3xl font-bold">{loading ? <Skeleton className="h-9 w-12" /> : value}</div>
             </div>
@@ -874,7 +873,7 @@ export default function ClientDashboardPage() {
                         <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, {loggedInUser?.agentName || loggedInUser?.name}!</h1>
                         <p className="text-muted-foreground mt-2">Here's a summary of your recent activity.</p>
                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <StatCard 
                             title="All Cars" 
                             value={stats.total} 
@@ -1368,3 +1367,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
