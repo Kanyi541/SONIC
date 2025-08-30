@@ -137,7 +137,7 @@ export default function ValuerDashboardPage() {
     useEffect(() => {
         if (loggedInUser) {
             setLoading(true);
-            const q = query(collection(db, "bookings"), where("status", "in", ["Pending Valuation", "Pending Approval", "Completed", "Rejected"]));
+            const q = query(collection(db, "bookings"), where("status", "in", ["Pending", "Pending Valuation", "Pending Approval", "Completed", "Rejected"]));
             const bookingsUnsubscribe = onSnapshot(q, (snapshot) => {
                 const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
                 setBookings(bookingsData);
@@ -234,7 +234,27 @@ export default function ValuerDashboardPage() {
     };
     
 
-    const openValuationDialog = (booking: Booking) => {
+    const openValuationDialog = async (booking: Booking) => {
+        if (booking.status === "Pending") {
+            try {
+                const bookingDocRef = doc(db, "bookings", booking.id);
+                await updateDoc(bookingDocRef, {
+                    status: "Pending Valuation"
+                });
+                toast({
+                    title: "Valuation Started",
+                    description: `Booking #${booking.bookingNumber} is now being valuated.`,
+                });
+            } catch (error) {
+                 console.error("Error updating booking status:", error);
+                 toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Could not start valuation process.",
+                });
+                return;
+            }
+        }
         form.reset();
         setImageDataUrls([]);
         setSelectedBooking(booking);
@@ -262,8 +282,8 @@ export default function ValuerDashboardPage() {
         );
     });
 
-    const pendingBookings = filteredBookings.filter(b => b.status === "Pending Valuation");
-    const completedBookings = filteredBookings.filter(b => b.status === "Completed" || b.status === "Rejected" || b.status === "Pending Approval");
+    const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
+    const completedBookings = filteredBookings.filter(b => ["Pending Valuation", "Pending Approval", "Completed", "Rejected"].includes(b.status));
 
     const stats = {
         total: bookings.length,
@@ -292,7 +312,8 @@ export default function ValuerDashboardPage() {
     const renderBookingsTable = (
         bookingsData: Booking[],
         title: string,
-        description: string
+        description: string,
+        isPendingTable: boolean = false
     ) => (
          <Card>
             <CardHeader>
@@ -352,7 +373,7 @@ export default function ValuerDashboardPage() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => openValuationDialog(booking)}
-                                    disabled={booking.status !== 'Pending Valuation'}
+                                    disabled={!isPendingTable && booking.status !== 'Pending Valuation'}
                                 >
                                     <FilePen className="mr-2 h-4 w-4" />
                                     <span className="hidden sm:inline">Valuate</span>
@@ -380,7 +401,7 @@ export default function ValuerDashboardPage() {
             userEmail={loggedInUser?.email || ""}
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
-                { name: 'Pending Valuations', view: 'pending-bookings', notificationCount: stats.pendingValuation },
+                { name: 'Pending Valuations', view: 'pending-bookings', notificationCount: stats.pending },
                 { name: 'Finalized Reports', view: 'bookings' },
             ]}
             footerContent={(
@@ -464,7 +485,7 @@ export default function ValuerDashboardPage() {
                             </div>
                         </TabsContent>
                         <TabsContent value="pending-bookings">
-                           {renderBookingsTable(pendingBookings, "Pending Valuations", "A list of all new vehicle valuations.")}
+                           {renderBookingsTable(pendingBookings, "Pending Valuations", "A list of all new vehicle valuations.", true)}
                         </TabsContent>
                         <TabsContent value="bookings">
                            {renderBookingsTable(completedBookings, "Finalized Reports", "A list of all valuations that have been approved or rejected by clients.")}
