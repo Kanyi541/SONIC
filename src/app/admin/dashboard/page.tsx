@@ -55,6 +55,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from "@/components/ui/progress"
 
 
 interface Institution {
@@ -212,7 +213,7 @@ function AdminDashboard() {
         requiredViews: string[]
     ) => {
         if (requiredViews.includes(activeView) || activeView === 'dashboard') {
-            const q = query(collection(db, collectionName), orderBy("valuedAt", "desc"));
+            const q = query(collection(db, collectionName), orderBy("name"));
             const unsubscribe = onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setter(data);
@@ -224,11 +225,20 @@ function AdminDashboard() {
         }
     };
     
-    subscribeToCollection("insurers", setInstitutions, ["institutions"]);
+    subscribeToCollection("insurers", setInstitutions, ["clients"]);
     subscribeToCollection("valuers", setValuers, ["valuers"]);
     subscribeToCollection("staff", setStaff, ["staff"]);
     subscribeToCollection("branches", setBranches, ["branches"]);
-    subscribeToCollection("valuations", setValuations, ["dashboard", "valuations"]);
+    
+    if (activeView === 'dashboard' || activeView === 'valuations') {
+        const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"));
+        const valUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
+            setValuations(data);
+        });
+        subscriptions.push(valUnsubscribe);
+    }
+    
 
     const bookingsQuery = query(collection(db, "bookings"));
     const requiredBookingViews = ['dashboard', 'valuations'];
@@ -249,8 +259,8 @@ function AdminDashboard() {
     }
     
     // Fallback for views that don't subscribe to anything
-    const viewsWithoutSubscriptions = ['dashboard'];
-    if (!['institutions', 'valuers', 'staff', 'branches', ...requiredBookingViews].includes(activeView) && !viewsWithoutSubscriptions.includes(activeView)) {
+    const viewsWithoutSubscriptions = ['settings'];
+    if (!['clients', 'valuers', 'staff', 'branches', ...requiredBookingViews].includes(activeView) && !viewsWithoutSubscriptions.includes(activeView)) {
       setLoading(false);
     }
 
@@ -316,14 +326,14 @@ function AdminDashboard() {
       setControlActive(true);
       setShowPassword(false);
       let userTypeDisplay = 'User';
-      if (userType === 'institution') userTypeDisplay = 'Institution';
+      if (userType === 'institution') userTypeDisplay = 'Client';
       if (userType === 'valuer') userTypeDisplay = 'Valuer';
       if (userType === 'staff') userTypeDisplay = 'Staff';
 
       toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.`});
     } catch (error: any) {
        let userTypeDisplay = 'User';
-        if (userType === 'institution') userTypeDisplay = 'Institution';
+        if (userType === 'institution') userTypeDisplay = 'Client';
         if (userType === 'valuer') userTypeDisplay = 'Valuer';
         if (userType === 'staff') userTypeDisplay = 'Staff';
        console.error(`Error adding ${userType}: `, error);
@@ -388,7 +398,7 @@ function AdminDashboard() {
     try {
         await deleteDoc(docRef);
         let userTypeDisplay = 'User';
-        if (collectionName === 'insurers') userTypeDisplay = 'Institution';
+        if (collectionName === 'insurers') userTypeDisplay = 'Client';
         if (collectionName === 'valuers') userTypeDisplay = 'Valuer';
         if (collectionName === 'staff') userTypeDisplay = 'Staff';
         toast({ title: `${userTypeDisplay} Deleted`, description: `${name} has been successfully deleted.` });
@@ -510,21 +520,21 @@ function AdminDashboard() {
         const booking = bookings.find(b => b.id === valuation.bookingId);
         return { ...valuation, booking };
     });
-
-    const chartConfig = {
-      PendingApproval: {
-        label: "Pending Approval",
-        color: "hsl(var(--destructive))",
-      },
-      Approved: {
-        label: "Approved",
-        color: "hsl(var(--chart-1))",
-      },
-      Rejected: {
-          label: "Rejected",
-          color: "hsl(var(--primary))"
-      }
-    } 
+    
+  const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
+      <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
+          <div className="flex items-start justify-between">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-muted`}>
+                  {icon}
+              </div>
+              <div className="text-3xl font-bold">{loading ? <Skeleton className="h-9 w-12" /> : value}</div>
+          </div>
+          <div className="mt-4">
+              <p className="text-sm font-medium text-muted-foreground">{title}</p>
+              <Progress value={progress} className={`h-1 mt-1 ${colorClass}`} indicatorClassName={colorClass} />
+          </div>
+      </Card>
+  );
 
   const renderUserTable = (
     data: (Institution | Valuer | Staff)[],
@@ -541,7 +551,7 @@ function AdminDashboard() {
         </div>
         <Button onClick={onAdd}>
           <PlusCircle className="mr-2" />
-          Register New {userType.charAt(0).toUpperCase() + userType.slice(1)}
+          Register New {userType === 'institution' ? 'Client' : (userType.charAt(0).toUpperCase() + userType.slice(1))}
         </Button>
       </CardHeader>
       <CardContent>
@@ -628,7 +638,7 @@ function AdminDashboard() {
     onOpenChange: (open: boolean) => void,
     userType: 'institution' | 'valuer' | 'staff'
   ) => {
-    const userTypeDisplay = userType.charAt(0).toUpperCase() + userType.slice(1);
+    const userTypeDisplay = userType === 'institution' ? 'Client' : userType.charAt(0).toUpperCase() + userType.slice(1);
     return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -710,7 +720,7 @@ function AdminDashboard() {
             <TableRow className="bg-muted/50">
               <TableHead className="font-semibold">Booking No.</TableHead>
               <TableHead className="font-semibold hidden md:table-cell">Customer</TableHead>
-              <TableHead className="font-semibold hidden lg:table-cell">Institution</TableHead>
+              <TableHead className="font-semibold hidden lg:table-cell">Client</TableHead>
               <TableHead className="font-semibold hidden sm:table-cell">Vehicle</TableHead>
               <TableHead className="font-semibold hidden md:table-cell">Plate No.</TableHead>
               <TableHead className="font-semibold hidden xl:table-cell">Assessment Value (KES)</TableHead>
@@ -806,7 +816,7 @@ function AdminDashboard() {
       <Sidebar variant="inset" side="left">
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <div className="bg-primary text-primary-foreground rounded-lg p-2 flex items-center justify-center">
+            <div className="bg-sidebar-primary text-sidebar-primary-foreground rounded-lg p-2 flex items-center justify-center">
               <Settings className="h-6 w-6" />
             </div>
             <h2 className="text-lg font-semibold text-sidebar-primary">Admin Panel</h2>
@@ -822,21 +832,22 @@ function AdminDashboard() {
             </SidebarMenuItem>
             
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('institutions')} isActive={activeView === 'institutions'} tooltip="Manage Institutions">
+                <SidebarMenuButton onClick={() => setActiveView('staff')} isActive={activeView === 'staff'} tooltip="Manage Staff">
+                    <Briefcase />
+                    Manage Staff
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setActiveView('clients')} isActive={activeView === 'clients'} tooltip="Manage Clients">
                 <Building />
-                Manage Institutions
+                Manage Clients
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Manage Valuers">
                     <UserCog />
                     Manage Valuers
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-                <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('staff')} isActive={activeView === 'staff'} tooltip="Manage Staff">
-                    <Briefcase />
-                    Manage Staff
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -850,6 +861,13 @@ function AdminDashboard() {
               <SidebarMenuButton onClick={() => setActiveView('valuations')} isActive={activeView === 'valuations'} tooltip="Valuations">
                 <FileSpreadsheet />
                 Valuations
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setActiveView('settings')} isActive={activeView === 'settings'} tooltip="Settings">
+                <Settings />
+                Settings
               </SidebarMenuButton>
             </SidebarMenuItem>
 
@@ -925,47 +943,39 @@ function AdminDashboard() {
                     <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, Admin!</h1>
                     <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Valuers & Assessors.</p>
                 </div>
-                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                   <Card onClick={() => setActiveView('staff')} className="cursor-pointer hover:bg-muted transition-colors">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Staff</CardTitle>
-                            <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.totalStaff}</div>
-                            <p className="text-xs text-muted-foreground">Total registered staff</p>
-                        </CardContent>
-                    </Card>
-                    <Card onClick={() => setActiveView('institutions')} className="cursor-pointer hover:bg-muted transition-colors">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Institutions</CardTitle>
-                            <Building className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.totalInstitutions}</div>
-                            <p className="text-xs text-muted-foreground">Total partner institutions</p>
-                        </CardContent>
-                    </Card>
-                    <Card onClick={() => setActiveView('valuations')} className="cursor-pointer hover:bg-muted transition-colors">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Cars</CardTitle>
-                            <Car className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.totalCars}</div>
-                            <p className="text-xs text-muted-foreground">Total cars booked</p>
-                        </CardContent>
-                    </Card>
-                    <Card onClick={() => setActiveView('valuations')} className="cursor-pointer hover:bg-muted transition-colors">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Valuated</CardTitle>
-                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.totalValuations}</div>
-                            <p className="text-xs text-muted-foreground">Total cars valuated</p>
-                        </CardContent>
-                    </Card>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard 
+                        title="Staff" 
+                        value={stats.totalStaff} 
+                        icon={<Briefcase className="h-6 w-6 text-blue-500" />} 
+                        onClick={() => setActiveView('staff')}
+                        progress={100}
+                        colorClass="bg-blue-500"
+                    />
+                     <StatCard 
+                        title="Clients" 
+                        value={stats.totalInstitutions} 
+                        icon={<Building className="h-6 w-6 text-orange-500" />} 
+                        onClick={() => setActiveView('clients')}
+                        progress={100}
+                        colorClass="bg-orange-500"
+                    />
+                     <StatCard 
+                        title="Total Cars" 
+                        value={stats.totalCars} 
+                        icon={<Car className="h-6 w-6 text-green-500" />} 
+                        onClick={() => setActiveView('valuations')}
+                        progress={100}
+                        colorClass="bg-green-500"
+                    />
+                     <StatCard 
+                        title="Valued" 
+                        value={stats.totalValuations} 
+                        icon={<CheckCircle className="h-6 w-6 text-red-500" />} 
+                        onClick={() => setActiveView('valuations')}
+                        progress={stats.totalCars > 0 ? (stats.totalValuations / stats.totalCars) * 100 : 0}
+                        colorClass="bg-red-500"
+                    />
                 </div>
 
                 <Card>
@@ -1031,7 +1041,7 @@ function AdminDashboard() {
                 </Card>
               </div>
             )}
-            {activeView === 'institutions' && renderUserTable(institutions, "Manage Institutions", "View and manage all registered institutions.", () => setAddInstitutionOpen(true), "institution")}
+            {activeView === 'clients' && renderUserTable(institutions, "Manage Clients", "View and manage all registered clients.", () => setAddInstitutionOpen(true), "institution")}
             {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuer")}
             {activeView === 'staff' && renderUserTable(staff, "Manage Staff", "View and manage all registered staff members.", () => setAddStaffOpen(true), "staff")}
             {activeView === 'branches' && (
@@ -1126,6 +1136,13 @@ function AdminDashboard() {
             </Dialog>
 
             {activeView === 'valuations' && renderValuationsTable(valuations, "All Valuations", "View and manage all submitted valuation reports.")}
+            
+            {activeView === 'settings' && (
+              <div>
+                <h2 className="text-2xl font-bold">Settings</h2>
+                <p>Manage application settings here.</p>
+              </div>
+            )}
             
             <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
               <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
