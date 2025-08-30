@@ -473,8 +473,10 @@ export default function ClientDashboardPage() {
         );
     });
     
-    const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
-    const completedBookings = filteredBookings.filter(b => b.status === "Completed" || b.status === "Rejected");
+    const getFilteredBookingsByStatus = (status: string | string[]) => {
+        const statuses = Array.isArray(status) ? status : [status];
+        return filteredBookings.filter(b => statuses.includes(b.status));
+    };
 
     const filteredCustomers = customers.filter(customer => {
         const searchTermLower = customerSearchTerm.toLowerCase();
@@ -618,7 +620,7 @@ export default function ClientDashboardPage() {
       institutionName={institutionName}
       menuItems={[
         { name: "Dashboard", view: "dashboard" },
-        { name: "Customers", view: "create-booking", action: () => setBookingDialogOpen(true) },
+        { name: "Customers", view: "customers", action: () => setBookingDialogOpen(true) },
         { name: "Agents", view: "agents" },
         { name: "Staff", view: "staff" },
         { name: "CASA Branches", view: "branches"},
@@ -634,7 +636,7 @@ export default function ClientDashboardPage() {
         </>
       )}
     >
-      {(activeView) => (
+      {(activeView, setActiveView) => (
           <>
           <Dialog open={isBookingDialogOpen} onOpenChange={setBookingDialogOpen}>
               <DialogContent className="sm:max-w-3xl grid-rows-[auto_1fr_auto] max-h-[90vh]">
@@ -851,7 +853,7 @@ export default function ClientDashboardPage() {
                     <p className="text-muted-foreground mt-2">Here's a summary of your recent activity.</p>
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <Card>
+                    <Card onClick={() => setActiveView('all-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">All Cars</CardTitle>
                             <Car className="h-4 w-4 text-muted-foreground" />
@@ -861,7 +863,7 @@ export default function ClientDashboardPage() {
                             <p className="text-xs text-muted-foreground">Total bookings made</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card onClick={() => setActiveView('pending-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">New Requests</CardTitle>
                             <FileSignature className="h-4 w-4 text-muted-foreground" />
@@ -871,7 +873,7 @@ export default function ClientDashboardPage() {
                             <p className="text-xs text-muted-foreground">New valuation bookings</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card onClick={() => setActiveView('pending-valuation-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
                             <FileClock className="h-4 w-4 text-muted-foreground" />
@@ -881,7 +883,7 @@ export default function ClientDashboardPage() {
                             <p className="text-xs text-muted-foreground">Awaiting valuer report</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card onClick={() => setActiveView('pending-approval-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
                             <FileWarning className="h-4 w-4 text-muted-foreground" />
@@ -891,7 +893,7 @@ export default function ClientDashboardPage() {
                             <p className="text-xs text-muted-foreground">Awaiting your approval</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card onClick={() => setActiveView('completed-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Approved</CardTitle>
                             <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -901,7 +903,7 @@ export default function ClientDashboardPage() {
                             <p className="text-xs text-muted-foreground">Completed reports</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card onClick={() => setActiveView('rejected-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Rejected</CardTitle>
                             <XCircle className="h-4 w-4 text-muted-foreground" />
@@ -1350,6 +1352,25 @@ export default function ClientDashboardPage() {
                     </CardContent>
                 </Card>
             </TabsContent>
+            
+            <TabsContent value="all-bookings">
+                {renderBookingsTable(filteredBookings, "All Bookings", "A complete list of all your bookings.")}
+            </TabsContent>
+            <TabsContent value="pending-bookings">
+                {renderBookingsTable(getFilteredBookingsByStatus("Pending"), "New Requests", "Bookings that are new and awaiting assignment to a valuer.")}
+            </TabsContent>
+            <TabsContent value="pending-valuation-bookings">
+                {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Pending Valuation", "Bookings assigned to a valuer and awaiting their report.")}
+            </TabsContent>
+            <TabsContent value="pending-approval-bookings">
+                {renderBookingsTable(getFilteredBookingsByStatus("Pending Approval"), "Pending Approval", "Valuation reports that have been submitted and are awaiting your review.")}
+            </TabsContent>
+            <TabsContent value="completed-bookings">
+                {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "Approved Bookings", "All bookings that have been fully completed and approved.")}
+            </TabsContent>
+            <TabsContent value="rejected-bookings">
+                {renderBookingsTable(getFilteredBookingsByStatus("Rejected"), "Rejected Bookings", "Bookings that have been rejected during the approval process.")}
+            </TabsContent>
 
           </Tabs>
         </>
@@ -1357,5 +1378,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    

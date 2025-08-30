@@ -32,7 +32,7 @@ type DashboardLayoutProps = {
     userEmail: string;
     institutionName?: string;
     menuItems: MenuItem[];
-    children: (activeView: string) => React.ReactNode;
+    children: (activeView: string, setActiveView: React.Dispatch<React.SetStateAction<string>>) => React.ReactNode;
     footerContent?: React.ReactNode;
 };
 
@@ -40,14 +40,12 @@ const getIconForView = (view: string) => {
     switch (view) {
         case 'dashboard':
             return <LayoutDashboard />;
-        case 'create-booking':
-            return <Users />;
+        case 'customers':
+             return <Users />;
         case 'bookings':
             return <CheckCircle />;
         case 'valuations':
             return <BookCopy />;
-        case 'customers':
-            return <Users />;
         case 'agents':
             return <UserCog />;
         case 'staff':
@@ -181,7 +179,7 @@ export default function UnifiedDashboardLayout({
                     </div>
                 </header>
                 <main className="flex-1 container py-8">
-                    {children(activeView)}
+                    {children(activeView, setActiveView)}
                 </main>
                 <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
                     <div className="container flex flex-col items-center justify-center gap-2 md:h-24">
