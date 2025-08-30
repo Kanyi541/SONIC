@@ -123,7 +123,7 @@ type ChartDataPoint = {
 const customerSchema = z.object({
   name: z.string().min(1, "Customer name is required"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().regex(/^\d{10}$/, "Phone number must be 10 digits.").min(1, "Customer phone is required"),
+  phone: z.string().min(1, "Customer phone is required"),
 });
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
@@ -137,7 +137,7 @@ const agentSchema = z.object({
       .refine((password) => /\d/.test(password), { message: "Password must contain at least one number" })
       .refine((password) => /[@$!%*?&]/.test(password), { message: "Password must contain at least one special character" }),
     email: z.string().email("Invalid email address"),
-    phone: z.string().regex(/^\d{10}$/, "Phone number must be 10 digits.").min(1, "Agent phone is required"),
+    phone: z.string().min(1, "Agent phone is required"),
 });
 
 type AgentFormValues = z.infer<typeof agentSchema>;
@@ -146,7 +146,7 @@ const staffSchema = z.object({
     name: z.string().min(1, "Staff name is required"),
     username: z.string().min(1, "Username is required"),
     email: z.string().email("Invalid email address"),
-    phone: z.string().regex(/^\d{10}$/, "Phone number must be 10 digits.").min(1, "Staff phone is required"),
+    phone: z.string().min(1, "Staff phone is required"),
 });
 
 type StaffFormValues = z.infer<typeof staffSchema>;
@@ -155,7 +155,7 @@ type StaffFormValues = z.infer<typeof staffSchema>;
 const bookingSchema = z.object({
   customerName: z.string().min(1, "Customer name is required."),
   customerEmail: z.string().email("Invalid email address."),
-  customerPhone: z.string().regex(/^\d{10}$/, "Phone number must be 10 digits.").min(1, "Customer phone is required."),
+  customerPhone: z.string().min(1, "Customer phone is required."),
   plateNumber: z.string().min(1, "Plate number is required"),
   policyNumber: z.string().min(1, "Policy number is required"),
   carMake: z.string().min(1, "Car make is required"),
@@ -499,6 +499,8 @@ export default function ClientDashboardPage() {
             booking.plateNumber.toLowerCase().includes(searchTermLower)
         );
     });
+    
+    const recentBookings = filteredBookings.slice(0, 5);
     
     const getFilteredBookingsByStatus = (status: string | string[]) => {
         const statuses = Array.isArray(status) ? status : [status];
@@ -948,6 +950,68 @@ export default function ClientDashboardPage() {
                             colorClass="bg-red-500"
                         />
                     </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Recent Bookings</CardTitle>
+                            <CardDescription>A summary of your 5 most recent bookings.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Booking ID</TableHead>
+                                        <TableHead>Customer</TableHead>
+                                        <TableHead>Vehicle</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {loading ? (
+                                        Array.from({ length: 5 }).map((_, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : recentBookings.length > 0 ? (
+                                        recentBookings.map((booking) => (
+                                            <TableRow key={booking.id}>
+                                                <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
+                                                <TableCell>{booking.customerName}</TableCell>
+                                                <TableCell>{booking.plateNumber}</TableCell>
+                                                <TableCell>{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
+                                                    >
+                                                        <Printer className="mr-2 h-4 w-4" />
+                                                        View Report
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="text-center h-24">
+                                                No recent bookings found.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                </div>
             </TabsContent>
             
@@ -968,6 +1032,7 @@ export default function ClientDashboardPage() {
                                         className="w-full rounded-lg bg-background pl-8"
                                         value={customerSearchTerm}
                                         onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                                        maxLength={10}
                                     />
                                 </div>
                                 <Dialog open={isCustomerDialogOpen} onOpenChange={setCustomerDialogOpen}>
@@ -1097,6 +1162,7 @@ export default function ClientDashboardPage() {
                                         className="w-full rounded-lg bg-background pl-8"
                                         value={agentSearchTerm}
                                         onChange={(e) => setAgentSearchTerm(e.target.value)}
+                                        maxLength={10}
                                     />
                                 </div>
                                 <Dialog open={isAgentDialogOpen} onOpenChange={setAgentDialogOpen}>
@@ -1220,6 +1286,7 @@ export default function ClientDashboardPage() {
                                         className="w-full rounded-lg bg-background pl-8"
                                         value={staffSearchTerm}
                                         onChange={(e) => setStaffSearchTerm(e.target.value)}
+                                        maxLength={10}
                                     />
                                 </div>
                                 <Dialog open={isStaffDialogOpen} onOpenChange={setStaffDialogOpen}>
@@ -1391,5 +1458,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
