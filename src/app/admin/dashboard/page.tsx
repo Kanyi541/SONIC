@@ -212,7 +212,8 @@ function AdminDashboard() {
         requiredViews: string[]
     ) => {
         if (requiredViews.includes(activeView) || activeView === 'dashboard') {
-            const unsubscribe = onSnapshot(collection(db, collectionName), (snapshot) => {
+            const q = query(collection(db, collectionName), orderBy("valuedAt", "desc"));
+            const unsubscribe = onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setter(data);
                 setLoading(false);
@@ -504,6 +505,11 @@ function AdminDashboard() {
         totalInstitutions: institutions.length,
         totalStaff: staff.length,
     };
+    
+    const recentValuations = valuations.slice(0, 5).map(valuation => {
+        const booking = bookings.find(b => b.id === valuation.bookingId);
+        return { ...valuation, booking };
+    });
 
     const chartConfig = {
       PendingApproval: {
@@ -964,22 +970,63 @@ function AdminDashboard() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Booking Statistics ({format(new Date(), 'MMMM')})</CardTitle>
-                        <CardDescription>Daily trends for report statuses this month.</CardDescription>
+                        <CardTitle>Recent Valuations</CardTitle>
+                        <CardDescription>A summary of the latest valuation reports submitted.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="day" />
-                                <YAxis/>
-                                <Tooltip content={<ChartTooltipContent />} />
-                                <Legend />
-                                <Line type="monotone" dataKey="PendingApproval" stroke={chartConfig.PendingApproval.color} strokeWidth={2} name="Pending Approval" />
-                                <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />
-                                <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />
-                            </LineChart>
-                        </ChartContainer>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>#</TableHead>
+                                    <TableHead>Plate No</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
+                                    <TableHead className="hidden md:table-cell">Date of Assessment</TableHead>
+                                    <TableHead className="hidden lg:table-cell">Make</TableHead>
+                                    <TableHead>Customer Name</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Institution</TableHead>
+                                    <TableHead>Status</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    Array.from({ length: 5 }).map((_, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-4" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                    </TableRow>
+                                    ))
+                                ) : recentValuations.length > 0 ? (
+                                    recentValuations.map((valuation, index) => (
+                                    <TableRow key={valuation.id}>
+                                        <TableCell>{index + 1}</TableCell>
+                                        <TableCell>{valuation.booking?.plateNumber}</TableCell>
+                                        <TableCell className="font-mono text-xs hidden sm:table-cell">{valuation.booking?.bookingNumber}</TableCell>
+                                        <TableCell className="hidden md:table-cell">{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</TableCell>
+                                        <TableCell className="hidden lg:table-cell">{valuation.booking?.carMake}</TableCell>
+                                        <TableCell>{valuation.booking?.customerName}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">{valuation.booking?.insurerName}</TableCell>
+                                        <TableCell>
+                                        <Badge variant={getStatusVariant(valuation.status || 'Pending Approval')}>
+                                            {valuation.status || 'Pending Approval'}
+                                        </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={8} className="h-24 text-center">
+                                            No recent valuations found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
                     </CardContent>
                 </Card>
               </div>
