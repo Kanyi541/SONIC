@@ -48,7 +48,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -123,7 +123,7 @@ type ChartDataPoint = {
 const customerSchema = z.object({
   name: z.string().min(1, "Customer name is required"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().min(1, "Customer phone is required"),
+  phone: z.string().regex(/^\d{1,10}$/, "Phone number must be up to 10 digits.").min(1, "Customer phone is required"),
 });
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
@@ -131,9 +131,13 @@ type CustomerFormValues = z.infer<typeof customerSchema>;
 const agentSchema = z.object({
     name: z.string().min(1, "Agent name is required"),
     username: z.string().min(1, "Username is required"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    password: z.string().min(8, "Password must be at least 8 characters")
+      .refine((password) => /[A-Z]/.test(password), { message: "Password must contain at least one uppercase letter" })
+      .refine((password) => /[a-z]/.test(password), { message: "Password must contain at least one lowercase letter" })
+      .refine((password) => /\d/.test(password), { message: "Password must contain at least one number" })
+      .refine((password) => /[@$!%*?&]/.test(password), { message: "Password must contain at least one special character" }),
     email: z.string().email("Invalid email address"),
-    phone: z.string().min(1, "Agent phone is required"),
+    phone: z.string().regex(/^\d{1,10}$/, "Phone number must be up to 10 digits.").min(1, "Agent phone is required"),
 });
 
 type AgentFormValues = z.infer<typeof agentSchema>;
@@ -141,9 +145,8 @@ type AgentFormValues = z.infer<typeof agentSchema>;
 const staffSchema = z.object({
     name: z.string().min(1, "Staff name is required"),
     username: z.string().min(1, "Username is required"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
     email: z.string().email("Invalid email address"),
-    phone: z.string().min(1, "Staff phone is required"),
+    phone: z.string().regex(/^\d{1,10}$/, "Phone number must be up to 10 digits.").min(1, "Staff phone is required"),
 });
 
 type StaffFormValues = z.infer<typeof staffSchema>;
@@ -152,7 +155,7 @@ type StaffFormValues = z.infer<typeof staffSchema>;
 const bookingSchema = z.object({
   customerName: z.string().min(1, "Customer name is required."),
   customerEmail: z.string().email("Invalid email address."),
-  customerPhone: z.string().min(1, "Customer phone is required."),
+  customerPhone: z.string().regex(/^\d{1,10}$/, "Phone number must be up to 10 digits.").min(1, "Customer phone is required."),
   plateNumber: z.string().min(1, "Plate number is required"),
   policyNumber: z.string().min(1, "Policy number is required"),
   carMake: z.string().min(1, "Car make is required"),
@@ -164,6 +167,28 @@ const bookingSchema = z.object({
 });
 
 type BookingFormValues = z.infer<typeof bookingSchema>;
+
+const PasswordInput = ({ field }: { field: any }) => {
+    const [showPassword, setShowPassword] = useState(false);
+    return (
+        <div className="relative">
+            <Input 
+                type={showPassword ? "text" : "password"} 
+                {...field}
+                placeholder="••••••••"
+            />
+            <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                onClick={() => setShowPassword(!showPassword)}
+            >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </Button>
+        </div>
+    );
+};
 
 export default function ClientDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -202,7 +227,7 @@ export default function ClientDashboardPage() {
 
   const staffForm = useForm<StaffFormValues>({
     resolver: zodResolver(staffSchema),
-    defaultValues: { name: "", email: "", phone: "", username: "", password: "" },
+    defaultValues: { name: "", email: "", phone: "", username: "" },
   });
 
   const bookingForm = useForm<BookingFormValues>({
@@ -608,7 +633,7 @@ export default function ClientDashboardPage() {
         </Card>
     );
 
-     const userDisplayRole = loggedInUser?.agentName
+      const userDisplayRole = loggedInUser?.agentName
       ? `${loggedInUser.agentName} Panel - ${loggedInUser.name}`
       : loggedInUser?.name || "Client";
     
@@ -625,19 +650,19 @@ export default function ClientDashboardPage() {
         : allMenuItems;
 
     const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick: () => void, progress: number, colorClass: string }) => (
-        <Card onClick={onClick} className="cursor-pointer hover:bg-muted transition-colors p-4 flex flex-col justify-between">
-            <div className="flex items-start justify-between">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-muted`}>
-                    {icon}
-                </div>
-                <div className="text-3xl font-bold">{loading ? <Skeleton className="h-9 w-12" /> : value}</div>
-            </div>
-            <div className="mt-4">
-                <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                <Progress value={progress} className={`h-1 mt-1 ${colorClass}`} indicatorClassName={colorClass} />
-            </div>
-        </Card>
-    );
+      <Card onClick={onClick} className="cursor-pointer hover:bg-muted transition-colors p-4 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-muted`}>
+                  {icon}
+              </div>
+              <div className="text-3xl font-bold">{loading ? <Skeleton className="h-9 w-12" /> : value}</div>
+          </div>
+          <div className="mt-4">
+              <p className="text-sm font-medium text-muted-foreground">{title}</p>
+              <Progress value={progress} className={`h-1 mt-1 ${colorClass}`} indicatorClassName={colorClass} />
+          </div>
+      </Card>
+  );
 
   return (
     <UnifiedDashboardLayout
@@ -704,7 +729,7 @@ export default function ClientDashboardPage() {
                                       <FormItem>
                                       <FormLabel>Customer Phone</FormLabel>
                                       <FormControl>
-                                          <Input {...field} placeholder="Enter customer phone" />
+                                          <Input {...field} placeholder="Enter customer phone" type="number" />
                                       </FormControl>
                                         <FormMessage />
                                       </FormItem>
@@ -991,7 +1016,7 @@ export default function ClientDashboardPage() {
                                                         <FormItem>
                                                         <FormLabel>Phone Number</FormLabel>
                                                         <FormControl>
-                                                            <Input {...field} placeholder="e.g. 0712345678" />
+                                                            <Input {...field} placeholder="e.g. 0712345678" type="number" />
                                                         </FormControl>
                                                         <FormMessage />
                                                         </FormItem>
@@ -1090,9 +1115,9 @@ export default function ClientDashboardPage() {
                                             <form onSubmit={agentForm.handleSubmit(handleAddAgent)} className="space-y-4">
                                                 <FormField control={agentForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Jane Smith" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. janesmith" /></FormControl><FormMessage /></FormItem>)} />
-                                                <FormField control={agentForm.control} name="password" render={({ field }) => (<FormItem><FormLabel>Password</FormLabel><FormControl><Input {...field} type="password" placeholder="••••••••" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={agentForm.control} name="password" render={({ field }) => (<FormItem><FormLabel>Password</FormLabel><FormControl><PasswordInput field={field} /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. jane@example.com" /></FormControl><FormMessage /></FormItem>)} />
-                                                <FormField control={agentForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={agentForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="number" /></FormControl><FormMessage /></FormItem>)} />
                                                 <DialogFooter className="pt-4">
                                                     <Button type="button" variant="outline" onClick={() => setAgentDialogOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={agentForm.formState.isSubmitting}>
@@ -1212,9 +1237,8 @@ export default function ClientDashboardPage() {
                                             <form onSubmit={staffForm.handleSubmit(handleAddStaff)} className="space-y-6 pt-4">
                                                 <FormField control={staffForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Alex Ray" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={staffForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. alexray" /></FormControl><FormMessage /></FormItem>)} />
-                                                <FormField control={staffForm.control} name="password" render={({ field }) => (<FormItem><FormLabel>Password</FormLabel><FormControl><Input {...field} type="password" placeholder="••••••••" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={staffForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. alex@example.com" /></FormControl><FormMessage /></FormItem>)} />
-                                                <FormField control={staffForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={staffForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="number" /></FormControl><FormMessage /></FormItem>)} />
                                                 <DialogFooter>
                                                     <Button type="button" variant="outline" onClick={() => setStaffDialogOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={staffForm.formState.isSubmitting}>
