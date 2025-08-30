@@ -48,7 +48,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +58,7 @@ import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Ca
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Progress } from "@/components/ui/progress";
 
 
 interface LoggedInUser {
@@ -606,12 +607,10 @@ export default function ClientDashboardPage() {
         </Card>
     );
 
-    const userDisplayRole = loggedInUser?.agentName
+     const userDisplayRole = loggedInUser?.agentName
       ? `${loggedInUser.agentName} Panel - ${loggedInUser.name}`
       : loggedInUser?.name || "Client";
     
-    const institutionName = loggedInUser?.agentName ? loggedInUser?.name : undefined;
-
     const allMenuItems = [
         { name: "Dashboard", view: "dashboard" },
         { name: "Customers", view: "customers", action: () => setBookingDialogOpen(true) },
@@ -624,12 +623,28 @@ export default function ClientDashboardPage() {
         ? allMenuItems.filter(item => item.view !== 'agents' && item.view !== 'staff') 
         : allMenuItems;
 
+    const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick: () => void, progress: number, colorClass: string }) => (
+        <Card onClick={onClick} className="cursor-pointer hover:bg-muted transition-colors p-4 flex flex-col justify-between">
+            <div className="flex items-start justify-between">
+                <div className="flex flex-col items-center gap-2">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${colorClass} bg-opacity-20`}>
+                        {icon}
+                    </div>
+                </div>
+                <div className="text-3xl font-bold">{loading ? <Skeleton className="h-9 w-12" /> : value}</div>
+            </div>
+            <div className="mt-4">
+                <p className="text-sm font-medium text-muted-foreground">{title}</p>
+                <Progress value={progress} className={`h-1 mt-1 ${colorClass}`} indicatorClassName={colorClass} />
+            </div>
+        </Card>
+    );
+
   return (
     <UnifiedDashboardLayout
       title="CASA Motor Valuers & Assessors Ltd"
       userRole={userDisplayRole}
       userEmail={loggedInUser?.email || ""}
-      institutionName={institutionName}
       menuItems={filteredMenuItems}
       isAgent={!!loggedInUser?.agentName}
       footerContent={(
@@ -855,93 +870,61 @@ export default function ClientDashboardPage() {
           <Tabs value={activeView} className="w-full">
             <TabsContent value="dashboard">
                <div className="grid gap-8">
-                <div>
-                    <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, {loggedInUser?.agentName || loggedInUser?.name}!</h1>
-                    <p className="text-muted-foreground mt-2">Here's a summary of your recent activity.</p>
-                </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <Card onClick={() => setActiveView('all-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">All Cars</CardTitle>
-                            <Car className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.total}</div>
-                            <p className="text-xs text-muted-foreground">Total bookings made</p>
-                        </CardContent>
-                    </Card>
-                    <Card onClick={() => setActiveView('pending-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">New Requests</CardTitle>
-                            <FileSignature className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pending}</div>
-                            <p className="text-xs text-muted-foreground">New valuation bookings</p>
-                        </CardContent>
-                    </Card>
-                    <Card onClick={() => setActiveView('pending-valuation-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
-                            <FileClock className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation}</div>
-                            <p className="text-xs text-muted-foreground">Awaiting valuer report</p>
-                        </CardContent>
-                    </Card>
-                    <Card onClick={() => setActiveView('pending-approval-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
-                            <FileWarning className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
-                            <p className="text-xs text-muted-foreground">Awaiting your approval</p>
-                        </CardContent>
-                    </Card>
-                    <Card onClick={() => setActiveView('completed-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Approved</CardTitle>
-                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.completed}</div>
-                            <p className="text-xs text-muted-foreground">Completed reports</p>
-                        </CardContent>
-                    </Card>
-                    <Card onClick={() => setActiveView('rejected-bookings')} className="cursor-pointer hover:bg-muted transition-colors">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
-                            <XCircle className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.rejected}</div>
-                            <p className="text-xs text-muted-foreground">Rejected reports</p>
-                        </CardContent>
-                    </Card>
-                </div>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Booking Statistics ({format(new Date(), 'MMMM')})</CardTitle>
-                        <CardDescription>Daily trends for your booking statuses this month.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="day" />
-                                <YAxis domain={[0, 'dataMax + 5']} />
-                                <Tooltip content={<ChartTooltipContent />} />
-                                <Legend />
-                                <Line type="monotone" dataKey="Pending" stroke={chartConfig.Pending.color} strokeWidth={2} />
-                                <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />
-                                <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />
-                            </LineChart>
-                        </ChartContainer>
-                    </CardContent>
-                </Card>
-              </div>
+                    <div>
+                        <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, {loggedInUser?.agentName || loggedInUser?.name}!</h1>
+                        <p className="text-muted-foreground mt-2">Here's a summary of your recent activity.</p>
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <StatCard 
+                            title="All Cars" 
+                            value={stats.total} 
+                            icon={<Car className="h-6 w-6 text-blue-500" />} 
+                            onClick={() => setActiveView('all-bookings')}
+                            progress={100}
+                            colorClass="bg-blue-500"
+                        />
+                         <StatCard 
+                            title="New Requests" 
+                            value={stats.pending} 
+                            icon={<FileSignature className="h-6 w-6 text-orange-500" />} 
+                            onClick={() => setActiveView('pending-bookings')}
+                            progress={(stats.pending / stats.total) * 100}
+                            colorClass="bg-orange-500"
+                        />
+                         <StatCard 
+                            title="Pending Valuation" 
+                            value={stats.pendingValuation} 
+                            icon={<FileClock className="h-6 w-6 text-yellow-500" />} 
+                            onClick={() => setActiveView('pending-valuation-bookings')}
+                            progress={(stats.pendingValuation / stats.total) * 100}
+                            colorClass="bg-yellow-500"
+                        />
+                         <StatCard 
+                            title="Pending Approval" 
+                            value={stats.pendingApproval} 
+                            icon={<FileWarning className="h-6 w-6 text-purple-500" />} 
+                            onClick={() => setActiveView('pending-approval-bookings')}
+                            progress={(stats.pendingApproval / stats.total) * 100}
+                            colorClass="bg-purple-500"
+                        />
+                         <StatCard 
+                            title="Approved" 
+                            value={stats.completed} 
+                            icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
+                            onClick={() => setActiveView('completed-bookings')}
+                            progress={(stats.completed / stats.total) * 100}
+                            colorClass="bg-green-500"
+                        />
+                         <StatCard 
+                            title="Rejected" 
+                            value={stats.rejected} 
+                            icon={<XCircle className="h-6 w-6 text-red-500" />} 
+                            onClick={() => setActiveView('rejected-bookings')}
+                            progress={(stats.rejected / stats.total) * 100}
+                            colorClass="bg-red-500"
+                        />
+                    </div>
+               </div>
             </TabsContent>
             
             <TabsContent value="customers">
