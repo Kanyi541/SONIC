@@ -605,7 +605,7 @@ export default function ClientDashboardPage() {
     );
 
     const userDisplayRole = loggedInUser?.agentName 
-        ? `${loggedInUser.agentName} (Agent)` 
+        ? `${loggedInUser.agentName} Panel-Agent` 
         : loggedInUser?.name || "Client";
     
     const institutionName = loggedInUser?.agentName ? loggedInUser?.name : undefined;

@@ -768,37 +768,24 @@ function AdminDashboard() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             
-            <Collapsible>
-                <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-sidebar-accent w-full">
-                         <div className="flex items-center gap-2">
-                             <FolderCog/>
-                             <span>Management</span>
-                        </div>
-                        <ChevronDown className="h-4 w-4" />
-                    </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="ml-4">
-                     <SidebarMenuItem>
-                        <SidebarMenuButton onClick={() => setActiveView('institutions')} isActive={activeView === 'institutions'} tooltip="Manage Institutions">
-                            <Building />
-                            Manage Institutions
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Manage Valuers">
-                            <UserCog />
-                            Manage Valuers
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                     <SidebarMenuItem>
-                        <SidebarMenuButton onClick={() => setActiveView('staff')} isActive={activeView === 'staff'} tooltip="Manage Staff">
-                            <Briefcase />
-                            Manage Staff
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </CollapsibleContent>
-            </Collapsible>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setActiveView('institutions')} isActive={activeView === 'institutions'} tooltip="Manage Institutions">
+                <Building />
+                Manage Institutions
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Manage Valuers">
+                    <UserCog />
+                    Manage Valuers
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+                <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView('staff')} isActive={activeView === 'staff'} tooltip="Manage Staff">
+                    <Briefcase />
+                    Manage Staff
+                </SidebarMenuButton>
+            </SidebarMenuItem>
             
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setActiveView('valuations')} isActive={activeView === 'valuations'} tooltip="Valuations">
