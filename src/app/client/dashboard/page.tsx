@@ -123,7 +123,7 @@ type ChartDataPoint = {
 const customerSchema = z.object({
   name: z.string().min(1, "Customer name is required"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().regex(/^\d{1,10}$/, "Phone number must be up to 10 digits.").min(1, "Customer phone is required"),
+  phone: z.string().regex(/^\d{10}$/, "Phone number must be 10 digits.").min(1, "Customer phone is required"),
 });
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
@@ -137,7 +137,7 @@ const agentSchema = z.object({
       .refine((password) => /\d/.test(password), { message: "Password must contain at least one number" })
       .refine((password) => /[@$!%*?&]/.test(password), { message: "Password must contain at least one special character" }),
     email: z.string().email("Invalid email address"),
-    phone: z.string().regex(/^\d{1,10}$/, "Phone number must be up to 10 digits.").min(1, "Agent phone is required"),
+    phone: z.string().regex(/^\d{10}$/, "Phone number must be 10 digits.").min(1, "Agent phone is required"),
 });
 
 type AgentFormValues = z.infer<typeof agentSchema>;
@@ -146,7 +146,7 @@ const staffSchema = z.object({
     name: z.string().min(1, "Staff name is required"),
     username: z.string().min(1, "Username is required"),
     email: z.string().email("Invalid email address"),
-    phone: z.string().regex(/^\d{1,10}$/, "Phone number must be up to 10 digits.").min(1, "Staff phone is required"),
+    phone: z.string().regex(/^\d{10}$/, "Phone number must be 10 digits.").min(1, "Staff phone is required"),
 });
 
 type StaffFormValues = z.infer<typeof staffSchema>;
@@ -155,7 +155,7 @@ type StaffFormValues = z.infer<typeof staffSchema>;
 const bookingSchema = z.object({
   customerName: z.string().min(1, "Customer name is required."),
   customerEmail: z.string().email("Invalid email address."),
-  customerPhone: z.string().regex(/^\d{1,10}$/, "Phone number must be up to 10 digits.").min(1, "Customer phone is required."),
+  customerPhone: z.string().regex(/^\d{10}$/, "Phone number must be 10 digits.").min(1, "Customer phone is required."),
   plateNumber: z.string().min(1, "Plate number is required"),
   policyNumber: z.string().min(1, "Policy number is required"),
   carMake: z.string().min(1, "Car make is required"),
@@ -729,7 +729,7 @@ export default function ClientDashboardPage() {
                                       <FormItem>
                                       <FormLabel>Customer Phone</FormLabel>
                                       <FormControl>
-                                          <Input {...field} placeholder="Enter customer phone" type="number" />
+                                          <Input {...field} placeholder="Enter customer phone" type="number" maxLength={10} />
                                       </FormControl>
                                         <FormMessage />
                                       </FormItem>
@@ -1016,7 +1016,7 @@ export default function ClientDashboardPage() {
                                                         <FormItem>
                                                         <FormLabel>Phone Number</FormLabel>
                                                         <FormControl>
-                                                            <Input {...field} placeholder="e.g. 0712345678" type="number" />
+                                                            <Input {...field} placeholder="e.g. 0712345678" type="number" maxLength={10} />
                                                         </FormControl>
                                                         <FormMessage />
                                                         </FormItem>
@@ -1117,7 +1117,7 @@ export default function ClientDashboardPage() {
                                                 <FormField control={agentForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. janesmith" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="password" render={({ field }) => (<FormItem><FormLabel>Password</FormLabel><FormControl><PasswordInput field={field} /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. jane@example.com" /></FormControl><FormMessage /></FormItem>)} />
-                                                <FormField control={agentForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="number" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={agentForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="number" maxLength={10} /></FormControl><FormMessage /></FormItem>)} />
                                                 <DialogFooter className="pt-4">
                                                     <Button type="button" variant="outline" onClick={() => setAgentDialogOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={agentForm.formState.isSubmitting}>
@@ -1238,7 +1238,7 @@ export default function ClientDashboardPage() {
                                                 <FormField control={staffForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Alex Ray" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={staffForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. alexray" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={staffForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. alex@example.com" /></FormControl><FormMessage /></FormItem>)} />
-                                                <FormField control={staffForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="number" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={staffForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="number" maxLength={10} /></FormControl><FormMessage /></FormItem>)} />
                                                 <DialogFooter>
                                                     <Button type="button" variant="outline" onClick={() => setStaffDialogOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={staffForm.formState.isSubmitting}>
