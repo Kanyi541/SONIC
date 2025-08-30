@@ -890,9 +890,8 @@ function AdminDashboard() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>#</TableHead>
                                     <TableHead>Plate No</TableHead>
-                                    <TableHead className="hidden lg:table-cell">Make &amp; Model</TableHead>
+                                    <TableHead>Make &amp; Model</TableHead>
                                     <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
                                     <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
                                     <TableHead>Customer Name</TableHead>
@@ -906,9 +905,8 @@ function AdminDashboard() {
                                 {loading ? (
                                     Array.from({ length: 5 }).map((_, index) => (
                                     <TableRow key={index}>
-                                        <TableCell><Skeleton className="h-5 w-4" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                                        <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
                                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
@@ -919,11 +917,10 @@ function AdminDashboard() {
                                     </TableRow>
                                     ))
                                 ) : recentValuations.length > 0 ? (
-                                    recentValuations.map((valuation, index) => (
+                                    recentValuations.map((valuation) => (
                                     <TableRow key={valuation.id}>
-                                        <TableCell>{index + 1}</TableCell>
                                         <TableCell>{valuation.booking?.plateNumber}</TableCell>
-                                        <TableCell className="hidden lg:table-cell">{`${valuation.booking?.carMake} ${valuation.booking?.carModel}`}</TableCell>
+                                        <TableCell>{`${valuation.booking?.carMake} ${valuation.booking?.carModel}`}</TableCell>
                                         <TableCell className="font-mono text-xs hidden sm:table-cell">{valuation.booking?.bookingNumber}</TableCell>
                                         <TableCell className="hidden md:table-cell">{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</TableCell>
                                         <TableCell>{valuation.booking?.customerName}</TableCell>
@@ -939,7 +936,7 @@ function AdminDashboard() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={10} className="h-24 text-center">
+                                        <TableCell colSpan={9} className="h-24 text-center">
                                             No recent valuations found.
                                         </TableCell>
                                     </TableRow>
@@ -1077,3 +1074,4 @@ export default function AdminDashboardPage() {
 }
 
     
+
