@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
@@ -989,12 +988,14 @@ function AdminDashboard() {
                                 <TableRow>
                                     <TableHead>#</TableHead>
                                     <TableHead>Plate No</TableHead>
+                                    <TableHead className="hidden lg:table-cell">Make &amp; Model</TableHead>
                                     <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
-                                    <TableHead className="hidden md:table-cell">Date of Assessment</TableHead>
-                                    <TableHead className="hidden lg:table-cell">Make</TableHead>
+                                    <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
                                     <TableHead>Customer Name</TableHead>
                                     <TableHead className="hidden sm:table-cell">Institution</TableHead>
                                     <TableHead>Status</TableHead>
+                                    <TableHead className="hidden xl:table-cell">Assessment Value (KES)</TableHead>
+                                    <TableHead className="hidden xl:table-cell">Forced Value (KES)</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -1003,12 +1004,14 @@ function AdminDashboard() {
                                     <TableRow key={index}>
                                         <TableCell><Skeleton className="h-5 w-4" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                        <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
                                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                        <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                        <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                     </TableRow>
                                     ))
                                 ) : recentValuations.length > 0 ? (
@@ -1016,21 +1019,23 @@ function AdminDashboard() {
                                     <TableRow key={valuation.id}>
                                         <TableCell>{index + 1}</TableCell>
                                         <TableCell>{valuation.booking?.plateNumber}</TableCell>
+                                        <TableCell className="hidden lg:table-cell">{`${valuation.booking?.carMake} ${valuation.booking?.carModel}`}</TableCell>
                                         <TableCell className="font-mono text-xs hidden sm:table-cell">{valuation.booking?.bookingNumber}</TableCell>
                                         <TableCell className="hidden md:table-cell">{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</TableCell>
-                                        <TableCell className="hidden lg:table-cell">{valuation.booking?.carMake}</TableCell>
                                         <TableCell>{valuation.booking?.customerName}</TableCell>
                                         <TableCell className="hidden sm:table-cell">{valuation.booking?.insurerName}</TableCell>
                                         <TableCell>
-                                        <Badge variant={getStatusVariant(valuation.status || 'Pending Approval')}>
+                                          <Badge variant={getStatusVariant(valuation.status || 'Pending Approval')}>
                                             {valuation.status || 'Pending Approval'}
-                                        </Badge>
+                                          </Badge>
                                         </TableCell>
+                                        <TableCell className="font-mono hidden xl:table-cell">{valuation.assessmentValue}</TableCell>
+                                        <TableCell className="font-mono hidden xl:table-cell">{valuation.forcedValue}</TableCell>
                                     </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={8} className="h-24 text-center">
+                                        <TableCell colSpan={10} className="h-24 text-center">
                                             No recent valuations found.
                                         </TableCell>
                                     </TableRow>
