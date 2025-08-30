@@ -205,16 +205,17 @@ export default function ValuerDashboardPage() {
                 comments: data.comments,
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
+                status: "Approved",
             });
     
             const bookingDocRef = doc(db, "bookings", selectedBooking.id);
             await updateDoc(bookingDocRef, {
-                status: "Pending Approval"
+                status: "Completed"
             });
     
             toast({
-                title: "Valuation Submitted",
-                description: `Report for ${selectedBooking.bookingNumber} has been submitted for approval.`,
+                title: "Valuation Approved",
+                description: `Report for ${selectedBooking.bookingNumber} has been approved and finalized.`,
             });
             
             setValuationDialogOpen(false);
@@ -686,5 +687,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
-    
