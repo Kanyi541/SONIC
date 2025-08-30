@@ -100,7 +100,7 @@ export default function UnifiedDashboardLayout({
     
     const isValuerDashboard = userRole !== "Admin" && !menuItems.some(item => item.view === 'customers');
 
-    const sidebarPanelTitle = userRole.includes('Panel-Agent')
+    const sidebarPanelTitle = userRole.includes('Panel -')
         ? userRole
         : `${userRole} Panel`;
 
@@ -131,7 +131,7 @@ export default function UnifiedDashboardLayout({
                         <div className="bg-sidebar-primary text-sidebar-primary-foreground rounded-lg p-2 flex items-center justify-center">
                             <Settings className="h-6 w-6" />
                         </div>
-                        <h2 className="text-xl font-semibold text-sidebar-primary">{sidebarPanelTitle}</h2>
+                        <h2 className="text-lg font-semibold text-sidebar-primary">{sidebarPanelTitle}</h2>
                     </div>
                 </SidebarHeader>
                 <SidebarContent>
@@ -165,12 +165,6 @@ export default function UnifiedDashboardLayout({
                         <div className="flex items-center gap-4">
                             <SidebarTrigger className="text-white hover:text-white/80" />
                             <h1 className="text-xl font-headline font-bold text-white">{title}</h1>
-                            {institutionName && (
-                                <>
-                                 <div className="h-6 w-px bg-gray-600"></div>
-                                 <span className="text-base font-medium text-gray-300">{institutionName}</span>
-                                </>
-                            )}
                         </div>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
