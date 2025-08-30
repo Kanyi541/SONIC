@@ -7,7 +7,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
@@ -85,6 +85,13 @@ interface Staff {
   active: boolean;
 }
 
+interface Branch {
+  id: string;
+  name: string;
+  manager: string;
+  location: string;
+}
+
 interface Booking {
   id: string;
   bookingNumber: string;
@@ -130,6 +137,7 @@ function AdminDashboard() {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [valuers, setValuers] = useState<Valuer[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [valuations, setValuations] = useState<Valuation[]>([]);
   const [pendingBookingsForNotif, setPendingBookingsForNotif] = useState<Booking[]>([]);
@@ -137,6 +145,7 @@ function AdminDashboard() {
   const [isAddInstitutionOpen, setAddInstitutionOpen] = useState(false);
   const [isAddValuerOpen, setAddValuerOpen] = useState(false);
   const [isAddStaffOpen, setAddStaffOpen] = useState(false);
+  const [isAddBranchOpen, setAddBranchOpen] = useState(false);
   const [isControlActive, setControlActive] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [bookingSearchTerm, setBookingSearchTerm] = useState('');
@@ -217,6 +226,7 @@ function AdminDashboard() {
     subscribeToCollection("insurers", setInstitutions, ["institutions"]);
     subscribeToCollection("valuers", setValuers, ["valuers"]);
     subscribeToCollection("staff", setStaff, ["staff"]);
+    subscribeToCollection("branches", setBranches, ["branches"]);
     subscribeToCollection("valuations", setValuations, ["dashboard", "valuations"]);
 
     const bookingsQuery = query(collection(db, "bookings"));
@@ -239,7 +249,7 @@ function AdminDashboard() {
     
     // Fallback for views that don't subscribe to anything
     const viewsWithoutSubscriptions = ['dashboard'];
-    if (!['institutions', 'valuers', 'staff', ...requiredBookingViews].includes(activeView) && !viewsWithoutSubscriptions.includes(activeView)) {
+    if (!['institutions', 'valuers', 'staff', 'branches', ...requiredBookingViews].includes(activeView) && !viewsWithoutSubscriptions.includes(activeView)) {
       setLoading(false);
     }
 
@@ -321,6 +331,43 @@ function AdminDashboard() {
          title: `Failed to Add ${userTypeDisplay}`,
          description: `An error occurred while adding the ${userType}.`,
        });
+    }
+  };
+
+  const handleAddBranch = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const name = (form.elements.namedItem('branchName') as HTMLInputElement).value;
+    const manager = (form.elements.namedItem('branchManager') as HTMLInputElement).value;
+    const location = (form.elements.namedItem('branchLocation') as HTMLInputElement).value;
+
+    try {
+        await addDoc(collection(db, "branches"), {
+            name,
+            manager,
+            location,
+        });
+        toast({ title: "Branch Added", description: `${name} has been successfully added.` });
+        setAddBranchOpen(false);
+        form.reset();
+    } catch (error) {
+        console.error("Error adding branch: ", error);
+        toast({
+            variant: "destructive",
+            title: "Failed to Add Branch",
+            description: "An error occurred while adding the branch.",
+        });
+    }
+  };
+  
+  const handleDeleteBranch = async (id: string, name: string) => {
+    const docRef = doc(db, "branches", id);
+    try {
+        await deleteDoc(docRef);
+        toast({ title: "Branch Deleted", description: `${name} has been successfully deleted.` });
+    } catch (error) {
+        console.error("Error deleting branch: ", error);
+        toast({ variant: "destructive", title: "Deletion Failed", description: "Could not delete branch." });
     }
   };
 
@@ -786,6 +833,12 @@ function AdminDashboard() {
                     Manage Staff
                 </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView('branches')} isActive={activeView === 'branches'} tooltip="Our Branches">
+                    <Building2 />
+                    Our Branches
+                </SidebarMenuButton>
+            </SidebarMenuItem>
             
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setActiveView('valuations')} isActive={activeView === 'valuations'} tooltip="Valuations">
@@ -934,11 +987,97 @@ function AdminDashboard() {
             {activeView === 'institutions' && renderUserTable(institutions, "Manage Institutions", "View and manage all registered institutions.", () => setAddInstitutionOpen(true), "institution")}
             {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuer")}
             {activeView === 'staff' && renderUserTable(staff, "Manage Staff", "View and manage all registered staff members.", () => setAddStaffOpen(true), "staff")}
+            {activeView === 'branches' && (
+                <Card className="shadow-lg border-primary/20">
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                        <CardTitle className="font-headline text-3xl text-primary">Our Branches</CardTitle>
+                        <CardDescription>View and manage all company branches.</CardDescription>
+                        </div>
+                        <Button onClick={() => setAddBranchOpen(true)}>
+                            <PlusCircle className="mr-2" />
+                            Add Branch
+                        </Button>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                        <TableHeader>
+                            <TableRow className="bg-muted/50">
+                            <TableHead className="font-semibold text-left">Branch Name</TableHead>
+                            <TableHead className="font-semibold text-left">Branch Manager</TableHead>
+                            <TableHead className="font-semibold text-left">Location</TableHead>
+                            <TableHead className="text-right font-semibold">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {branches.map(branch => (
+                            <TableRow key={branch.id}>
+                                <TableCell className="font-medium">{branch.name}</TableCell>
+                                <TableCell>{branch.manager}</TableCell>
+                                <TableCell>{branch.location}</TableCell>
+                                <TableCell className="text-right">
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="outline" size="icon" className="bg-black text-primary hover:bg-black/90 hover:text-primary/90">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This action cannot be undone. This will permanently delete the branch {branch.name}.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteBranch(branch.id, branch.name)}>
+                                                    Continue
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            )}
             
             {renderUserDialog(isAddInstitutionOpen, setAddInstitutionOpen, 'institution')}
             {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
             {renderUserDialog(isAddStaffOpen, setAddStaffOpen, 'staff')}
             
+            <Dialog open={isAddBranchOpen} onOpenChange={setAddBranchOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                    <DialogTitle>Add New Branch</DialogTitle>
+                    <DialogDescription>
+                        Fill in the details below to create a new branch.
+                    </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddBranch} className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="branchName" className="text-right">Name</Label>
+                        <Input id="branchName" name="branchName" className="col-span-3" required />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="branchManager" className="text-right">Manager</Label>
+                        <Input id="branchManager" name="branchManager" className="col-span-3" required />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="branchLocation" className="text-right">Location</Label>
+                        <Input id="branchLocation" name="branchLocation" className="col-span-3" required />
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit">Create Branch</Button>
+                    </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
             {activeView === 'valuations' && renderValuationsTable(valuations, "All Valuations", "View and manage all submitted valuation reports.")}
             
             <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
@@ -1069,5 +1208,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    
