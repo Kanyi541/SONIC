@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2 } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
@@ -117,7 +117,7 @@ interface Valuation {
     imageUrls: string[];
     valuedBy: string;
     valuedAt: any;
-    status: 'Approved' | 'Rejected';
+    status: 'Approved' | 'Rejected' | 'Pending Approval';
     rejectionReason?: string;
 }
 
@@ -149,6 +149,8 @@ function AdminDashboard() {
   const [showPassword, setShowPassword] = useState(false);
   const [bookingSearchTerm, setBookingSearchTerm] = useState('');
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedValuationForAction, setSelectedValuationForAction] = useState<Valuation | null>(null);
   
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -220,7 +222,7 @@ function AdminDashboard() {
     subscribeToCollection("staff", setStaff, ["staff"]);
     subscribeToCollection("branches", setBranches, ["branches"]);
     
-    if (activeView === 'dashboard' || activeView === 'valuations') {
+    if (['dashboard', 'valuations', 'pending-approval'].includes(activeView)) {
         const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"));
         const valUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
@@ -231,7 +233,7 @@ function AdminDashboard() {
     
 
     const bookingsQuery = query(collection(db, "bookings"));
-    const requiredBookingViews = ['dashboard', 'valuations'];
+    const requiredBookingViews = ['dashboard', 'valuations', 'pending-approval'];
 
     if (requiredBookingViews.includes(activeView)) {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
@@ -405,11 +407,46 @@ function AdminDashboard() {
     window.open(url, '_blank');
   };
 
+    const handleApproval = async (valuation: Valuation) => {
+        const bookingDocRef = doc(db, "bookings", valuation.bookingId);
+        const valuationDocRef = doc(db, "valuations", valuation.id);
+        try {
+            await updateDoc(bookingDocRef, { status: "Completed" });
+            await updateDoc(valuationDocRef, { status: "Approved" });
+            toast({ title: "Valuation Approved", description: `Report for booking #${valuation.bookingId} approved.` });
+        } catch (error) {
+            console.error("Error approving valuation: ", error);
+            toast({ variant: "destructive", title: "Approval Failed", description: "Could not approve valuation." });
+        }
+    };
+
+    const handleRejection = async () => {
+        if (!selectedValuationForAction || !rejectionReason) {
+            toast({ variant: "destructive", title: "Validation Error", description: "Rejection reason cannot be empty." });
+            return;
+        }
+        const { bookingId, id } = selectedValuationForAction;
+        const bookingDocRef = doc(db, "bookings", bookingId);
+        const valuationDocRef = doc(db, "valuations", id);
+        try {
+            await updateDoc(bookingDocRef, { status: "Rejected" });
+            await updateDoc(valuationDocRef, { status: "Rejected", rejectionReason });
+            toast({ title: "Valuation Rejected", description: `Report for booking #${bookingId} has been rejected.` });
+            setRejectionReason("");
+            setSelectedValuationForAction(null);
+        } catch (error) {
+            console.error("Error rejecting valuation: ", error);
+            toast({ variant: "destructive", title: "Rejection Failed", description: "Could not reject valuation." });
+        }
+    };
+
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "Pending":
       case "Pending Valuation":
         return "secondary";
+      case "Pending Approval":
+        return "outline";
       case "Completed":
       case "Approved":
         return "default";
@@ -423,6 +460,7 @@ function AdminDashboard() {
     const stats = {
         totalCars: bookings.length,
         totalValuations: valuations.length,
+        pendingApproval: valuations.filter(v => v.status === 'Pending Approval').length,
         totalInstitutions: institutions.length,
         totalStaff: staff.length,
     };
@@ -605,6 +643,7 @@ function AdminDashboard() {
     valuationsData: Valuation[],
     title: string,
     description: string,
+    isApprovalView: boolean = false
   ) => (
      <Card className="shadow-lg border-primary/20">
       <CardHeader>
@@ -634,8 +673,6 @@ function AdminDashboard() {
               <TableHead className="font-semibold hidden lg:table-cell">Client</TableHead>
               <TableHead className="font-semibold hidden sm:table-cell">Vehicle</TableHead>
               <TableHead className="font-semibold hidden md:table-cell">Plate No.</TableHead>
-              <TableHead className="font-semibold hidden xl:table-cell">Assessment Value (KES)</TableHead>
-              <TableHead className="font-semibold hidden xl:table-cell">Forced Value (KES)</TableHead>
               <TableHead className="font-semibold text-left">Status</TableHead>
               <TableHead className="text-right font-semibold">Action</TableHead>
             </TableRow>
@@ -649,8 +686,6 @@ function AdminDashboard() {
                   <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                   <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
                   <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                   <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                 </TableRow>
@@ -665,45 +700,58 @@ function AdminDashboard() {
                     <TableCell className="hidden lg:table-cell">{booking?.insurerName}</TableCell>
                     <TableCell className="hidden sm:table-cell">{booking?.carMake}</TableCell>
                     <TableCell className="font-mono hidden md:table-cell">{booking?.plateNumber}</TableCell>
-                    <TableCell className="font-mono hidden xl:table-cell">{valuation.assessmentValue}</TableCell>
-                    <TableCell className="font-mono hidden xl:table-cell">{valuation.forcedValue}</TableCell>
                     <TableCell>
                         <Badge variant={getStatusVariant(valuation.status)}>{valuation.status}</Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
-                        <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm">
-                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">Reports</span>
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-56 p-2">
-                            <div className="grid gap-2">
-                            <Button
-                                variant="ghost"
-                                className="justify-start"
-                                onClick={() => handleOpenReportInNewTab('booking', valuation.bookingId)}
-                            >
-                                Booking Report
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                className="justify-start"
-                                onClick={() => handleOpenReportInNewTab('valuation', valuation.bookingId)}
-                            >
-                                Valuation Report
-                            </Button>
-                            </div>
-                        </PopoverContent>
-                        </Popover>
+                        {isApprovalView ? (
+                            <>
+                                <Button variant="default" size="sm" onClick={() => handleApproval(valuation)}>
+                                    <ThumbsUp className="mr-2 h-4 w-4" />
+                                    Approve
+                                </Button>
+                                <DialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" onClick={() => setSelectedValuationForAction(valuation)}>
+                                        <ThumbsDown className="mr-2 h-4 w-4" />
+                                        Reject
+                                    </Button>
+                                </DialogTrigger>
+                            </>
+                        ) : (
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                    <span className="hidden sm:inline">Reports</span>
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-56 p-2">
+                                    <div className="grid gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        className="justify-start"
+                                        onClick={() => handleOpenReportInNewTab('booking', valuation.bookingId)}
+                                    >
+                                        Booking Report
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        className="justify-start"
+                                        onClick={() => handleOpenReportInNewTab('valuation', valuation.bookingId)}
+                                    >
+                                        Valuation Report
+                                    </Button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        )}
                     </TableCell>
                     </TableRow>
                 )
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={9} className="text-center h-24">
+                <TableCell colSpan={7} className="text-center h-24">
                   No valuations found.
                 </TableCell>
               </TableRow>
@@ -768,6 +816,25 @@ function AdminDashboard() {
             </SidebarMenuItem>
             
             <SidebarMenuItem>
+                <SidebarMenuButton 
+                    onClick={() => setActiveView('pending-approval')} 
+                    isActive={activeView === 'pending-approval'} 
+                    tooltip="Pending Approval"
+                    className="flex items-center justify-between"
+                >
+                    <div className="flex items-center gap-2">
+                        <FileWarning />
+                        Pending Approval
+                    </div>
+                     {stats.pendingApproval > 0 && (
+                        <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
+                            {stats.pendingApproval}
+                        </span>
+                    )}
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setActiveView('settings')} isActive={activeView === 'settings'} tooltip="Settings">
                 <Settings />
                 Settings
@@ -777,6 +844,7 @@ function AdminDashboard() {
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
+      <Dialog onOpenChange={(open) => !open && setSelectedValuationForAction(null)}>
       <SidebarInset>
         <header className="sticky top-0 z-40 w-full border-b bg-black shadow-sm">
             <div className="container flex h-16 items-center justify-between">
@@ -872,12 +940,12 @@ function AdminDashboard() {
                         colorClass="bg-green-500"
                     />
                      <StatCard 
-                        title="Valued" 
-                        value={stats.totalValuations} 
-                        icon={<CheckCircle className="h-6 w-6 text-red-500" />} 
-                        onClick={() => setActiveView('valuations')}
-                        progress={stats.totalCars > 0 ? (stats.totalValuations / stats.totalCars) * 100 : 0}
-                        colorClass="bg-red-500"
+                        title="Pending Approval" 
+                        value={stats.pendingApproval} 
+                        icon={<FileWarning className="h-6 w-6 text-yellow-500" />} 
+                        onClick={() => setActiveView('pending-approval')}
+                        progress={stats.totalValuations > 0 ? (stats.pendingApproval / stats.totalValuations) * 100 : 0}
+                        colorClass="bg-yellow-500"
                     />
                 </div>
 
@@ -1041,8 +1109,10 @@ function AdminDashboard() {
                 </DialogContent>
             </Dialog>
 
-            {activeView === 'valuations' && renderValuationsTable(valuations, "All Valuations", "View and manage all submitted valuation reports.")}
+            {activeView === 'valuations' && renderValuationsTable(valuations.filter(v => v.status !== 'Pending Approval'), "All Valuations", "View and manage all submitted valuation reports.")}
             
+            {activeView === 'pending-approval' && renderValuationsTable(valuations.filter(v => v.status === 'Pending Approval'), "Pending Approval", "Review and approve or reject submitted valuation reports.", true)}
+
             {activeView === 'settings' && (
               <div>
                 <h2 className="text-2xl font-bold">Settings</h2>
@@ -1061,6 +1131,28 @@ function AdminDashboard() {
             </div>
         </footer>
       </SidebarInset>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Reject Valuation</DialogTitle>
+                <DialogDescription>
+                    Please provide a reason for rejecting this valuation report. This will be visible to the client.
+                </DialogDescription>
+            </DialogHeader>
+            <Textarea
+                placeholder="Enter rejection reason here..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+            />
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button variant="destructive" onClick={handleRejection}>
+                    Confirm Rejection
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 }
@@ -1074,4 +1166,3 @@ export default function AdminDashboardPage() {
 }
 
     
-

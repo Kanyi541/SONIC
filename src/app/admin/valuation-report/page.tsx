@@ -23,7 +23,7 @@ interface Valuation {
     imageUrls: string[];
     valuedBy: string;
     valuedAt: any;
-    status?: 'Approved' | 'Rejected';
+    status?: 'Approved' | 'Rejected' | 'Pending Approval';
     rejectionReason?: string;
 }
 
@@ -84,9 +84,9 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
             {valuation.status === 'Rejected' && (
                 <Alert variant="destructive" className="mb-8">
                     <XCircle className="h-4 w-4" />
-                    <AlertTitle>Report Rejected by {booking.insurerName}</AlertTitle>
+                    <AlertTitle>Report Rejected by Admin</AlertTitle>
                     <AlertDescription>
-                        {valuation.rejectionReason || "This valuation report was rejected."}
+                       <strong>Reason:</strong> {valuation.rejectionReason || "This valuation report was rejected."}
                     </AlertDescription>
                 </Alert>
             )}

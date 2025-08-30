@@ -190,12 +190,6 @@ export default function ValuerDashboardPage() {
         try {
             await addDoc(collection(db, "valuations"), {
                 bookingId: selectedBooking.id,
-                bookingNumber: selectedBooking.bookingNumber,
-                customerName: selectedBooking.customerName,
-                plateNumber: selectedBooking.plateNumber,
-                carMake: selectedBooking.carMake,
-                carModel: selectedBooking.carModel,
-                guarantorName: selectedBooking.insurerName,
                 assessmentDate: data.assessmentDate,
                 assessmentValue: data.assessmentValue,
                 forcedValue: data.forcedValue,
@@ -205,17 +199,17 @@ export default function ValuerDashboardPage() {
                 comments: data.comments,
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
-                status: "Approved",
+                status: "Pending Approval",
             });
     
             const bookingDocRef = doc(db, "bookings", selectedBooking.id);
             await updateDoc(bookingDocRef, {
-                status: "Completed"
+                status: "Pending Approval"
             });
     
             toast({
-                title: "Valuation Approved",
-                description: `Report for ${selectedBooking.bookingNumber} has been approved and finalized.`,
+                title: "Valuation Submitted",
+                description: `Report for ${selectedBooking.bookingNumber} has been submitted for approval.`,
             });
             
             setValuationDialogOpen(false);
@@ -266,7 +260,7 @@ export default function ValuerDashboardPage() {
         switch (status) {
             case "Pending": return "secondary";
             case "Pending Valuation": return "outline";
-            case "Pending Approval": return "destructive";
+            case "Pending Approval": return "outline";
             case "Completed": return "default";
             case "Rejected": return "destructive";
             default: return "default";
@@ -283,8 +277,8 @@ export default function ValuerDashboardPage() {
         );
     });
 
-    const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
-    const completedBookings = filteredBookings.filter(b => ["Pending Valuation", "Pending Approval", "Completed", "Rejected"].includes(b.status));
+    const pendingBookings = filteredBookings.filter(b => b.status === "Pending" || b.status === "Pending Valuation");
+    const completedBookings = filteredBookings.filter(b => ["Pending Approval", "Completed", "Rejected"].includes(b.status));
 
     const stats = {
         total: bookings.length,
@@ -374,7 +368,7 @@ export default function ValuerDashboardPage() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => openValuationDialog(booking)}
-                                    disabled={!isPendingTable && booking.status !== 'Pending Valuation'}
+                                    disabled={!isPendingTable}
                                 >
                                     <FilePen className="mr-2 h-4 w-4" />
                                     <span className="hidden sm:inline">Valuate</span>
@@ -402,7 +396,7 @@ export default function ValuerDashboardPage() {
             userEmail={loggedInUser?.email || ""}
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
-                { name: 'Pending Valuations', view: 'pending-bookings', notificationCount: stats.pending },
+                { name: 'Pending Valuations', view: 'pending-bookings', notificationCount: stats.pending + stats.pendingValuation },
                 { name: 'Finalized Reports', view: 'bookings' },
             ]}
             footerContent={(
@@ -438,7 +432,7 @@ export default function ValuerDashboardPage() {
                                             <Clock className="h-4 w-4 text-muted-foreground" />
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation}</div>
+                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation + stats.pending}</div>
                                             <p className="text-xs text-muted-foreground">Awaiting valuation reports</p>
                                         </CardContent>
                                     </Card>
@@ -687,3 +681,5 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    

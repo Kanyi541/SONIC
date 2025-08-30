@@ -472,7 +472,7 @@ export default function ClientDashboardPage() {
       case "Pending Valuation":
         return "outline";
       case "Pending Approval":
-        return "destructive";
+        return "outline";
       case "Completed":
         return "default";
       case "Rejected":
@@ -1458,3 +1458,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
