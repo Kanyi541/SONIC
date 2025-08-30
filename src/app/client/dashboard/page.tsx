@@ -618,8 +618,7 @@ export default function ClientDashboardPage() {
       institutionName={institutionName}
       menuItems={[
         { name: "Dashboard", view: "dashboard" },
-        { name: "New Booking", view: "create-booking", action: () => setBookingDialogOpen(true) },
-        { name: "Customers", view: "customers" },
+        { name: "Customers", view: "create-booking", action: () => setBookingDialogOpen(true) },
         { name: "Agents", view: "agents" },
         { name: "Staff", view: "staff" },
         { name: "CASA Branches", view: "branches"},

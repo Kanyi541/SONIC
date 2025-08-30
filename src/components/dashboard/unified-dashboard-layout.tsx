@@ -41,7 +41,7 @@ const getIconForView = (view: string) => {
         case 'dashboard':
             return <LayoutDashboard />;
         case 'create-booking':
-            return <PlusCircle />;
+            return <Users />;
         case 'bookings':
             return <CheckCircle />;
         case 'valuations':
