@@ -48,7 +48,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -458,7 +458,7 @@ export default function ClientDashboardPage() {
     const stats = {
         total: bookings.length,
         pending: bookings.filter(b => b.status === 'Pending').length,
-        pendingValuation: bookings.filter(b => b.status === 'Pending').length,
+        pendingValuation: bookings.filter(b => b.status === 'Pending Valuation').length,
         pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
         rejected: bookings.filter(b => b.status === 'Rejected').length,
@@ -850,10 +850,10 @@ export default function ClientDashboardPage() {
                     <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, {loggedInUser?.agentName || loggedInUser?.name}!</h1>
                     <p className="text-muted-foreground mt-2">Here's a summary of your recent activity.</p>
                 </div>
-                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                   <Card>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                            <CardTitle className="text-sm font-medium">All Cars</CardTitle>
                             <Car className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -863,12 +863,32 @@ export default function ClientDashboardPage() {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">New Requests</CardTitle>
+                            <FileSignature className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pending}</div>
+                            <p className="text-xs text-muted-foreground">New valuation bookings</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
-                            <Hourglass className="h-4 w-4 text-muted-foreground" />
+                            <FileClock className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation}</div>
-                            <p className="text-xs text-muted-foreground">Awaiting valuation from valuer</p>
+                            <p className="text-xs text-muted-foreground">Awaiting valuer report</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+                            <FileWarning className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
+                            <p className="text-xs text-muted-foreground">Awaiting your approval</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -878,7 +898,7 @@ export default function ClientDashboardPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.completed}</div>
-                            <p className="text-xs text-muted-foreground">Completed and approved reports</p>
+                            <p className="text-xs text-muted-foreground">Completed reports</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -1337,3 +1357,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
