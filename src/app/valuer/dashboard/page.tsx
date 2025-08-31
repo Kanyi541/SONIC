@@ -137,7 +137,7 @@ export default function ValuerDashboardPage() {
     useEffect(() => {
         if (loggedInUser) {
             setLoading(true);
-            const q = query(collection(db, "bookings"), where("status", "in", ["Pending", "Pending Valuation", "Pending Approval", "Completed", "Rejected"]));
+            const q = query(collection(db, "bookings"), where("status", "in", ["Pending Valuation", "Completed", "Rejected"]));
             const bookingsUnsubscribe = onSnapshot(q, (snapshot) => {
                 const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
                 setBookings(bookingsData);
@@ -230,26 +230,6 @@ export default function ValuerDashboardPage() {
     
 
     const openValuationDialog = async (booking: Booking) => {
-        if (booking.status === "Pending") {
-            try {
-                const bookingDocRef = doc(db, "bookings", booking.id);
-                await updateDoc(bookingDocRef, {
-                    status: "Pending Valuation"
-                });
-                toast({
-                    title: "Valuation Started",
-                    description: `Booking #${booking.bookingNumber} is now being valuated.`,
-                });
-            } catch (error) {
-                 console.error("Error updating booking status:", error);
-                 toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "Could not start valuation process.",
-                });
-                return;
-            }
-        }
         form.reset();
         setImageDataUrls([]);
         setSelectedBooking(booking);
@@ -277,14 +257,12 @@ export default function ValuerDashboardPage() {
         );
     });
 
-    const pendingBookings = filteredBookings.filter(b => b.status === "Pending" || b.status === "Pending Valuation");
-    const completedBookings = filteredBookings.filter(b => ["Pending Approval", "Completed", "Rejected"].includes(b.status));
+    const pendingBookings = filteredBookings.filter(b => b.status === "Pending Valuation");
+    const completedBookings = filteredBookings.filter(b => ["Completed", "Rejected"].includes(b.status));
 
     const stats = {
         total: bookings.length,
-        pending: bookings.filter(b => b.status === 'Pending').length,
-        pendingValuation: bookings.filter(b => b.status === 'Pending Valuation').length,
-        pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
+        pending: bookings.filter(b => b.status === 'Pending Valuation').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
         rejected: bookings.filter(b => b.status === 'Rejected').length,
     };
@@ -396,7 +374,7 @@ export default function ValuerDashboardPage() {
             userEmail={loggedInUser?.email || ""}
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
-                { name: 'Pending Valuations', view: 'pending-bookings', notificationCount: stats.pending + stats.pendingValuation },
+                { name: 'Pending Valuations', view: 'pending-bookings', notificationCount: stats.pending },
                 { name: 'Finalized Reports', view: 'bookings' },
             ]}
             footerContent={(
@@ -432,18 +410,18 @@ export default function ValuerDashboardPage() {
                                             <Clock className="h-4 w-4 text-muted-foreground" />
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingValuation + stats.pending}</div>
+                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pending}</div>
                                             <p className="text-xs text-muted-foreground">Awaiting valuation reports</p>
                                         </CardContent>
                                     </Card>
                                      <Card>
                                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
-                                            <Hourglass className="h-4 w-4 text-muted-foreground" />
+                                            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+                                            <XCircle className="h-4 w-4 text-muted-foreground" />
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pendingApproval}</div>
-                                            <p className="text-xs text-muted-foreground">Awaiting Client approval</p>
+                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.rejected}</div>
+                                            <p className="text-xs text-muted-foreground">Rejected by Admin</p>
                                         </CardContent>
                                     </Card>
                                     <Card>
@@ -681,5 +659,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
-    

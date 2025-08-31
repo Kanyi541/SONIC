@@ -444,7 +444,7 @@ export default function ClientDashboardPage() {
             ...data,
             bookingNumber,
             createdAt: new Date(),
-            status: "Pending",
+            status: "Pending Approval",
             insurerId: loggedInUser.username,
             insurerName: loggedInUser.name,
         });
@@ -1458,5 +1458,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
