@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle } from 'lucide-react';
+import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle, FileSignature, FileWarning } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -28,6 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 
 interface LoggedInUser {
     name: string;
@@ -83,6 +84,7 @@ export default function ValuerDashboardPage() {
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
     const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+    const [activeView, setActiveView] = useState('dashboard');
 
     const form = useForm<ValuationFormValues>({
         resolver: zodResolver(valuationSchema),
@@ -137,12 +139,15 @@ export default function ValuerDashboardPage() {
     useEffect(() => {
         if (loggedInUser) {
             setLoading(true);
-            const q = query(collection(db, "bookings"), where("status", "in", ["Pending Valuation", "Completed", "Rejected"]));
+            const q = query(collection(db, "bookings"), where("status", "in", ["Pending", "Pending Valuation", "Completed", "Rejected"]));
             const bookingsUnsubscribe = onSnapshot(q, (snapshot) => {
                 const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
                 setBookings(bookingsData);
                 generateChartData(bookingsData);
                 setLoading(false);
+            }, (error) => {
+                 console.error("Error fetching bookings:", error);
+                 setLoading(false);
             });
 
             return () => bookingsUnsubscribe();
@@ -230,6 +235,17 @@ export default function ValuerDashboardPage() {
     
 
     const openValuationDialog = async (booking: Booking) => {
+        if(booking.status === 'Pending'){
+            try {
+                const bookingDocRef = doc(db, "bookings", booking.id);
+                await updateDoc(bookingDocRef, { status: "Pending Valuation" });
+                toast({ title: "Valuation Started", description: `Booking #${booking.bookingNumber} is now being valuated.` });
+            } catch (error) {
+                 console.error("Error updating booking status:", error);
+                 toast({ variant: "destructive", title: "Error", description: "Could not start valuation process." });
+                 return;
+            }
+        }
         form.reset();
         setImageDataUrls([]);
         setSelectedBooking(booking);
@@ -257,15 +273,31 @@ export default function ValuerDashboardPage() {
         );
     });
 
-    const pendingBookings = filteredBookings.filter(b => b.status === "Pending Valuation");
-    const completedBookings = filteredBookings.filter(b => ["Completed", "Rejected"].includes(b.status));
+    const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
+    const finalizedBookings = filteredBookings.filter(b => ["Completed", "Rejected", "Pending Approval"].includes(b.status));
 
     const stats = {
         total: bookings.length,
-        pending: bookings.filter(b => b.status === 'Pending Valuation').length,
+        pending: bookings.filter(b => b.status === 'Pending').length,
+        pendingValuation: bookings.filter(b => b.status === 'Pending Valuation').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
         rejected: bookings.filter(b => b.status === 'Rejected').length,
     };
+    
+      const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
+      <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
+          <div className="flex items-start justify-between">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-muted`}>
+                  {icon}
+              </div>
+              <div className="text-3xl font-bold">{loading ? <Skeleton className="h-9 w-12" /> : value}</div>
+          </div>
+          <div className="mt-4">
+              <p className="text-sm font-medium text-muted-foreground">{title}</p>
+              <Progress value={progress} className={`h-1 mt-1 ${colorClass}`} indicatorClassName={colorClass} />
+          </div>
+      </Card>
+    );
 
     const chartConfig = {
       Pending: {
@@ -375,7 +407,7 @@ export default function ValuerDashboardPage() {
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
                 { name: 'Pending Valuations', view: 'pending-bookings', notificationCount: stats.pending },
-                { name: 'Finalized Reports', view: 'bookings' },
+                { name: 'Finalized Reports', view: 'finalized-reports' },
             ]}
             footerContent={(
                  <>
@@ -388,52 +420,41 @@ export default function ValuerDashboardPage() {
                 </>
             )}
         >
-            {(activeView) => (
+            {(activeView, setActiveView) => (
                 <>
-                    <Tabs value={activeView} className="w-full">
+                    <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
                         <TabsContent value="dashboard">
                             <div className="grid gap-8">
                                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                   <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">All Cars</CardTitle>
-                                            <Car className="h-4 w-4 text-muted-foreground" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.total}</div>
-                                            <p className="text-xs text-muted-foreground">Total registered plates</p>
-                                        </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
-                                            <Clock className="h-4 w-4 text-muted-foreground" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pending}</div>
-                                            <p className="text-xs text-muted-foreground">Awaiting valuation reports</p>
-                                        </CardContent>
-                                    </Card>
-                                     <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
-                                            <XCircle className="h-4 w-4 text-muted-foreground" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.rejected}</div>
-                                            <p className="text-xs text-muted-foreground">Rejected by Admin</p>
-                                        </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Approved</CardTitle>
-                                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.completed}</div>
-                                            <p className="text-xs text-muted-foreground">Completed and approved</p>
-                                        </CardContent>
-                                    </Card>
+                                   <StatCard 
+                                        title="All Cars" 
+                                        value={stats.total} 
+                                        icon={<Car className="h-6 w-6 text-blue-500" />} 
+                                        progress={100}
+                                        colorClass="bg-blue-500"
+                                    />
+                                     <StatCard 
+                                        title="Pending Valuation" 
+                                        value={stats.pending} 
+                                        icon={<FileSignature className="h-6 w-6 text-orange-500" />} 
+                                        onClick={() => setActiveView('pending-bookings')}
+                                        progress={stats.total > 0 ? (stats.pending / stats.total) * 100 : 0}
+                                        colorClass="bg-orange-500"
+                                    />
+                                    <StatCard 
+                                        title="Rejected by Admin" 
+                                        value={stats.rejected} 
+                                        icon={<XCircle className="h-6 w-6 text-red-500" />} 
+                                        progress={stats.total > 0 ? (stats.rejected / stats.total) * 100 : 0}
+                                        colorClass="bg-red-500"
+                                    />
+                                     <StatCard 
+                                        title="Approved" 
+                                        value={stats.completed} 
+                                        icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
+                                        progress={stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}
+                                        colorClass="bg-green-500"
+                                    />
                                 </div>
                                 <Card>
                                     <CardHeader>
@@ -445,7 +466,7 @@ export default function ValuerDashboardPage() {
                                            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                                                 <CartesianGrid strokeDasharray="3 3" />
                                                 <XAxis dataKey="day" />
-                                                <YAxis domain={[0, 1000]} />
+                                                <YAxis domain={[0, 'dataMax + 5']} />
                                                 <Tooltip content={<ChartTooltipContent />} />
                                                 <Legend />
                                                 <Line type="monotone" dataKey="Pending" stroke={chartConfig.Pending.color} strokeWidth={2} name="Pending Valuation"/>
@@ -460,8 +481,8 @@ export default function ValuerDashboardPage() {
                         <TabsContent value="pending-bookings">
                            {renderBookingsTable(pendingBookings, "Pending Valuations", "A list of all new vehicle valuations.", true)}
                         </TabsContent>
-                        <TabsContent value="bookings">
-                           {renderBookingsTable(completedBookings, "Finalized Reports", "A list of all valuations that have been approved or rejected by clients.")}
+                        <TabsContent value="finalized-reports">
+                           {renderBookingsTable(finalizedBookings, "Finalized Reports", "A list of all valuations that have been approved or rejected by clients.")}
                         </TabsContent>
                     </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
@@ -659,3 +680,4 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
