@@ -59,7 +59,7 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
               
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8">
                 <h3 className="text-xl font-semibold text-black mb-4">Booking Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-base">
+                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-base">
                     <div className="flex justify-between py-2 border-b border-gray-100">
                         <span className="font-semibold text-gray-700">Client Name:</span>
                         <span className="text-gray-900 font-medium">{booking.customerName}</span>
@@ -128,16 +128,16 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
             </div>
             </main>
              <footer className="bg-[#1a1a1a] p-4 text-white text-xs mt-auto">
-                <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 text-center sm:text-left">
-                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 text-center">
+                    <div className="flex items-center justify-center gap-2">
                         <Phone size={14} className="text-primary"/>
                         <span>0722924854 / 0737924854</span>
                     </div>
-                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <div className="flex items-center justify-center gap-2">
                         <MapPin size={14} className="text-primary"/>
                         <span>Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</span>
                     </div>
-                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <div className="flex items-center justify-center gap-2">
                         <Mail size={14} className="text-primary"/>
                         <span>casamotorvaluers@gmail.com</span>
                     </div>
