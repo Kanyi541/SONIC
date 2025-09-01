@@ -873,8 +873,8 @@ function AdminDashboard() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Read All Cars</CardTitle>
-                        <CardDescription>A summary of all valuation reports submitted.</CardDescription>
+                        <CardTitle>All car</CardTitle>
+                        <CardDescription>A summary of all Car Valutions</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
