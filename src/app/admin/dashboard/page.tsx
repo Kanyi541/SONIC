@@ -153,6 +153,7 @@ function AdminDashboard() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerms, setSearchTerms] = useState({ clients: '', valuers: '', staff: '', branches: '' });
   const itemsPerPage = 5;
   
   const getInitials = (email?: string | null) => {
@@ -467,22 +468,47 @@ function AdminDashboard() {
     description: string,
     onAdd: () => void,
     userType: 'institution' | 'valuer' | 'staff'
-  ) => (
+  ) => {
+    const searchTerm = searchTerms[userType === 'institution' ? 'clients' : userType];
+
+    const filteredData = data.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.username.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    return (
     <Card className="shadow-lg border-primary/20">
       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
         </div>
-        <Button onClick={onAdd}>
-          <PlusCircle className="mr-2" />
-          Register New {userType === 'institution' ? 'Client' : (userType.charAt(0).toUpperCase() + userType.slice(1))}
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder={`Search ${title}...`}
+              className="w-full rounded-lg bg-background pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerms(prev => ({...prev, [userType === 'institution' ? 'clients' : userType]: e.target.value}))}
+            />
+          </div>
+          <Button onClick={onAdd}>
+            <PlusCircle className="mr-2" />
+            Register New {userType === 'institution' ? 'Client' : (userType.charAt(0).toUpperCase() + userType.slice(1))}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-[50px] font-semibold">No.</TableHead>
               <TableHead className="font-semibold text-left">Name</TableHead>
               <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
               <TableHead className="hidden sm:table-cell font-semibold text-left">Email</TableHead>
@@ -492,8 +518,9 @@ function AdminDashboard() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map(item => (
+            {paginatedData.map((item, index) => (
               <TableRow key={item.id}>
+                <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                 <TableCell className="font-medium flex items-center gap-3">
                   <div className="p-2 bg-muted rounded-full hidden sm:flex">
                     <User className="h-5 w-5 text-primary" />
@@ -554,9 +581,27 @@ function AdminDashboard() {
             ))}
           </TableBody>
         </Table>
+        <div className="flex items-center justify-end space-x-2 py-4">
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+            >
+                Previous
+            </Button>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+            >
+                Next
+            </Button>
+        </div>
       </CardContent>
     </Card>
-  );
+  )};
 
   const renderUserDialog = (
     isOpen: boolean,
@@ -1103,3 +1148,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    

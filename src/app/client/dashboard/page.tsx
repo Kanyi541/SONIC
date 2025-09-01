@@ -113,6 +113,14 @@ interface Booking {
   status: string;
 }
 
+interface Valuation {
+    id: string;
+    bookingId: string;
+    assessmentDate: any;
+    assessmentValue: string;
+    forcedValue: string;
+}
+
 type ChartDataPoint = {
     day: string;
     Pending: number;
@@ -192,6 +200,7 @@ const PasswordInput = ({ field }: { field: any }) => {
 
 export default function ClientDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [valuations, setValuations] = useState<Valuation[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -214,6 +223,8 @@ export default function ClientDashboardPage() {
   const [agentSearchTerm, setAgentSearchTerm] = useState("");
   const [staffSearchTerm, setStaffSearchTerm] = useState("");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const customerForm = useForm<CustomerFormValues>({
       resolver: zodResolver(customerSchema),
@@ -302,6 +313,7 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     if (loggedInUser) {
         setLoading(true);
+
         const bookingsQuery = query(collection(db, "bookings"), where("insurerId", "==", loggedInUser.username));
         const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
@@ -309,6 +321,12 @@ export default function ClientDashboardPage() {
             setBookings(sortedBookings);
             generateChartData(sortedBookings);
             setLoading(false);
+        });
+
+        const valuationsQuery = query(collection(db, "valuations"));
+        const valuationsUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
+            const valuationsData: Valuation[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Valuation));
+            setValuations(valuationsData);
         });
 
         setLoadingCustomers(true);
@@ -345,6 +363,7 @@ export default function ClientDashboardPage() {
 
         return () => {
             bookingsUnsubscribe();
+            valuationsUnsubscribe();
             customersUnsubscribe();
             agentsUnsubscribe();
             staffUnsubscribe();
@@ -500,7 +519,14 @@ export default function ClientDashboardPage() {
         );
     });
     
-    const recentBookings = filteredBookings.slice(0, 5);
+    const combinedBookings = useMemo(() => {
+        return filteredBookings.map(booking => {
+            const valuation = valuations.find(v => v.bookingId === booking.id);
+            return { ...booking, valuation };
+        });
+    }, [filteredBookings, valuations]);
+
+    const recentBookings = combinedBookings.slice(0, 5);
     
     const getFilteredBookingsByStatus = (status: string | string[]) => {
         const statuses = Array.isArray(status) ? status : [status];
@@ -959,11 +985,14 @@ export default function ClientDashboardPage() {
                              <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Booking ID</TableHead>
-                                        <TableHead>Customer</TableHead>
-                                        <TableHead>Vehicle</TableHead>
-                                        <TableHead>Date</TableHead>
+                                        <TableHead>Plate No</TableHead>
+                                        <TableHead>Make &amp; Model</TableHead>
+                                        <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
+                                        <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
+                                        <TableHead>Customer Name</TableHead>
                                         <TableHead>Status</TableHead>
+                                        <TableHead className="hidden xl:table-cell">Assessment Value (KES)</TableHead>
+                                        <TableHead className="hidden xl:table-cell">Forced Value (KES)</TableHead>
                                         <TableHead className="text-right">Action</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -971,24 +1000,30 @@ export default function ClientDashboardPage() {
                                     {loading ? (
                                         Array.from({ length: 5 }).map((_, index) => (
                                             <TableRow key={index}>
-                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                                                 <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                                <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                                 <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                                <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                                 <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                                             </TableRow>
                                         ))
                                     ) : recentBookings.length > 0 ? (
                                         recentBookings.map((booking) => (
                                             <TableRow key={booking.id}>
-                                                <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
-                                                <TableCell>{booking.customerName}</TableCell>
                                                 <TableCell>{booking.plateNumber}</TableCell>
-                                                <TableCell>{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                                                <TableCell>{`${booking.carMake} ${booking.carModel}`}</TableCell>
+                                                <TableCell className="font-mono text-xs hidden sm:table-cell">{booking.bookingNumber}</TableCell>
+                                                <TableCell className="hidden md:table-cell">{booking.valuation?.assessmentDate ? new Date(booking.valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</TableCell>
+                                                <TableCell>{booking.customerName}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                                 </TableCell>
+                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.assessmentValue || 'N/A'}</TableCell>
+                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.forcedValue || 'N/A'}</TableCell>
                                                 <TableCell className="text-right">
                                                     <Button
                                                         variant="outline"
@@ -996,14 +1031,14 @@ export default function ClientDashboardPage() {
                                                         onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
                                                     >
                                                         <Printer className="mr-2 h-4 w-4" />
-                                                        View Report
+                                                        <span className="hidden sm:inline">View Report</span>
                                                     </Button>
                                                 </TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="text-center h-24">
+                                            <TableCell colSpan={9} className="text-center h-24">
                                                 No recent bookings found.
                                             </TableCell>
                                         </TableRow>
@@ -1032,7 +1067,6 @@ export default function ClientDashboardPage() {
                                         className="w-full rounded-lg bg-background pl-8"
                                         value={customerSearchTerm}
                                         onChange={(e) => setCustomerSearchTerm(e.target.value)}
-                                        maxLength={10}
                                     />
                                 </div>
                                 <Dialog open={isCustomerDialogOpen} onOpenChange={setCustomerDialogOpen}>
@@ -1081,7 +1115,7 @@ export default function ClientDashboardPage() {
                                                         <FormItem>
                                                         <FormLabel>Phone Number</FormLabel>
                                                         <FormControl>
-                                                            <Input {...field} placeholder="e.g. 0712345678" type="number" maxLength={10} />
+                                                            <Input {...field} placeholder="e.g. 0712345678" type="tel" />
                                                         </FormControl>
                                                         <FormMessage />
                                                         </FormItem>
@@ -1105,6 +1139,7 @@ export default function ClientDashboardPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
+                                    <TableHead className="w-[50px]">No.</TableHead>
                                     <TableHead className="font-semibold text-left">Name</TableHead>
                                     <TableHead className="font-semibold text-left">Email</TableHead>
                                     <TableHead className="font-semibold text-left">Phone</TableHead>
@@ -1114,14 +1149,16 @@ export default function ClientDashboardPage() {
                                 {loadingCustomers ? (
                                     Array.from({ length: 5 }).map((_, index) => (
                                       <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-48" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                       </TableRow>
                                     ))
-                                ) : filteredCustomers.length > 0 ? (
-                                    filteredCustomers.map(customer => (
+                                ) : filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).length > 0 ? (
+                                    filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((customer, index) => (
                                         <TableRow key={customer.id}>
+                                            <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                             <TableCell className="font-medium flex items-center gap-3">
                                                 <div className="p-2 bg-muted rounded-full hidden sm:flex">
                                                     <User className="h-5 w-5 text-primary" />
@@ -1134,13 +1171,31 @@ export default function ClientDashboardPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="text-center h-24">
+                                        <TableCell colSpan={4} className="text-center h-24">
                                             No customers found.
                                         </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
                         </Table>
+                         <div className="flex items-center justify-end space-x-2 py-4">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredCustomers.length / itemsPerPage)))}
+                                disabled={currentPage === Math.ceil(filteredCustomers.length / itemsPerPage)}
+                            >
+                                Next
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </TabsContent>
@@ -1162,7 +1217,6 @@ export default function ClientDashboardPage() {
                                         className="w-full rounded-lg bg-background pl-8"
                                         value={agentSearchTerm}
                                         onChange={(e) => setAgentSearchTerm(e.target.value)}
-                                        maxLength={10}
                                     />
                                 </div>
                                 <Dialog open={isAgentDialogOpen} onOpenChange={setAgentDialogOpen}>
@@ -1183,7 +1237,7 @@ export default function ClientDashboardPage() {
                                                 <FormField control={agentForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. janesmith" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="password" render={({ field }) => (<FormItem><FormLabel>Password</FormLabel><FormControl><PasswordInput field={field} /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. jane@example.com" /></FormControl><FormMessage /></FormItem>)} />
-                                                <FormField control={agentForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="number" maxLength={10} /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={agentForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="tel" /></FormControl><FormMessage /></FormItem>)} />
                                                 <DialogFooter className="pt-4">
                                                     <Button type="button" variant="outline" onClick={() => setAgentDialogOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={agentForm.formState.isSubmitting}>
@@ -1203,6 +1257,7 @@ export default function ClientDashboardPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
+                                    <TableHead className="w-[50px]">No.</TableHead>
                                     <TableHead className="font-semibold text-left">Name</TableHead>
                                     <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
                                     <TableHead className="font-semibold text-left">Email</TableHead>
@@ -1214,6 +1269,7 @@ export default function ClientDashboardPage() {
                                 {loadingAgents ? (
                                     Array.from({ length: 3 }).map((_, index) => (
                                       <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-48" /></TableCell>
@@ -1221,9 +1277,10 @@ export default function ClientDashboardPage() {
                                         <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                                       </TableRow>
                                     ))
-                                ) : filteredAgents.length > 0 ? (
-                                    filteredAgents.map(agent => (
+                                ) : filteredAgents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).length > 0 ? (
+                                    filteredAgents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((agent, index) => (
                                         <TableRow key={agent.id}>
+                                            <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                             <TableCell className="font-medium flex items-center gap-3">
                                                 <div className="p-2 bg-muted rounded-full hidden sm:flex">
                                                     <UserCog className="h-5 w-5 text-primary" />
@@ -1258,13 +1315,31 @@ export default function ClientDashboardPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">
+                                        <TableCell colSpan={6} className="text-center h-24">
                                             No agents found.
                                         </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
                         </Table>
+                         <div className="flex items-center justify-end space-x-2 py-4">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredAgents.length / itemsPerPage)))}
+                                disabled={currentPage === Math.ceil(filteredAgents.length / itemsPerPage)}
+                            >
+                                Next
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </TabsContent>
@@ -1286,7 +1361,6 @@ export default function ClientDashboardPage() {
                                         className="w-full rounded-lg bg-background pl-8"
                                         value={staffSearchTerm}
                                         onChange={(e) => setStaffSearchTerm(e.target.value)}
-                                        maxLength={10}
                                     />
                                 </div>
                                 <Dialog open={isStaffDialogOpen} onOpenChange={setStaffDialogOpen}>
@@ -1305,7 +1379,7 @@ export default function ClientDashboardPage() {
                                                 <FormField control={staffForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Alex Ray" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={staffForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. alexray" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={staffForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. alex@example.com" /></FormControl><FormMessage /></FormItem>)} />
-                                                <FormField control={staffForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="number" maxLength={10} /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={staffForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="tel" /></FormControl><FormMessage /></FormItem>)} />
                                                 <DialogFooter>
                                                     <Button type="button" variant="outline" onClick={() => setStaffDialogOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={staffForm.formState.isSubmitting}>
@@ -1324,6 +1398,7 @@ export default function ClientDashboardPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
+                                     <TableHead className="w-[50px]">No.</TableHead>
                                     <TableHead className="font-semibold text-left">Name</TableHead>
                                     <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
                                     <TableHead className="font-semibold text-left">Email</TableHead>
@@ -1335,6 +1410,7 @@ export default function ClientDashboardPage() {
                                 {loadingStaff ? (
                                     Array.from({ length: 3 }).map((_, index) => (
                                       <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-48" /></TableCell>
@@ -1342,9 +1418,10 @@ export default function ClientDashboardPage() {
                                         <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                                       </TableRow>
                                     ))
-                                ) : filteredStaff.length > 0 ? (
-                                    filteredStaff.map(staffMember => (
+                                ) : filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).length > 0 ? (
+                                    filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((staffMember, index) => (
                                         <TableRow key={staffMember.id}>
+                                             <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                             <TableCell className="font-medium flex items-center gap-3">
                                                 <div className="p-2 bg-muted rounded-full hidden sm:flex">
                                                     <Briefcase className="h-5 w-5 text-primary" />
@@ -1379,13 +1456,31 @@ export default function ClientDashboardPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">
+                                        <TableCell colSpan={6} className="text-center h-24">
                                             No staff found.
                                         </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
                         </Table>
+                        <div className="flex items-center justify-end space-x-2 py-4">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredStaff.length / itemsPerPage)))}
+                                disabled={currentPage === Math.ceil(filteredStaff.length / itemsPerPage)}
+                            >
+                                Next
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </TabsContent>
@@ -1458,3 +1553,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    

@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle } from 'lucide-react';
+import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle, FileSignature } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -25,6 +25,7 @@ import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
+import { Progress } from "@/components/ui/progress";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -83,6 +84,9 @@ export default function ValuerDashboardPage() {
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
     const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+    const [activeView, setActiveView] = useState('dashboard');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
     const form = useForm<ValuationFormValues>({
         resolver: zodResolver(valuationSchema),
@@ -257,8 +261,13 @@ export default function ValuerDashboardPage() {
         );
     });
 
-    const pendingBookings = filteredBookings.filter(b => b.status === "Pending Valuation");
-    const completedBookings = filteredBookings.filter(b => ["Completed", "Rejected"].includes(b.status));
+    const getFilteredBookingsByStatus = (status: string | string[]) => {
+        const statuses = Array.isArray(status) ? status : [status];
+        if (statuses.includes('All')) {
+            return filteredBookings;
+        }
+        return filteredBookings.filter(b => statuses.includes(b.status));
+    };
 
     const stats = {
         total: bookings.length,
@@ -282,12 +291,31 @@ export default function ValuerDashboardPage() {
       }
     } 
 
+    const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick: () => void, progress: number, colorClass: string }) => (
+        <Card onClick={onClick} className="cursor-pointer hover:bg-muted transition-colors p-4 flex flex-col justify-between">
+            <div className="flex items-start justify-between">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-muted`}>
+                    {icon}
+                </div>
+                <div className="text-3xl font-bold">{loading ? <Skeleton className="h-9 w-12" /> : value}</div>
+            </div>
+            <div className="mt-4">
+                <p className="text-sm font-medium text-muted-foreground">{title}</p>
+                <Progress value={progress} className={`h-1 mt-1 ${colorClass}`} indicatorClassName={colorClass} />
+            </div>
+        </Card>
+    );
+
     const renderBookingsTable = (
         bookingsData: Booking[],
         title: string,
         description: string,
         isPendingTable: boolean = false
-    ) => (
+    ) => {
+        const totalPages = Math.ceil(bookingsData.length / itemsPerPage);
+        const paginatedData = bookingsData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+        return (
          <Card>
             <CardHeader>
                <div className="flex justify-between items-center">
@@ -311,6 +339,7 @@ export default function ValuerDashboardPage() {
                  <Table>
                     <TableHeader>
                         <TableRow className="bg-muted/50">
+                            <TableHead className="w-[50px]">No.</TableHead>
                             <TableHead className="font-semibold">Booking ID</TableHead>
                             <TableHead className="hidden sm:table-cell font-semibold">Customer</TableHead>
                             <TableHead className="hidden md:table-cell font-semibold">Vehicle</TableHead>
@@ -323,6 +352,7 @@ export default function ValuerDashboardPage() {
                     {loading ? (
                         Array.from({ length: 5 }).map((_, index) => (
                         <TableRow key={index}>
+                            <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                             <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                             <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
@@ -331,9 +361,10 @@ export default function ValuerDashboardPage() {
                             <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                         </TableRow>
                         ))
-                    ) : bookingsData.length > 0 ? (
-                        bookingsData.map((booking) => (
+                    ) : paginatedData.length > 0 ? (
+                        paginatedData.map((booking, index) => (
                         <TableRow key={booking.id}>
+                             <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                             <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
                             <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
                             <TableCell className="hidden md:table-cell">{booking.plateNumber}</TableCell>
@@ -356,16 +387,35 @@ export default function ValuerDashboardPage() {
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center h-24">
+                            <TableCell colSpan={7} className="text-center h-24">
                                 No bookings found.
                             </TableCell>
                         </TableRow>
                     )}
                     </TableBody>
                 </Table>
+                <div className="flex items-center justify-end space-x-2 py-4">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                    </Button>
+                </div>
             </CardContent>
         </Card>
-    );
+        )
+    };
     
     return (
         <UnifiedDashboardLayout
@@ -388,52 +438,44 @@ export default function ValuerDashboardPage() {
                 </>
             )}
         >
-            {(activeView) => (
+            {(activeView, setActiveView) => (
                 <>
-                    <Tabs value={activeView} className="w-full">
+                    <Tabs value={activeView} onValueChange={(view) => { setActiveView(view); setCurrentPage(1); }}>
                         <TabsContent value="dashboard">
                             <div className="grid gap-8">
-                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                   <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">All Cars</CardTitle>
-                                            <Car className="h-4 w-4 text-muted-foreground" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.total}</div>
-                                            <p className="text-xs text-muted-foreground">Total registered plates</p>
-                                        </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Pending Valuation</CardTitle>
-                                            <Clock className="h-4 w-4 text-muted-foreground" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.pending}</div>
-                                            <p className="text-xs text-muted-foreground">Awaiting valuation reports</p>
-                                        </CardContent>
-                                    </Card>
-                                     <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
-                                            <XCircle className="h-4 w-4 text-muted-foreground" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.rejected}</div>
-                                            <p className="text-xs text-muted-foreground">Rejected by Admin</p>
-                                        </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Approved</CardTitle>
-                                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : stats.completed}</div>
-                                            <p className="text-xs text-muted-foreground">Completed and approved</p>
-                                        </CardContent>
-                                    </Card>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <StatCard 
+                                        title="All Cars" 
+                                        value={stats.total} 
+                                        icon={<Car className="h-6 w-6 text-blue-500" />} 
+                                        onClick={() => setActiveView('all-bookings')}
+                                        progress={100}
+                                        colorClass="bg-blue-500"
+                                    />
+                                    <StatCard 
+                                        title="Pending Valuation" 
+                                        value={stats.pending} 
+                                        icon={<FileSignature className="h-6 w-6 text-orange-500" />} 
+                                        onClick={() => setActiveView('pending-bookings')}
+                                        progress={(stats.pending / stats.total) * 100}
+                                        colorClass="bg-orange-500"
+                                    />
+                                    <StatCard 
+                                        title="Approved" 
+                                        value={stats.completed} 
+                                        icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
+                                        onClick={() => setActiveView('completed-bookings')}
+                                        progress={(stats.completed / stats.total) * 100}
+                                        colorClass="bg-green-500"
+                                    />
+                                    <StatCard 
+                                        title="Rejected" 
+                                        value={stats.rejected} 
+                                        icon={<XCircle className="h-6 w-6 text-red-500" />} 
+                                        onClick={() => setActiveView('rejected-bookings')}
+                                        progress={(stats.rejected / stats.total) * 100}
+                                        colorClass="bg-red-500"
+                                    />
                                 </div>
                                 <Card>
                                     <CardHeader>
@@ -457,11 +499,20 @@ export default function ValuerDashboardPage() {
                                 </Card>
                             </div>
                         </TabsContent>
+                         <TabsContent value="all-bookings">
+                           {renderBookingsTable(getFilteredBookingsByStatus('All'), "All Assigned Bookings", "A complete list of all bookings assigned to you.", true)}
+                        </TabsContent>
                         <TabsContent value="pending-bookings">
-                           {renderBookingsTable(pendingBookings, "Pending Valuations", "A list of all new vehicle valuations.", true)}
+                           {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Pending Valuations", "A list of all new vehicle valuations.", true)}
+                        </TabsContent>
+                        <TabsContent value="completed-bookings">
+                           {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "Approved Reports", "A list of all valuations that have been approved.")}
+                        </TabsContent>
+                        <TabsContent value="rejected-bookings">
+                           {renderBookingsTable(getFilteredBookingsByStatus("Rejected"), "Rejected Reports", "A list of all valuations that have been rejected by clients.")}
                         </TabsContent>
                         <TabsContent value="bookings">
-                           {renderBookingsTable(completedBookings, "Finalized Reports", "A list of all valuations that have been approved or rejected by clients.")}
+                           {renderBookingsTable(getFilteredBookingsByStatus(["Completed", "Rejected"]), "Finalized Reports", "A list of all valuations that have been approved or rejected by clients.")}
                         </TabsContent>
                     </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
@@ -659,3 +710,5 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    
