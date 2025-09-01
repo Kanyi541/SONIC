@@ -526,7 +526,12 @@ export default function ClientDashboardPage() {
         });
     }, [filteredBookings, valuations]);
 
-    const recentBookings = combinedBookings.slice(0, 5);
+    const paginatedDashboardBookings = combinedBookings.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+
+    const totalDashboardPages = Math.ceil(combinedBookings.length / itemsPerPage);
     
     const getFilteredBookingsByStatus = (status: string | string[]) => {
         const statuses = Array.isArray(status) ? status : [status];
@@ -978,13 +983,14 @@ export default function ClientDashboardPage() {
                     </div>
                     <Card>
                         <CardHeader>
-                            <CardTitle>Recent Bookings</CardTitle>
-                            <CardDescription>A summary of your 5 most recent bookings.</CardDescription>
+                            <CardTitle>All car</CardTitle>
+                            <CardDescription>A summary of all Car Valutions</CardDescription>
                         </CardHeader>
                         <CardContent>
                              <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead>No.</TableHead>
                                         <TableHead>Plate No</TableHead>
                                         <TableHead>Make &amp; Model</TableHead>
                                         <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
@@ -1000,6 +1006,7 @@ export default function ClientDashboardPage() {
                                     {loading ? (
                                         Array.from({ length: 5 }).map((_, index) => (
                                             <TableRow key={index}>
+                                                <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                                                 <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                                                 <TableCell><Skeleton className="h-5 w-28" /></TableCell>
                                                 <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
@@ -1011,9 +1018,10 @@ export default function ClientDashboardPage() {
                                                 <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                                             </TableRow>
                                         ))
-                                    ) : recentBookings.length > 0 ? (
-                                        recentBookings.map((booking) => (
+                                    ) : paginatedDashboardBookings.length > 0 ? (
+                                        paginatedDashboardBookings.map((booking, index) => (
                                             <TableRow key={booking.id}>
+                                                <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                                 <TableCell>{booking.plateNumber}</TableCell>
                                                 <TableCell>{`${booking.carMake} ${booking.carModel}`}</TableCell>
                                                 <TableCell className="font-mono text-xs hidden sm:table-cell">{booking.bookingNumber}</TableCell>
@@ -1038,13 +1046,31 @@ export default function ClientDashboardPage() {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={9} className="text-center h-24">
-                                                No recent bookings found.
+                                            <TableCell colSpan={10} className="text-center h-24">
+                                                No bookings found.
                                             </TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
                             </Table>
+                            <div className="flex items-center justify-end space-x-2 py-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalDashboardPages))}
+                                    disabled={currentPage === totalDashboardPages}
+                                >
+                                    Next
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                </div>
@@ -1553,5 +1579,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
