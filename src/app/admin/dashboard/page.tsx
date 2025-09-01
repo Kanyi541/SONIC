@@ -828,38 +828,38 @@ function AdminDashboard() {
                     <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, Admin!</h1>
                     <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Valuers & Assessors.</p>
                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard 
                         title="Staff" 
                         value={stats.totalStaff} 
                         icon={<Briefcase className="h-6 w-6 text-blue-500" />} 
                         onClick={() => setActiveView('staff')}
-                        progress={100}
+                        progress={stats.totalStaff > 0 ? (stats.totalStaff / (stats.totalStaff + stats.totalInstitutions)) * 100 : 0}
                         colorClass="bg-blue-500"
                     />
                      <StatCard 
-                        title="Clients" 
+                        title="Institution" 
                         value={stats.totalInstitutions} 
                         icon={<Building className="h-6 w-6 text-orange-500" />} 
                         onClick={() => setActiveView('clients')}
-                        progress={100}
+                        progress={stats.totalInstitutions > 0 ? (stats.totalInstitutions / (stats.totalStaff + stats.totalInstitutions)) * 100 : 0}
                         colorClass="bg-orange-500"
                     />
-                     <StatCard 
-                        title="Valuers" 
-                        value={stats.totalValuers} 
-                        icon={<UserCog className="h-6 w-6 text-purple-500" />} 
-                        onClick={() => setActiveView('valuers')}
-                        progress={100}
-                        colorClass="bg-purple-500"
-                    />
-                     <StatCard 
+                    <StatCard 
                         title="Total Cars" 
                         value={stats.totalCars} 
                         icon={<Car className="h-6 w-6 text-green-500" />} 
                         onClick={() => setActiveView('valuations')}
                         progress={100}
                         colorClass="bg-green-500"
+                    />
+                    <StatCard 
+                        title="Valued Cars" 
+                        value={stats.totalValuations} 
+                        icon={<FileSpreadsheet className="h-6 w-6 text-purple-500" />} 
+                        onClick={() => setActiveView('valuations')}
+                        progress={stats.totalCars > 0 ? (stats.totalValuations / stats.totalCars) * 100 : 0}
+                        colorClass="bg-purple-500"
                     />
                 </div>
 
