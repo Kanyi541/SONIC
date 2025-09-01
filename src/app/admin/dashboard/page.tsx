@@ -664,12 +664,13 @@ function AdminDashboard() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold">Booking No.</TableHead>
+              <TableHead className="font-semibold">Booking ID</TableHead>
               <TableHead className="font-semibold hidden md:table-cell">Customer</TableHead>
-              <TableHead className="font-semibold hidden lg:table-cell">Client</TableHead>
               <TableHead className="font-semibold hidden sm:table-cell">Vehicle</TableHead>
-              <TableHead className="font-semibold hidden md:table-cell">Plate No.</TableHead>
+              <TableHead className="font-semibold hidden lg:table-cell">Institution</TableHead>
               <TableHead className="font-semibold text-left">Status</TableHead>
+              <TableHead className="font-semibold hidden xl:table-cell">Assessment Value (KES)</TableHead>
+              <TableHead className="font-semibold hidden xl:table-cell">Forced Value (KES)</TableHead>
               <TableHead className="text-right font-semibold">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -679,25 +680,32 @@ function AdminDashboard() {
                 <TableRow key={index}>
                   <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                   <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
-                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                   <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                  <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                 </TableRow>
               ))
             ) : valuationsData.length > 0 ? (
                 valuationsData.map((valuation) => {
                 const booking = bookings.find(b => b.id === valuation.bookingId);
+                const isCompleted = booking?.status === 'Completed';
                 return (
                     <TableRow key={valuation.id}>
                     <TableCell className="font-mono text-xs truncate">{booking?.bookingNumber}</TableCell>
                     <TableCell className="font-medium hidden md:table-cell">{booking?.customerName}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{`${booking?.carMake} ${booking?.carModel}`}</TableCell>
                     <TableCell className="hidden lg:table-cell">{booking?.insurerName}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{booking?.carMake}</TableCell>
-                    <TableCell className="font-mono hidden md:table-cell">{booking?.plateNumber}</TableCell>
                     <TableCell>
                         <Badge variant={getStatusVariant(booking?.status || 'Unknown')}>{booking?.status}</Badge>
+                    </TableCell>
+                    <TableCell className="font-mono hidden xl:table-cell">
+                        {isCompleted ? valuation.assessmentValue : ''}
+                    </TableCell>
+                    <TableCell className="font-mono hidden xl:table-cell">
+                        {isCompleted ? valuation.forcedValue : ''}
                     </TableCell>
                     <TableCell className="text-right">
                          <Popover>
@@ -716,13 +724,15 @@ function AdminDashboard() {
                                 >
                                     Booking Report
                                 </Button>
-                                <Button
-                                    variant="ghost"
-                                    className="justify-start"
-                                    onClick={() => handleOpenReportInNewTab('valuation', valuation.bookingId)}
-                                >
-                                    Valuation Report
-                                </Button>
+                                {isCompleted && (
+                                    <Button
+                                        variant="ghost"
+                                        className="justify-start"
+                                        onClick={() => handleOpenReportInNewTab('valuation', valuation.bookingId)}
+                                    >
+                                        Valuation Report
+                                    </Button>
+                                )}
                                 </div>
                             </PopoverContent>
                         </Popover>
@@ -732,7 +742,7 @@ function AdminDashboard() {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center h-24">
+                <TableCell colSpan={8} className="text-center h-24">
                   No valuations found.
                 </TableCell>
               </TableRow>
