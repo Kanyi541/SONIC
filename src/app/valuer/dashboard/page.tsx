@@ -477,26 +477,7 @@ export default function ValuerDashboardPage() {
                                         colorClass="bg-red-500"
                                     />
                                 </div>
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Valuation Statistics ({format(new Date(), 'MMMM')})</CardTitle>
-                                        <CardDescription>Daily trends for your valuation statuses this month.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                                           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis dataKey="day" />
-                                                <YAxis domain={[0, 1000]} />
-                                                <Tooltip content={<ChartTooltipContent />} />
-                                                <Legend />
-                                                <Line type="monotone" dataKey="Pending" stroke={chartConfig.Pending.color} strokeWidth={2} name="Pending Valuation"/>
-                                                <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />
-                                                <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />
-                                            </LineChart>
-                                        </ChartContainer>
-                                    </CardContent>
-                                </Card>
+                                {renderBookingsTable(getFilteredBookingsByStatus('All'), "All car", "A summary of all Car Valutions", true)}
                             </div>
                         </TabsContent>
                          <TabsContent value="all-bookings">
@@ -710,5 +691,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
-    
