@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
@@ -153,7 +154,7 @@ function AdminDashboard() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerms, setSearchTerms] = useState({ clients: '', valuers: '', staff: '', branches: '' });
+  const [searchTerms, setSearchTerms] = useState({ clients: '', valuers: '', staff: '', branches: '', dashboard: '' });
   const itemsPerPage = 5;
   
   const getInitials = (email?: string | null) => {
@@ -441,8 +442,19 @@ function AdminDashboard() {
         return { ...valuation, booking };
   });
 
-  const totalPages = Math.ceil(allValuations.length / itemsPerPage);
-  const paginatedValuations = allValuations.slice(
+  const filteredDashboardValuations = allValuations.filter(v => {
+    const searchTerm = searchTerms.dashboard.toLowerCase();
+    const booking = v.booking;
+    if (!booking) return false;
+    return (
+        booking.plateNumber?.toLowerCase().includes(searchTerm) ||
+        booking.customerName?.toLowerCase().includes(searchTerm) ||
+        booking.bookingNumber?.toLowerCase().includes(searchTerm)
+    );
+  });
+
+  const totalPages = Math.ceil(filteredDashboardValuations.length / itemsPerPage);
+  const paginatedValuations = filteredDashboardValuations.slice(
       (currentPage - 1) * itemsPerPage,
       currentPage * itemsPerPage
   );
@@ -918,8 +930,22 @@ function AdminDashboard() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>All car</CardTitle>
-                        <CardDescription>A summary of all Car Valutions</CardDescription>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>All car</CardTitle>
+                                <CardDescription>A summary of all Car Valutions</CardDescription>
+                            </div>
+                            <div className="relative w-full max-w-sm">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    placeholder="Search valuations..."
+                                    className="w-full rounded-lg bg-background pl-8"
+                                    value={searchTerms.dashboard}
+                                    onChange={(e) => setSearchTerms(prev => ({...prev, dashboard: e.target.value}))}
+                                />
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -1148,5 +1174,7 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
 
     
