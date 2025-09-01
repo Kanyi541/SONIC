@@ -45,10 +45,10 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, KeyRound } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -150,6 +150,20 @@ const agentSchema = z.object({
 
 type AgentFormValues = z.infer<typeof agentSchema>;
 
+const resetPasswordSchema = z.object({
+    password: z.string().min(8, "Password must be at least 8 characters")
+      .refine((password) => /[A-Z]/.test(password), { message: "Password must contain at least one uppercase letter" })
+      .refine((password) => /[a-z]/.test(password), { message: "Password must contain at least one lowercase letter" })
+      .refine((password) => /\d/.test(password), { message: "Password must contain at least one number" })
+      .refine((password) => /[@$!%*?&]/.test(password), { message: "Password must contain at least one special character" }),
+    confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"]
+});
+
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+
 const staffSchema = z.object({
     name: z.string().min(1, "Staff name is required"),
     username: z.string().min(1, "Username is required"),
@@ -215,6 +229,8 @@ export default function ClientDashboardPage() {
   const [isAgentDialogOpen, setAgentDialogOpen] = useState(false);
   const [isStaffDialogOpen, setStaffDialogOpen] = useState(false);
   const [isComboboxOpen, setComboboxOpen] = useState(false);
+  const [isResetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [selectedAgentForPasswordReset, setSelectedAgentForPasswordReset] = useState<Agent | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
@@ -256,6 +272,11 @@ export default function ClientDashboardPage() {
         authorisedBy: "",
         comments: "",
     }
+  });
+
+  const resetPasswordForm = useForm<ResetPasswordFormValues>({
+      resolver: zodResolver(resetPasswordSchema),
+      defaultValues: { password: "", confirmPassword: "" },
   });
 
   const {
@@ -403,6 +424,21 @@ export default function ClientDashboardPage() {
     } catch (error) {
         console.error("Error adding agent:", error);
         toast({ variant: "destructive", title: "Error", description: "Failed to add agent." });
+    }
+  };
+
+  const handleResetPassword = async (data: ResetPasswordFormValues) => {
+    if (!selectedAgentForPasswordReset) return;
+    try {
+        const agentRef = doc(db, "insurers", selectedAgentForPasswordReset.id);
+        await updateDoc(agentRef, { password: data.password });
+        toast({ title: "Password Reset", description: `Password for ${selectedAgentForPasswordReset.name} has been updated.` });
+        setResetPasswordOpen(false);
+        setSelectedAgentForPasswordReset(null);
+        resetPasswordForm.reset();
+    } catch (error) {
+        console.error("Error resetting password:", error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to reset password." });
     }
   };
 
@@ -1316,7 +1352,10 @@ export default function ClientDashboardPage() {
                                             <TableCell className="hidden sm:table-cell">{agent.username}</TableCell>
                                             <TableCell>{agent.email}</TableCell>
                                             <TableCell>{agent.phone}</TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right space-x-2">
+                                                 <Button variant="outline" size="icon" onClick={() => { setSelectedAgentForPasswordReset(agent); setResetPasswordOpen(true); }}>
+                                                    <KeyRound className="h-4 w-4" />
+                                                 </Button>
                                                  <AlertDialog>
                                                     <AlertDialogTrigger asChild>
                                                         <Button variant="destructive" size="icon">
@@ -1574,6 +1613,51 @@ export default function ClientDashboardPage() {
             </TabsContent>
 
           </Tabs>
+
+            <Dialog open={isResetPasswordOpen} onOpenChange={setResetPasswordOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reset Password for {selectedAgentForPasswordReset?.name}</DialogTitle>
+                        <DialogDescription>Enter a new password below.</DialogDescription>
+                    </DialogHeader>
+                    <Form {...resetPasswordForm}>
+                        <form onSubmit={resetPasswordForm.handleSubmit(handleResetPassword)} className="space-y-4">
+                            <FormField
+                                control={resetPasswordForm.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>New Password</FormLabel>
+                                        <FormControl>
+                                            <PasswordInput field={field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={resetPasswordForm.control}
+                                name="confirmPassword"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Confirm New Password</FormLabel>
+                                        <FormControl>
+                                            <PasswordInput field={field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setResetPasswordOpen(false)}>Cancel</Button>
+                                <Button type="submit" disabled={resetPasswordForm.formState.isSubmitting}>
+                                    {resetPasswordForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Reset Password"}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
         </>
       )}
     </UnifiedDashboardLayout>
