@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
@@ -31,10 +31,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
   password: z.string().min(1, { message: "Password is required." }),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email to reset your password." }),
 });
 
 const userLoginSchema = z.object({
@@ -50,6 +55,7 @@ const agentLoginSchema = z.object({
 
 
 type LoginFormValues = z.infer<typeof loginSchema>;
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 type UserLoginFormValues = z.infer<typeof userLoginSchema>;
 type AgentLoginFormValues = z.infer<typeof agentLoginSchema>;
 type Role = "Admin" | "Client" | "Valuer" | "Agent";
@@ -79,13 +85,19 @@ const PasswordInput = ({ field, ...props }: { field: any, [key: string]: any }) 
 const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
   const router = useRouter();
   const { toast } = useToast();
+  const [isForgotPassword, setForgotPassword] = useState(false);
 
-  const form = useForm<LoginFormValues>({
+  const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: "" },
+  });
+
+  const onLoginSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
@@ -104,6 +116,67 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
       setIsLoading(false);
     }
   };
+  
+  const onForgotPasswordSubmit = async (data: ForgotPasswordFormValues) => {
+    setIsLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, data.email);
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Please check your inbox for instructions to reset your password.",
+      });
+      setForgotPassword(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Reset Failed",
+        description: "Could not send password reset email. Please check the email address.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isForgotPassword) {
+    return (
+    <Card className="bg-white/90 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="font-headline text-primary">Reset Admin Password</CardTitle>
+          <CardDescription>
+            Enter your email to receive a password reset link.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...forgotPasswordForm}>
+            <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-6">
+              <FormField
+                control={forgotPasswordForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="name@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="button" variant="outline" className="w-full" onClick={() => setForgotPassword(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="w-full" disabled={forgotPasswordForm.formState.isSubmitting}>
+                  {forgotPasswordForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Send Reset Link
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className="bg-white/90 backdrop-blur-sm">
@@ -114,10 +187,10 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Form {...loginForm}>
+          <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
             <FormField
-              control={form.control}
+              control={loginForm.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
@@ -130,7 +203,7 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
               )}
             />
             <FormField
-              control={form.control}
+              control={loginForm.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
@@ -142,10 +215,15 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full" disabled={loginForm.formState.isSubmitting}>
+              {loginForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
+             <div className="text-center text-sm">
+              <Button variant="link" type="button" onClick={() => setForgotPassword(true)}>
+                Forgot Password?
+              </Button>
+            </div>
           </form>
         </Form>
       </CardContent>
@@ -260,6 +338,24 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
+            <div className="text-center text-sm">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="link">Forgot Password?</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Password Recovery</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      To reset your password, please contact CASA Motor Valuers & Assessors directly for assistance.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogAction>OK</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </form>
         </Form>
       </CardContent>
@@ -373,6 +469,24 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
+             <div className="text-center text-sm">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="link">Forgot Password?</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Password Recovery</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      To reset your password, please contact CASA Motor Valuers & Assessors directly for assistance.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogAction>OK</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </form>
         </Form>
       </CardContent>
@@ -501,6 +615,24 @@ const AgentLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
+            <div className="text-center text-sm">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="link">Forgot Password?</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Password Recovery</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      To reset your password, please contact CASA Motor Valuers & Assessors directly for assistance.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogAction>OK</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </form>
         </Form>
       </CardContent>
@@ -551,3 +683,5 @@ export default function LoginTabs() {
     </Tabs>
   );
 }
+
+    
