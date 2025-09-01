@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
 import { collection, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, query, where } from "firebase/firestore";
@@ -49,6 +49,23 @@ interface Booking {
   insurerName: string;
 }
 
+interface Valuation {
+    id: string;
+    bookingId: string;
+    assessmentDate: any;
+    assessmentValue: string;
+    forcedValue: string;
+    wsValue: string;
+    rsValue: string;
+    comments?: string;
+    imageUrls: string[];
+    valuedBy: string;
+    valuedAt: any;
+    status: 'Approved' | 'Rejected' | 'Pending Approval';
+    rejectionReason?: string;
+}
+
+
 type ChartDataPoint = {
     day: string;
     Pending: number;
@@ -74,6 +91,7 @@ type ValuationFormValues = z.infer<typeof valuationSchema>;
 export default function ValuerDashboardPage() {
     const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
+    const [valuations, setValuations] = useState<Valuation[]>([]);
     const [loading, setLoading] = useState(true);
     const [isValuationDialogOpen, setValuationDialogOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -141,15 +159,24 @@ export default function ValuerDashboardPage() {
     useEffect(() => {
         if (loggedInUser) {
             setLoading(true);
-            const q = query(collection(db, "bookings"), where("status", "in", ["Pending Valuation", "Completed", "Rejected"]));
-            const bookingsUnsubscribe = onSnapshot(q, (snapshot) => {
+            const bookingsQuery = query(collection(db, "bookings"), where("status", "in", ["Pending Valuation", "Completed", "Rejected"]));
+            const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
                 const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
                 setBookings(bookingsData);
                 generateChartData(bookingsData);
+            });
+
+            const valuationsQuery = query(collection(db, "valuations"));
+             const valuationsUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
+                const valuationsData: Valuation[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Valuation));
+                setValuations(valuationsData);
                 setLoading(false);
             });
 
-            return () => bookingsUnsubscribe();
+            return () => {
+                bookingsUnsubscribe();
+                valuationsUnsubscribe();
+            };
         } else {
             setLoading(false);
         }
@@ -268,6 +295,26 @@ export default function ValuerDashboardPage() {
         }
         return filteredBookings.filter(b => statuses.includes(b.status));
     };
+
+    const allValuationsWithBookings = useMemo(() => {
+        return valuations
+            .map(valuation => {
+                const booking = bookings.find(b => b.id === valuation.bookingId);
+                return { ...valuation, booking };
+            })
+            .filter(item => item.booking) // Ensure booking exists
+            .filter(v => {
+                const searchTermLower = searchTerm.toLowerCase();
+                const booking = v.booking;
+                if (!booking) return false;
+                return (
+                    booking.plateNumber?.toLowerCase().includes(searchTermLower) ||
+                    booking.customerName?.toLowerCase().includes(searchTermLower) ||
+                    booking.bookingNumber?.toLowerCase().includes(searchTermLower) ||
+                    booking.insurerName?.toLowerCase().includes(searchTermLower)
+                );
+            });
+    }, [valuations, bookings, searchTerm]);
 
     const stats = {
         total: bookings.length,
@@ -416,6 +463,116 @@ export default function ValuerDashboardPage() {
         </Card>
         )
     };
+
+    const renderValuationsDashboard = () => {
+        const totalPages = Math.ceil(allValuationsWithBookings.length / itemsPerPage);
+        const paginatedData = allValuationsWithBookings.slice(
+            (currentPage - 1) * itemsPerPage,
+            currentPage * itemsPerPage
+        );
+
+        return (
+            <Card>
+                <CardHeader>
+                   <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle>All car</CardTitle>
+                            <CardDescription>A summary of all Car Valutions</CardDescription>
+                        </div>
+                        <div className="relative w-full max-w-sm">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="search"
+                                placeholder="Search valuations..."
+                                className="w-full rounded-lg bg-background pl-8"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                     <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>No.</TableHead>
+                                <TableHead>Plate No</TableHead>
+                                <TableHead>Make &amp; Model</TableHead>
+                                <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
+                                <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
+                                <TableHead>Customer Name</TableHead>
+                                <TableHead className="hidden sm:table-cell">Client</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="hidden xl:table-cell">Assessment Value (KES)</TableHead>
+                                <TableHead className="hidden xl:table-cell">Forced Value (KES)</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {loading ? (
+                                Array.from({ length: 5 }).map((_, index) => (
+                                <TableRow key={index}>
+                                    <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                    <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                    <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                </TableRow>
+                                ))
+                            ) : paginatedData.length > 0 ? (
+                                paginatedData.map((valuation, index) => (
+                                <TableRow key={valuation.id}>
+                                    <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                                    <TableCell>{valuation.booking?.plateNumber}</TableCell>
+                                    <TableCell>{`${valuation.booking?.carMake} ${valuation.booking?.carModel}`}</TableCell>
+                                    <TableCell className="font-mono text-xs hidden sm:table-cell">{valuation.booking?.bookingNumber}</TableCell>
+                                    <TableCell className="hidden md:table-cell">{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</TableCell>
+                                    <TableCell>{valuation.booking?.customerName}</TableCell>
+                                    <TableCell className="hidden sm:table-cell">{valuation.booking?.insurerName}</TableCell>
+                                    <TableCell>
+                                      <Badge variant={getStatusVariant(valuation.booking?.status || 'Unknown')}>
+                                        {valuation.booking?.status}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell className="font-mono hidden xl:table-cell">{valuation.assessmentValue}</TableCell>
+                                    <TableCell className="font-mono hidden xl:table-cell">{valuation.forcedValue}</TableCell>
+                                </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={10} className="h-24 text-center">
+                                        No recent valuations found.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                     <div className="flex items-center justify-end space-x-2 py-4">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    };
     
     return (
         <UnifiedDashboardLayout
@@ -477,7 +634,7 @@ export default function ValuerDashboardPage() {
                                         colorClass="bg-red-500"
                                     />
                                 </div>
-                                {renderBookingsTable(getFilteredBookingsByStatus('All'), "All car", "A summary of all Car Valutions", true)}
+                                {renderValuationsDashboard()}
                             </div>
                         </TabsContent>
                          <TabsContent value="all-bookings">
