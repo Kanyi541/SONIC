@@ -885,25 +885,6 @@ function AdminDashboard() {
             </SidebarMenuItem>
             
             <SidebarMenuItem>
-                <SidebarMenuButton 
-                    onClick={() => setActiveView('new-bookings')} 
-                    isActive={activeView === 'new-bookings'} 
-                    tooltip="New Bookings"
-                    className="flex items-center justify-between"
-                >
-                    <div className="flex items-center gap-2">
-                        <FileSignature />
-                        New Bookings
-                    </div>
-                     {stats.pendingApproval > 0 && (
-                        <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
-                            {stats.pendingApproval}
-                        </span>
-                    )}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setActiveView('settings')} isActive={activeView === 'settings'} tooltip="Settings">
                 <Settings />
                 Settings
@@ -1009,7 +990,7 @@ function AdminDashboard() {
                         colorClass="bg-green-500"
                     />
                      <StatCard 
-                        title="Pending Bookings" 
+                        title="Pending Approval" 
                         value={stats.pendingApproval} 
                         icon={<FileSignature className="h-6 w-6 text-yellow-500" />} 
                         onClick={() => setActiveView('new-bookings')}
@@ -1180,7 +1161,7 @@ function AdminDashboard() {
 
             {activeView === 'valuations' && renderValuationsTable(valuations, "All Valuations", "View and manage all submitted valuation reports.")}
             
-            {activeView === 'new-bookings' && renderNewBookingsTable(bookings.filter(b => b.status === 'Pending Approval'), "New Bookings", "Review and approve or reject new bookings.", true)}
+            {activeView === 'new-bookings' && renderNewBookingsTable(bookings.filter(b => b.status === 'Pending Approval'), "New Bookings", "Review and approve or reject new bookings.")}
 
             {activeView === 'settings' && (
               <div>
@@ -1233,3 +1214,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
