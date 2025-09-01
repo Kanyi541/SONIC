@@ -139,7 +139,7 @@ export default function ValuerDashboardPage() {
     useEffect(() => {
         if (loggedInUser) {
             setLoading(true);
-            const q = query(collection(db, "bookings"), where("status", "in", ["Pending", "Pending Valuation", "Completed", "Rejected"]));
+            const q = query(collection(db, "bookings"), where("status", "in", ["Pending Valuation", "Completed", "Rejected"]));
             const bookingsUnsubscribe = onSnapshot(q, (snapshot) => {
                 const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
                 setBookings(bookingsData);
@@ -204,17 +204,17 @@ export default function ValuerDashboardPage() {
                 comments: data.comments,
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
-                status: "Pending Approval",
+                status: "Completed",
             });
     
             const bookingDocRef = doc(db, "bookings", selectedBooking.id);
             await updateDoc(bookingDocRef, {
-                status: "Pending Approval"
+                status: "Completed"
             });
     
             toast({
                 title: "Valuation Submitted",
-                description: `Report for ${selectedBooking.bookingNumber} has been submitted for approval.`,
+                description: `Report for ${selectedBooking.bookingNumber} has been submitted successfully.`,
             });
             
             setValuationDialogOpen(false);
@@ -234,18 +234,7 @@ export default function ValuerDashboardPage() {
     };
     
 
-    const openValuationDialog = async (booking: Booking) => {
-        if(booking.status === 'Pending'){
-            try {
-                const bookingDocRef = doc(db, "bookings", booking.id);
-                await updateDoc(bookingDocRef, { status: "Pending Valuation" });
-                toast({ title: "Valuation Started", description: `Booking #${booking.bookingNumber} is now being valuated.` });
-            } catch (error) {
-                 console.error("Error updating booking status:", error);
-                 toast({ variant: "destructive", title: "Error", description: "Could not start valuation process." });
-                 return;
-            }
-        }
+    const openValuationDialog = (booking: Booking) => {
         form.reset();
         setImageDataUrls([]);
         setSelectedBooking(booking);
@@ -273,15 +262,21 @@ export default function ValuerDashboardPage() {
         );
     });
 
-    const pendingBookings = filteredBookings.filter(b => b.status === "Pending");
-    const finalizedBookings = filteredBookings.filter(b => ["Completed", "Rejected", "Pending Approval"].includes(b.status));
+    const getFilteredBookingsByStatus = (status: string | string[]) => {
+        const statuses = Array.isArray(status) ? status : [status];
+        return filteredBookings.filter(b => statuses.includes(b.status));
+    };
+    
+    const pendingValuationBookings = getFilteredBookingsByStatus('Pending Valuation');
+    const rejectedBookings = getFilteredBookingsByStatus('Rejected');
+    const completedBookings = getFilteredBookingsByStatus('Completed');
+
 
     const stats = {
         total: bookings.length,
-        pending: bookings.filter(b => b.status === 'Pending').length,
-        pendingValuation: bookings.filter(b => b.status === 'Pending Valuation').length,
-        completed: bookings.filter(b => b.status === 'Completed').length,
-        rejected: bookings.filter(b => b.status === 'Rejected').length,
+        pendingValuation: pendingValuationBookings.length,
+        completed: completedBookings.length,
+        rejected: rejectedBookings.length,
     };
     
       const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
@@ -324,7 +319,7 @@ export default function ValuerDashboardPage() {
             <CardHeader>
                <div className="flex justify-between items-center">
                     <div>
-                        <CardTitle>{title}</CardTitle>
+                        <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
                         <CardDescription>{description}</CardDescription>
                     </div>
                     <div className="relative w-full max-w-sm">
@@ -374,15 +369,16 @@ export default function ValuerDashboardPage() {
                             <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                             </TableCell>
                             <TableCell className="text-right space-x-2">
+                                {booking.status === 'Pending Valuation' && (
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => openValuationDialog(booking)}
-                                    disabled={!isPendingTable}
                                 >
                                     <FilePen className="mr-2 h-4 w-4" />
                                     <span className="hidden sm:inline">Valuate</span>
                                 </Button>
+                                )}
                             </TableCell>
                         </TableRow>
                         ))
@@ -406,8 +402,10 @@ export default function ValuerDashboardPage() {
             userEmail={loggedInUser?.email || ""}
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
-                { name: 'Pending Valuations', view: 'pending-bookings', notificationCount: stats.pending },
-                { name: 'Finalized Reports', view: 'finalized-reports' },
+                { name: 'All Cars', view: 'all-bookings' },
+                { name: 'Pending Valuations', view: 'pending-valuation-bookings', notificationCount: stats.pendingValuation },
+                { name: 'Completed', view: 'completed-bookings' },
+                { name: 'Rejected', view: 'rejected-bookings' },
             ]}
             footerContent={(
                  <>
@@ -430,21 +428,23 @@ export default function ValuerDashboardPage() {
                                         title="All Cars" 
                                         value={stats.total} 
                                         icon={<Car className="h-6 w-6 text-blue-500" />} 
+                                        onClick={() => setActiveView('all-bookings')}
                                         progress={100}
                                         colorClass="bg-blue-500"
                                     />
                                      <StatCard 
                                         title="Pending Valuation" 
-                                        value={stats.pending} 
+                                        value={stats.pendingValuation} 
                                         icon={<FileSignature className="h-6 w-6 text-orange-500" />} 
-                                        onClick={() => setActiveView('pending-bookings')}
-                                        progress={stats.total > 0 ? (stats.pending / stats.total) * 100 : 0}
+                                        onClick={() => setActiveView('pending-valuation-bookings')}
+                                        progress={stats.total > 0 ? (stats.pendingValuation / stats.total) * 100 : 0}
                                         colorClass="bg-orange-500"
                                     />
                                     <StatCard 
                                         title="Rejected by Admin" 
                                         value={stats.rejected} 
                                         icon={<XCircle className="h-6 w-6 text-red-500" />} 
+                                        onClick={() => setActiveView('rejected-bookings')}
                                         progress={stats.total > 0 ? (stats.rejected / stats.total) * 100 : 0}
                                         colorClass="bg-red-500"
                                     />
@@ -452,6 +452,7 @@ export default function ValuerDashboardPage() {
                                         title="Approved" 
                                         value={stats.completed} 
                                         icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
+                                        onClick={() => setActiveView('completed-bookings')}
                                         progress={stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}
                                         colorClass="bg-green-500"
                                     />
@@ -478,11 +479,17 @@ export default function ValuerDashboardPage() {
                                 </Card>
                             </div>
                         </TabsContent>
-                        <TabsContent value="pending-bookings">
-                           {renderBookingsTable(pendingBookings, "Pending Valuations", "A list of all new vehicle valuations.", true)}
+                        <TabsContent value="all-bookings">
+                           {renderBookingsTable(filteredBookings, "All Bookings", "A list of all assigned bookings.")}
                         </TabsContent>
-                        <TabsContent value="finalized-reports">
-                           {renderBookingsTable(finalizedBookings, "Finalized Reports", "A list of all valuations that have been approved or rejected by clients.")}
+                         <TabsContent value="pending-valuation-bookings">
+                           {renderBookingsTable(pendingValuationBookings, "Pending Valuations", "A list of all new vehicle valuations.")}
+                        </TabsContent>
+                         <TabsContent value="completed-bookings">
+                           {renderBookingsTable(completedBookings, "Completed Valuations", "A list of all valuations that have been completed.")}
+                        </TabsContent>
+                         <TabsContent value="rejected-bookings">
+                           {renderBookingsTable(rejectedBookings, "Rejected Valuations", "A list of all valuations that have been rejected by clients.")}
                         </TabsContent>
                     </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
@@ -680,4 +687,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
