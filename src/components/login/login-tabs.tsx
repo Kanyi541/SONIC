@@ -624,7 +624,7 @@ const AgentLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
                   <AlertDialogHeader>
                     <AlertDialogTitle>Password Recovery</AlertDialogTitle>
                     <AlertDialogDescription>
-                      To reset your password, please contact CASA Motor Valuers & Assessors directly for assistance.
+                      To reset your password, please contact your Institution admin, Motor Valuers & Assessors directly for assistance.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -683,5 +683,3 @@ export default function LoginTabs() {
     </Tabs>
   );
 }
-
-    
