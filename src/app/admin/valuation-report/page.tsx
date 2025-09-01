@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { doc, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, XCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, XCircle, Phone, Mail, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -58,25 +58,16 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     }
 
     return (
-      <div className="bg-white p-14 shadow-lg rounded-lg" id="valuation-report">
-        <header className="flex justify-between items-center pb-6 border-b-2 border-primary">
-            <div>
-                <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
+      <div className="bg-white shadow-lg rounded-lg flex flex-col min-h-[calc(100vh-4rem)]">
+        <header className="bg-[#1a1a1a] p-6 relative">
+            <div className="w-48">
+              <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
             </div>
-            <div className="text-left">
-            <h1 className="text-4xl font-extrabold text-black">CASA Motor Valuers & Assessors</h1>
-            <p className="text-base text-gray-700 mt-1">
-                Highway Mall, Uhuru Highway<br />
-                Nairobi, Kenya
-            </p>
-            </div>
-            <div className="text-right text-base text-gray-700">
-            <p><span className="font-semibold">Phone:</span> +254 712 345 678</p>
-            <p><span className="font-semibold">Email:</span> casamotorvaluers@gmail.com</p>
-            </div>
+            <div className="absolute right-0 top-0 h-full w-4 bg-primary" />
         </header>
 
-        <main className="mt-10">
+        <main className="flex-grow p-14 watermarked">
+          <div className="report-content">
             <h2 className="text-2xl font-bold text-center text-black uppercase tracking-widest mb-8">
                 Motor Vehicle Valuation Report
             </h2>
@@ -135,10 +126,24 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     ))}
                 </div>
             </section>
+          </div>
         </main>
 
-        <footer className="text-center text-sm text-gray-500 mt-16 pt-6 border-t border-gray-300">
-            © {new Date().getFullYear()} Casa Motor Valuers & Assessors. This is a computer-generated document and does not require a signature.
+        <footer className="bg-[#1a1a1a] p-4 text-white text-xs mt-auto">
+            <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <Phone size={14} className="text-primary"/>
+                    <span>0722924854 / 0737924854</span>
+                </div>
+                <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <MapPin size={14} className="text-primary"/>
+                    <span>Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</span>
+                </div>
+                <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <Mail size={14} className="text-primary"/>
+                    <span>casamotorvaluers@gmail.com</span>
+                </div>
+            </div>
         </footer>
       </div>
     );
@@ -244,5 +249,3 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
-
-    
