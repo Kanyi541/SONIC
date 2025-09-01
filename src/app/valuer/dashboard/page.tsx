@@ -199,17 +199,17 @@ export default function ValuerDashboardPage() {
                 comments: data.comments,
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
-                status: "Pending Approval",
+                status: "Approved",
             });
     
             const bookingDocRef = doc(db, "bookings", selectedBooking.id);
             await updateDoc(bookingDocRef, {
-                status: "Pending Approval"
+                status: "Completed"
             });
     
             toast({
                 title: "Valuation Submitted",
-                description: `Report for ${selectedBooking.bookingNumber} has been submitted for approval.`,
+                description: `Report for ${selectedBooking.bookingNumber} has been submitted successfully.`,
             });
             
             setValuationDialogOpen(false);

@@ -234,7 +234,7 @@ function AdminDashboard() {
     
 
     const bookingsQuery = query(collection(db, "bookings"));
-    const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings'];
+    const requiredBookingViews = ['dashboard', 'valuations'];
 
     if (requiredBookingViews.includes(activeView)) {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
@@ -408,35 +408,6 @@ function AdminDashboard() {
     window.open(url, '_blank');
   };
 
-  const handleBookingApproval = async (booking: Booking) => {
-      const bookingDocRef = doc(db, "bookings", booking.id);
-      try {
-          await updateDoc(bookingDocRef, { status: "Pending Valuation" });
-          toast({ title: "Booking Approved", description: `Booking #${booking.bookingNumber} approved for valuation.` });
-      } catch (error) {
-          console.error("Error approving booking: ", error);
-          toast({ variant: "destructive", title: "Approval Failed", description: "Could not approve booking." });
-      }
-  };
-
-  const handleBookingRejection = async () => {
-      if (!selectedBookingForAction || !rejectionReason) {
-          toast({ variant: "destructive", title: "Validation Error", description: "Rejection reason cannot be empty." });
-          return;
-      }
-      const { id, bookingNumber } = selectedBookingForAction;
-      const bookingDocRef = doc(db, "bookings", id);
-      try {
-          await updateDoc(bookingDocRef, { status: "Rejected", rejectionReason });
-          toast({ title: "Booking Rejected", description: `Booking #${bookingNumber} has been rejected.` });
-          setRejectionReason("");
-          setSelectedBookingForAction(null);
-      } catch (error) {
-          console.error("Error rejecting booking: ", error);
-          toast({ variant: "destructive", title: "Rejection Failed", description: "Could not reject booking." });
-      }
-  };
-
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "Pending":
@@ -457,7 +428,6 @@ function AdminDashboard() {
   const stats = {
       totalCars: bookings.length,
       totalValuations: valuations.length,
-      pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
       totalInstitutions: institutions.length,
       totalStaff: staff.length,
   };
@@ -743,94 +713,6 @@ function AdminDashboard() {
     </Card>
   );
 
-  const renderNewBookingsTable = (
-    bookingsData: Booking[],
-    title: string,
-    description: string
-  ) => (
-     <Card className="shadow-lg border-primary/20">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
-              <CardDescription>{description}</CardDescription>
-            </div>
-            <div className="relative w-full max-w-sm">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder="Search bookings..."
-                    className="w-full rounded-lg bg-background pl-8"
-                    value={bookingSearchTerm}
-                    onChange={(e) => setBookingSearchTerm(e.target.value)}
-                />
-            </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold">Booking No.</TableHead>
-              <TableHead className="font-semibold hidden md:table-cell">Customer</TableHead>
-              <TableHead className="font-semibold hidden lg:table-cell">Client</TableHead>
-              <TableHead className="font-semibold hidden sm:table-cell">Vehicle</TableHead>
-              <TableHead className="font-semibold hidden md:table-cell">Plate No.</TableHead>
-              <TableHead className="font-semibold text-left">Status</TableHead>
-              <TableHead className="text-right font-semibold">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
-                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                  <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
-                </TableRow>
-              ))
-            ) : bookingsData.length > 0 ? (
-                bookingsData.map((booking) => (
-                    <TableRow key={booking.id}>
-                    <TableCell className="font-mono text-xs truncate">{booking?.bookingNumber}</TableCell>
-                    <TableCell className="font-medium hidden md:table-cell">{booking?.customerName}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{booking?.insurerName}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{booking?.carMake}</TableCell>
-                    <TableCell className="font-mono hidden md:table-cell">{booking?.plateNumber}</TableCell>
-                    <TableCell>
-                        <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                        <Button variant="default" size="sm" onClick={() => handleBookingApproval(booking)}>
-                            <ThumbsUp className="mr-2 h-4 w-4" />
-                            Approve
-                        </Button>
-                        <DialogTrigger asChild>
-                            <Button variant="destructive" size="sm" onClick={() => setSelectedBookingForAction(booking)}>
-                                <ThumbsDown className="mr-2 h-4 w-4" />
-                                Reject
-                            </Button>
-                        </DialogTrigger>
-                    </TableCell>
-                    </TableRow>
-                ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center h-24">
-                  No new bookings found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
-
   return (
     <SidebarProvider>
       <Sidebar variant="inset" side="left">
@@ -964,7 +846,7 @@ function AdminDashboard() {
                     <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, Admin!</h1>
                     <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Valuers & Assessors.</p>
                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <StatCard 
                         title="Staff" 
                         value={stats.totalStaff} 
@@ -988,14 +870,6 @@ function AdminDashboard() {
                         onClick={() => setActiveView('valuations')}
                         progress={100}
                         colorClass="bg-green-500"
-                    />
-                     <StatCard 
-                        title="Pending Approval" 
-                        value={stats.pendingApproval} 
-                        icon={<FileSignature className="h-6 w-6 text-yellow-500" />} 
-                        onClick={() => setActiveView('new-bookings')}
-                        progress={stats.totalCars > 0 ? (stats.pendingApproval / stats.totalCars) * 100 : 0}
-                        colorClass="bg-yellow-500"
                     />
                 </div>
 
@@ -1161,7 +1035,6 @@ function AdminDashboard() {
 
             {activeView === 'valuations' && renderValuationsTable(valuations, "All Valuations", "View and manage all submitted valuation reports.")}
             
-            {activeView === 'new-bookings' && renderNewBookingsTable(bookings.filter(b => b.status === 'Pending Approval'), "New Bookings", "Review and approve or reject new bookings.")}
 
             {activeView === 'settings' && (
               <div>
@@ -1197,9 +1070,6 @@ function AdminDashboard() {
                 <DialogClose asChild>
                     <Button variant="outline">Cancel</Button>
                 </DialogClose>
-                <Button variant="destructive" onClick={handleBookingRejection}>
-                    Confirm Rejection
-                </Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1214,5 +1084,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    
