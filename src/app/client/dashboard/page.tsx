@@ -544,6 +544,7 @@ export default function ClientDashboardPage() {
         pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
         rejected: bookings.filter(b => b.status === 'Rejected').length,
+        totalStaff: staff.length,
     };
 
     const filteredBookings = bookings.filter(booking => {
@@ -969,10 +970,10 @@ export default function ClientDashboardPage() {
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <StatCard 
-                            title="All Cars" 
-                            value={stats.total} 
-                            icon={<Car className="h-6 w-6 text-blue-500" />} 
-                            onClick={() => setActiveView('all-bookings')}
+                            title="Staff" 
+                            value={stats.totalStaff} 
+                            icon={<Briefcase className="h-6 w-6 text-blue-500" />} 
+                            onClick={() => setActiveView('staff')}
                             progress={100}
                             colorClass="bg-blue-500"
                         />
@@ -991,14 +992,6 @@ export default function ClientDashboardPage() {
                             onClick={() => setActiveView('pending-valuation-bookings')}
                             progress={(stats.pendingValuation / stats.total) * 100}
                             colorClass="bg-yellow-500"
-                        />
-                         <StatCard 
-                            title="Pending Approval" 
-                            value={stats.pendingApproval} 
-                            icon={<FileWarning className="h-6 w-6 text-purple-500" />} 
-                            onClick={() => setActiveView('pending-approval-bookings')}
-                            progress={(stats.pendingApproval / stats.total) * 100}
-                            colorClass="bg-purple-500"
                         />
                          <StatCard 
                             title="Approved" 
