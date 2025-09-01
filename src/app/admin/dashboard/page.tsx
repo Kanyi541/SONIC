@@ -807,13 +807,6 @@ function AdminDashboard() {
             </SidebarMenuItem>
             
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('valuations')} isActive={activeView === 'valuations'} tooltip="Valuations">
-                <FileSpreadsheet />
-                Valuations
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setActiveView('settings')} isActive={activeView === 'settings'} tooltip="Settings">
                 <Settings />
                 Settings
@@ -1127,10 +1120,41 @@ function AdminDashboard() {
             
 
             {activeView === 'settings' && (
-              <div>
-                <h2 className="text-2xl font-bold">Settings</h2>
-                <p>Manage application settings here.</p>
-              </div>
+                <div className="grid gap-6">
+                <Card>
+                    <CardHeader>
+                    <CardTitle>Application Settings</CardTitle>
+                    <CardDescription>Manage general application settings.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                    <p className="text-muted-foreground">
+                        General settings will be available here. (e.g., Site Name, Logo, Theme)
+                    </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                    <CardTitle>User Roles</CardTitle>
+                    <CardDescription>Manage permissions for different user roles.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                     <p className="text-muted-foreground">
+                        Role-based access control settings will be configured here.
+                    </p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                    <CardTitle>Notifications</CardTitle>
+                    <CardDescription>Configure email and in-app notification preferences.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">
+                           Notification settings will be available here.
+                        </p>
+                    </CardContent>
+                </Card>
+                </div>
             )}
         </main>
         <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
