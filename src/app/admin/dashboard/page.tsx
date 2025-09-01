@@ -430,6 +430,7 @@ function AdminDashboard() {
       totalValuations: valuations.length,
       totalInstitutions: institutions.length,
       totalStaff: staff.length,
+      totalValuers: valuers.length,
   };
     
     const recentValuations = valuations.slice(0, 5).map(valuation => {
@@ -734,25 +735,6 @@ function AdminDashboard() {
             </SidebarMenuItem>
             
             <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('staff')} isActive={activeView === 'staff'} tooltip="Manage Staff">
-                    <Briefcase />
-                    Manage Staff
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('clients')} isActive={activeView === 'clients'} tooltip="Manage Clients">
-                <Building />
-                Manage Clients
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Manage Valuers">
-                    <UserCog />
-                    Manage Valuers
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => setActiveView('branches')} isActive={activeView === 'branches'} tooltip="Our Branches">
                     <Building2 />
                     Our Branches
@@ -846,7 +828,7 @@ function AdminDashboard() {
                     <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, Admin!</h1>
                     <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Valuers & Assessors.</p>
                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard 
                         title="Staff" 
                         value={stats.totalStaff} 
@@ -862,6 +844,14 @@ function AdminDashboard() {
                         onClick={() => setActiveView('clients')}
                         progress={100}
                         colorClass="bg-orange-500"
+                    />
+                     <StatCard 
+                        title="Valuers" 
+                        value={stats.totalValuers} 
+                        icon={<UserCog className="h-6 w-6 text-purple-500" />} 
+                        onClick={() => setActiveView('valuers')}
+                        progress={100}
+                        colorClass="bg-purple-500"
                     />
                      <StatCard 
                         title="Total Cars" 
