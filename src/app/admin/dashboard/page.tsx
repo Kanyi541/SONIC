@@ -152,6 +152,8 @@ function AdminDashboard() {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -433,10 +435,16 @@ function AdminDashboard() {
       totalValuers: valuers.length,
   };
     
-    const recentValuations = valuations.slice(0, 5).map(valuation => {
+  const allValuations = valuations.map(valuation => {
         const booking = bookings.find(b => b.id === valuation.bookingId);
         return { ...valuation, booking };
-    });
+  });
+
+  const totalPages = Math.ceil(allValuations.length / itemsPerPage);
+  const paginatedValuations = allValuations.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+  );
     
   const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
       <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
@@ -828,7 +836,7 @@ function AdminDashboard() {
                     <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, Admin!</h1>
                     <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Valuers & Assessors.</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard 
                         title="Staff" 
                         value={stats.totalStaff} 
@@ -865,13 +873,14 @@ function AdminDashboard() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Recent Valuations</CardTitle>
-                        <CardDescription>A summary of the latest valuation reports submitted.</CardDescription>
+                        <CardTitle>Read All Cars</CardTitle>
+                        <CardDescription>A summary of all valuation reports submitted.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>No.</TableHead>
                                     <TableHead>Plate No</TableHead>
                                     <TableHead>Make &amp; Model</TableHead>
                                     <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
@@ -887,6 +896,7 @@ function AdminDashboard() {
                                 {loading ? (
                                     Array.from({ length: 5 }).map((_, index) => (
                                     <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
                                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
@@ -898,9 +908,10 @@ function AdminDashboard() {
                                         <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                     </TableRow>
                                     ))
-                                ) : recentValuations.length > 0 ? (
-                                    recentValuations.map((valuation) => (
+                                ) : paginatedValuations.length > 0 ? (
+                                    paginatedValuations.map((valuation, index) => (
                                     <TableRow key={valuation.id}>
+                                        <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                         <TableCell>{valuation.booking?.plateNumber}</TableCell>
                                         <TableCell>{`${valuation.booking?.carMake} ${valuation.booking?.carModel}`}</TableCell>
                                         <TableCell className="font-mono text-xs hidden sm:table-cell">{valuation.booking?.bookingNumber}</TableCell>
@@ -918,13 +929,31 @@ function AdminDashboard() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={9} className="h-24 text-center">
+                                        <TableCell colSpan={10} className="h-24 text-center">
                                             No recent valuations found.
                                         </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
                         </Table>
+                         <div className="flex items-center justify-end space-x-2 py-4">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                            >
+                                Next
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
               </div>
