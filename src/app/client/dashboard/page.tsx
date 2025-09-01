@@ -541,10 +541,10 @@ export default function ClientDashboardPage() {
         total: bookings.length,
         pending: bookings.filter(b => b.status === 'Pending').length,
         pendingValuation: bookings.filter(b => b.status === 'Pending Valuation').length,
-        pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
         rejected: bookings.filter(b => b.status === 'Rejected').length,
         totalStaff: staff.length,
+        totalAgents: agents.length,
     };
 
     const filteredBookings = bookings.filter(booking => {
@@ -710,8 +710,6 @@ export default function ClientDashboardPage() {
     const allMenuItems = [
         { name: "Dashboard", view: "dashboard" },
         { name: "Customers", view: "customers", action: () => setBookingDialogOpen(true) },
-        { name: "Agents", view: "agents" },
-        { name: "Staff", view: "staff" },
         { name: "CASA Branches", view: "branches"},
       ];
     
@@ -976,6 +974,14 @@ export default function ClientDashboardPage() {
                             onClick={() => setActiveView('staff')}
                             progress={100}
                             colorClass="bg-blue-500"
+                        />
+                         <StatCard 
+                            title="Agents" 
+                            value={stats.totalAgents} 
+                            icon={<UserCog className="h-6 w-6 text-indigo-500" />} 
+                            onClick={() => setActiveView('agents')}
+                            progress={100}
+                            colorClass="bg-indigo-500"
                         />
                          <StatCard 
                             title="New Requests" 
@@ -1594,9 +1600,6 @@ export default function ClientDashboardPage() {
             </TabsContent>
             <TabsContent value="pending-valuation-bookings">
                 {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Pending Valuation", "Bookings assigned to a valuer and awaiting their report.")}
-            </TabsContent>
-            <TabsContent value="pending-approval-bookings">
-                {renderBookingsTable(getFilteredBookingsByStatus("Pending Approval"), "Pending Approval", "Valuation reports that have been submitted and are awaiting your review.")}
             </TabsContent>
             <TabsContent value="completed-bookings">
                 {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "Approved Bookings", "All bookings that have been fully completed and approved.")}
