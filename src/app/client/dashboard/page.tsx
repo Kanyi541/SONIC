@@ -1065,7 +1065,7 @@ export default function ClientDashboardPage() {
                             colorClass="bg-red-500"
                         />
                     </div>
-                    {renderBookingsTable(filteredBookings, "All Cars", "A summary of all your bookings.", currentPage, setCurrentPage)}
+                    {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "All Cars", "A summary of all your completed bookings.", currentPage, setCurrentPage)}
                </div>
             </TabsContent>
             

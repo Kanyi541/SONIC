@@ -503,7 +503,7 @@ function AdminDashboard() {
   const recentValuations = valuations.map(v => ({
       ...v,
       booking: bookings.find(b => b.id === v.bookingId),
-  }));
+  })).filter(v => v.booking?.status === 'Completed');
     
   const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
       <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
@@ -1222,7 +1222,7 @@ function AdminDashboard() {
                 <Card>
                     <CardHeader>
                         <CardTitle>All Cars</CardTitle>
-                        <CardDescription>A summary of all vehicles valued or pending valuation.</CardDescription>
+                        <CardDescription>A summary of all completed valuations.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
