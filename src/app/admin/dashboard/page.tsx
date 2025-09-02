@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
@@ -152,6 +152,15 @@ function AdminDashboard() {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
+
+  const [itemsPerPage] = useState(5);
+  const [institutionsPage, setInstitutionsPage] = useState(1);
+  const [valuersPage, setValuersPage] = useState(1);
+  const [staffPage, setStaffPage] = useState(1);
+  const [branchesPage, setBranchesPage] = useState(1);
+  const [valuationsPage, setValuationsPage] = useState(1);
+  const [newBookingsPage, setNewBookingsPage] = useState(1);
+  const [recentValuationsPage, setRecentValuationsPage] = useState(1);
   
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -463,10 +472,7 @@ function AdminDashboard() {
       totalStaff: staff.length,
   };
     
-    const recentValuations = valuations.slice(0, 5).map(valuation => {
-        const booking = bookings.find(b => b.id === valuation.bookingId);
-        return { ...valuation, booking };
-    });
+  const recentValuations = valuations;
     
   const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
       <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
@@ -488,97 +494,118 @@ function AdminDashboard() {
     title: string,
     description: string,
     onAdd: () => void,
-    userType: 'institution' | 'valuer' | 'staff'
-  ) => (
-    <Card className="shadow-lg border-primary/20">
-      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </div>
-        <Button onClick={onAdd}>
-          <PlusCircle className="mr-2" />
-          Register New {userType === 'institution' ? 'Client' : (userType.charAt(0).toUpperCase() + userType.slice(1))}
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold text-left">Name</TableHead>
-              <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
-              <TableHead className="hidden sm:table-cell font-semibold text-left">Email</TableHead>
-              <TableHead className="hidden md:table-cell font-semibold text-left">Phone</TableHead>
-              <TableHead className="font-semibold text-center">Status</TableHead>
-              <TableHead className="text-right font-semibold">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map(item => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium flex items-center gap-3">
-                  <div className="p-2 bg-muted rounded-full hidden sm:flex">
-                    <User className="h-5 w-5 text-primary" />
-                  </div>
-                  {item.name}
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">{item.username}</TableCell>
-                <TableCell className="hidden sm:table-cell">{item.email}</TableCell>
-                <TableCell className="hidden md:table-cell">{item.phone}</TableCell>
-                <TableCell className="text-center">
-                   <div className="flex items-center justify-center gap-2">
-                      <span className={`text-sm font-medium ${item.active ? 'text-green-500' : 'text-red-500'}`}>
-                        {item.active ? 'Active' : 'Inactive'}
-                      </span>
-                      <Switch
-                        checked={item.active}
-                        onCheckedChange={() => {
-                            let collectionName = '';
-                            if (userType === 'institution') collectionName = 'insurers';
-                            else if (userType === 'valuer') collectionName = 'valuers';
-                            else if (userType === 'staff') collectionName = 'staff';
-                            toggleStatus(item.id, item.active, collectionName, item.name);
-                        }}
-                        aria-label={`Toggle status for ${item.name}`}
-                      />
+    userType: 'institution' | 'valuer' | 'staff',
+    currentPage: number,
+    setCurrentPage: (page: number) => void
+  ) => {
+    const totalPages = Math.ceil(data.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = data.slice(startIndex, startIndex + itemsPerPage);
+
+    return (
+        <Card className="shadow-lg border-primary/20">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+            <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+            </div>
+            <Button onClick={onAdd}>
+            <PlusCircle className="mr-2" />
+            Register New {userType === 'institution' ? 'Client' : (userType.charAt(0).toUpperCase() + userType.slice(1))}
+            </Button>
+        </CardHeader>
+        <CardContent>
+            <Table>
+            <TableHeader>
+                <TableRow className="bg-muted/50">
+                <TableHead className="font-semibold w-[50px]">No.</TableHead>
+                <TableHead className="font-semibold text-left">Name</TableHead>
+                <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
+                <TableHead className="hidden sm:table-cell font-semibold text-left">Email</TableHead>
+                <TableHead className="hidden md:table-cell font-semibold text-left">Phone</TableHead>
+                <TableHead className="font-semibold text-center">Status</TableHead>
+                <TableHead className="text-right font-semibold">Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {paginatedData.map((item, index) => (
+                <TableRow key={item.id}>
+                    <TableCell>{startIndex + index + 1}</TableCell>
+                    <TableCell className="font-medium flex items-center gap-3">
+                    <div className="p-2 bg-muted rounded-full hidden sm:flex">
+                        <User className="h-5 w-5 text-primary" />
                     </div>
-                </TableCell>
-                <TableCell className="text-right">
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <Button variant="outline" size="icon" className="bg-black text-primary hover:bg-black/90 hover:text-primary/90">
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the user {item.name}.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => {
-                                     let collectionName = '';
-                                     if (userType === 'institution') collectionName = 'insurers';
-                                     else if (userType === 'valuer') collectionName = 'valuers';
-                                     else if (userType === 'staff') collectionName = 'staff';
-                                    handleDeleteUser(item.id, item.name, collectionName)
-                                }}>
-                                    Continue
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
+                    {item.name}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">{item.username}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{item.email}</TableCell>
+                    <TableCell className="hidden md:table-cell">{item.phone}</TableCell>
+                    <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                        <span className={`text-sm font-medium ${item.active ? 'text-green-500' : 'text-red-500'}`}>
+                            {item.active ? 'Active' : 'Inactive'}
+                        </span>
+                        <Switch
+                            checked={item.active}
+                            onCheckedChange={() => {
+                                let collectionName = '';
+                                if (userType === 'institution') collectionName = 'insurers';
+                                else if (userType === 'valuer') collectionName = 'valuers';
+                                else if (userType === 'staff') collectionName = 'staff';
+                                toggleStatus(item.id, item.active, collectionName, item.name);
+                            }}
+                            aria-label={`Toggle status for ${item.name}`}
+                        />
+                        </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="icon" className="bg-black text-primary hover:bg-black/90 hover:text-primary/90">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete the user {item.name}.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => {
+                                        let collectionName = '';
+                                        if (userType === 'institution') collectionName = 'insurers';
+                                        else if (userType === 'valuer') collectionName = 'valuers';
+                                        else if (userType === 'staff') collectionName = 'staff';
+                                        handleDeleteUser(item.id, item.name, collectionName)
+                                    }}>
+                                        Continue
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </TableCell>
+                </TableRow>
+                ))}
+            </TableBody>
+            </Table>
+            <div className="flex justify-end items-center gap-2 mt-4">
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                </Button>
+                <span className="text-sm">Page {currentPage} of {totalPages}</span>
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
+        </CardContent>
+        </Card>
+    )
+  };
 
   const renderUserDialog = (
     isOpen: boolean,
@@ -640,8 +667,15 @@ function AdminDashboard() {
   const renderValuationsTable = (
     valuationsData: Valuation[],
     title: string,
-    description: string
-  ) => (
+    description: string,
+    currentPage: number,
+    setCurrentPage: (page: number) => void
+  ) => {
+    const totalPages = Math.ceil(valuationsData.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = valuationsData.slice(startIndex, startIndex + itemsPerPage);
+
+    return (
      <Card className="shadow-lg border-primary/20">
       <CardHeader>
         <div className="flex justify-between items-center">
@@ -665,6 +699,7 @@ function AdminDashboard() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="font-semibold w-[50px]">No.</TableHead>
               <TableHead className="font-semibold">Booking ID</TableHead>
               <TableHead className="font-semibold hidden md:table-cell">Customer</TableHead>
               <TableHead className="font-semibold hidden sm:table-cell">Vehicle</TableHead>
@@ -677,8 +712,9 @@ function AdminDashboard() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 5 }).map((_, index) => (
+              Array.from({ length: itemsPerPage }).map((_, index) => (
                 <TableRow key={index}>
+                  <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                   <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
@@ -689,12 +725,13 @@ function AdminDashboard() {
                   <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                 </TableRow>
               ))
-            ) : valuationsData.length > 0 ? (
-                valuationsData.map((valuation) => {
+            ) : paginatedData.length > 0 ? (
+                paginatedData.map((valuation, index) => {
                 const booking = bookings.find(b => b.id === valuation.bookingId);
                 const isCompleted = booking?.status === 'Completed';
                 return (
                     <TableRow key={valuation.id}>
+                    <TableCell>{startIndex + index + 1}</TableCell>
                     <TableCell className="font-mono text-xs truncate">{booking?.bookingNumber}</TableCell>
                     <TableCell className="font-medium hidden md:table-cell">{booking?.customerName}</TableCell>
                     <TableCell className="hidden sm:table-cell">{`${booking?.carMake} ${booking?.carModel}`}</TableCell>
@@ -743,22 +780,40 @@ function AdminDashboard() {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="text-center h-24">
+                <TableCell colSpan={9} className="text-center h-24">
                   No valuations found.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+         <div className="flex justify-end items-center gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+            </Button>
+            <span className="text-sm">Page {currentPage} of {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                Next
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+        </div>
       </CardContent>
     </Card>
-  );
+  )};
 
   const renderNewBookingsTable = (
     bookingsData: Booking[],
     title: string,
-    description: string
-  ) => (
+    description: string,
+    currentPage: number,
+    setCurrentPage: (page: number) => void
+  ) => {
+    const totalPages = Math.ceil(bookingsData.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = bookingsData.slice(startIndex, startIndex + itemsPerPage);
+
+    return (
      <Card className="shadow-lg border-primary/20">
       <CardHeader>
         <div className="flex justify-between items-center">
@@ -782,6 +837,7 @@ function AdminDashboard() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="font-semibold w-[50px]">No.</TableHead>
               <TableHead className="font-semibold">Booking No.</TableHead>
               <TableHead className="font-semibold hidden md:table-cell">Customer</TableHead>
               <TableHead className="font-semibold hidden lg:table-cell">Client</TableHead>
@@ -793,8 +849,9 @@ function AdminDashboard() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 5 }).map((_, index) => (
+              Array.from({ length: itemsPerPage }).map((_, index) => (
                 <TableRow key={index}>
+                  <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                   <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
@@ -804,9 +861,10 @@ function AdminDashboard() {
                   <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                 </TableRow>
               ))
-            ) : bookingsData.length > 0 ? (
-                bookingsData.map((booking) => (
+            ) : paginatedData.length > 0 ? (
+                paginatedData.map((booking, index) => (
                     <TableRow key={booking.id}>
+                    <TableCell>{startIndex + index + 1}</TableCell>
                     <TableCell className="font-mono text-xs truncate">{booking?.bookingNumber}</TableCell>
                     <TableCell className="font-medium hidden md:table-cell">{booking?.customerName}</TableCell>
                     <TableCell className="hidden lg:table-cell">{booking?.insurerName}</TableCell>
@@ -831,16 +889,34 @@ function AdminDashboard() {
                 ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center h-24">
+                <TableCell colSpan={8} className="text-center h-24">
                   No new bookings found.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+        <div className="flex justify-end items-center gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+            </Button>
+            <span className="text-sm">Page {currentPage} of {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                Next
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+        </div>
       </CardContent>
     </Card>
+  )};
+
+  const totalRecentValuationPages = Math.ceil(recentValuations.length / itemsPerPage);
+  const paginatedRecentValuations = recentValuations.slice(
+      (recentValuationsPage - 1) * itemsPerPage,
+      recentValuationsPage * itemsPerPage
   );
+
 
   return (
     <SidebarProvider>
@@ -1027,6 +1103,7 @@ function AdminDashboard() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[50px]">No.</TableHead>
                                     <TableHead>Plate No</TableHead>
                                     <TableHead>Make &amp; Model</TableHead>
                                     <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
@@ -1042,6 +1119,7 @@ function AdminDashboard() {
                                 {loading ? (
                                     Array.from({ length: 5 }).map((_, index) => (
                                     <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
                                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
@@ -1053,9 +1131,10 @@ function AdminDashboard() {
                                         <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                     </TableRow>
                                     ))
-                                ) : recentValuations.length > 0 ? (
-                                    recentValuations.map((valuation) => (
+                                ) : paginatedRecentValuations.length > 0 ? (
+                                    paginatedRecentValuations.map((valuation, index) => (
                                     <TableRow key={valuation.id}>
+                                        <TableCell>{(recentValuationsPage - 1) * itemsPerPage + index + 1}</TableCell>
                                         <TableCell>{valuation.booking?.plateNumber}</TableCell>
                                         <TableCell>{`${valuation.booking?.carMake} ${valuation.booking?.carModel}`}</TableCell>
                                         <TableCell className="font-mono text-xs hidden sm:table-cell">{valuation.booking?.bookingNumber}</TableCell>
@@ -1073,20 +1152,31 @@ function AdminDashboard() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={9} className="h-24 text-center">
+                                        <TableCell colSpan={10} className="h-24 text-center">
                                             No recent valuations found.
                                         </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
                         </Table>
+                         <div className="flex justify-end items-center gap-2 mt-4">
+                            <Button variant="outline" size="sm" onClick={() => setRecentValuationsPage(recentValuationsPage - 1)} disabled={recentValuationsPage === 1}>
+                                <ChevronLeft className="h-4 w-4" />
+                                Previous
+                            </Button>
+                            <span className="text-sm">Page {recentValuationsPage} of {totalRecentValuationPages}</span>
+                            <Button variant="outline" size="sm" onClick={() => setRecentValuationsPage(recentValuationsPage + 1)} disabled={recentValuationsPage === totalRecentValuationPages}>
+                                Next
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
               </div>
             )}
-            {activeView === 'clients' && renderUserTable(institutions, "Manage Clients", "View and manage all registered clients.", () => setAddInstitutionOpen(true), "institution")}
-            {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuer")}
-            {activeView === 'staff' && renderUserTable(staff, "Manage Staff", "View and manage all registered staff members.", () => setAddStaffOpen(true), "staff")}
+            {activeView === 'clients' && renderUserTable(institutions, "Manage Clients", "View and manage all registered clients.", () => setAddInstitutionOpen(true), "institution", institutionsPage, setInstitutionsPage)}
+            {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuer", valuersPage, setValuersPage)}
+            {activeView === 'staff' && renderUserTable(staff, "Manage Staff", "View and manage all registered staff members.", () => setAddStaffOpen(true), "staff", staffPage, setStaffPage)}
             {activeView === 'branches' && (
                 <Card className="shadow-lg border-primary/20">
                     <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -1103,6 +1193,7 @@ function AdminDashboard() {
                         <Table>
                         <TableHeader>
                             <TableRow className="bg-muted/50">
+                            <TableHead className="font-semibold w-[50px]">No.</TableHead>
                             <TableHead className="font-semibold text-left">Branch Name</TableHead>
                             <TableHead className="font-semibold text-left">Branch Manager</TableHead>
                             <TableHead className="font-semibold text-left">Location</TableHead>
@@ -1110,8 +1201,9 @@ function AdminDashboard() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {branches.map(branch => (
+                            {branches.map((branch, index) => (
                             <TableRow key={branch.id}>
+                                <TableCell>{index + 1}</TableCell>
                                 <TableCell className="font-medium">{branch.name}</TableCell>
                                 <TableCell>{branch.manager}</TableCell>
                                 <TableCell>{branch.location}</TableCell>
@@ -1178,9 +1270,9 @@ function AdminDashboard() {
                 </DialogContent>
             </Dialog>
 
-            {activeView === 'valuations' && renderValuationsTable(valuations, "All Valuations", "View and manage all submitted valuation reports.")}
+            {activeView === 'valuations' && renderValuationsTable(valuations, "All Valuations", "View and manage all submitted valuation reports.", valuationsPage, setValuationsPage)}
             
-            {activeView === 'new-bookings' && renderNewBookingsTable(bookings.filter(b => b.status === 'Pending Approval'), "New Bookings", "Review and approve or reject new bookings.")}
+            {activeView === 'new-bookings' && renderNewBookingsTable(bookings.filter(b => b.status === 'Pending Approval'), "New Bookings", "Review and approve or reject new bookings.", newBookingsPage, setNewBookingsPage)}
 
             {activeView === 'settings' && (
               <div>
