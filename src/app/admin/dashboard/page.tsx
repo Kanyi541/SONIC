@@ -950,9 +950,9 @@ function AdminDashboard() {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('clients')} isActive={activeView === 'clients'} tooltip="Manage Clients">
+              <SidebarMenuButton onClick={() => setActiveView('clients')} isActive={activeView === 'clients'} tooltip="Institutions">
                 <Building />
-                Manage Clients
+                Institutions
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -1178,7 +1178,7 @@ function AdminDashboard() {
                 </Card>
               </div>
             )}
-            {activeView === 'clients' && renderUserTable(institutions, "Manage Clients", "View and manage all registered clients.", () => setAddInstitutionOpen(true), "institution", institutionsPage, setInstitutionsPage)}
+            {activeView === 'clients' && renderUserTable(institutions, "Manage Institutions", "View and manage all registered institutions.", () => setAddInstitutionOpen(true), "institution", institutionsPage, setInstitutionsPage)}
             {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuer", valuersPage, setValuersPage)}
             {activeView === 'staff' && renderUserTable(staff, "Manage Staff", "View and manage all registered staff members.", () => setAddStaffOpen(true), "staff", staffPage, setStaffPage)}
             {activeView === 'branches' && (
