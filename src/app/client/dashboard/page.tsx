@@ -323,7 +323,11 @@ export default function ClientDashboardPage() {
         });
         
         setLoadingAgents(true);
-        const agentsQuery = query(collection(db, "insurers"), where("clientId", "==", loggedInUser.username), where("role", "==", "Agent"));
+        const agentsQuery = query(
+            collection(db, "insurers"), 
+            where("clientId", "==", loggedInUser.username), 
+            where("role", "==", "Agent")
+        );
         const agentsUnsubscribe = onSnapshot(agentsQuery, (snapshot) => {
             const agentsData: Agent[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Agent));
             setAgents(agentsData);
