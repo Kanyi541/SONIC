@@ -6,11 +6,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-<<<<<<< HEAD
-import { Loader2, ArrowLeft, XCircle } from 'lucide-react';
-=======
-import { Loader2, ArrowLeft, Phone, MapPin, Mail } from 'lucide-react';
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
+import { Loader2, ArrowLeft, XCircle, Phone, MapPin, Mail } from 'lucide-react';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 

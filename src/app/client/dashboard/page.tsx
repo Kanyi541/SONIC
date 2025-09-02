@@ -48,11 +48,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-<<<<<<< HEAD
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight } from "lucide-react";
-=======
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, KeyRound } from "lucide-react";
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight, KeyRound } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -126,14 +122,10 @@ interface Valuation {
     forcedValue: string;
 }
 
-<<<<<<< HEAD
 interface CombinedData extends Booking {
     valuation?: Valuation;
 }
 
-
-=======
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
 type ChartDataPoint = {
     day: string;
     Pending: number;
@@ -228,10 +220,7 @@ const PasswordInput = ({ field }: { field: any }) => {
 export default function ClientDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [valuations, setValuations] = useState<Valuation[]>([]);
-<<<<<<< HEAD
   const [combinedData, setCombinedData] = useState<CombinedData[]>([]);
-=======
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -256,8 +245,6 @@ export default function ClientDashboardPage() {
   const [agentSearchTerm, setAgentSearchTerm] = useState("");
   const [staffSearchTerm, setStaffSearchTerm] = useState("");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
 
   const [itemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -533,7 +520,7 @@ export default function ClientDashboardPage() {
             ...data,
             bookingNumber,
             createdAt: new Date(),
-            status: "Pending Valuation",
+            status: "Pending Approval",
             insurerId: loggedInUser.username,
             insurerName: loggedInUser.name,
         });
@@ -575,6 +562,7 @@ export default function ClientDashboardPage() {
         total: bookings.length,
         pending: bookings.filter(b => b.status === 'Pending').length,
         pendingValuation: bookings.filter(b => b.status === 'Pending Valuation').length,
+        pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
         rejected: bookings.filter(b => b.status === 'Rejected').length,
         totalStaff: staff.length,
@@ -590,23 +578,6 @@ export default function ClientDashboardPage() {
         );
     });
     
-<<<<<<< HEAD
-=======
-    const combinedBookings = useMemo(() => {
-        return filteredBookings.map(booking => {
-            const valuation = valuations.find(v => v.bookingId === booking.id);
-            return { ...booking, valuation };
-        });
-    }, [filteredBookings, valuations]);
-
-    const paginatedDashboardBookings = combinedBookings.slice(
-      (currentPage - 1) * itemsPerPage,
-      currentPage * itemsPerPage
-    );
-
-    const totalDashboardPages = Math.ceil(combinedBookings.length / itemsPerPage);
-    
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
     const getFilteredBookingsByStatus = (status: string | string[]) => {
         const statuses = Array.isArray(status) ? status : [status];
         return filteredBookings.filter(b => statuses.includes(b.status));
@@ -1130,102 +1101,7 @@ export default function ClientDashboardPage() {
                             colorClass="bg-red-500"
                         />
                     </div>
-<<<<<<< HEAD
                     {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "All Cars", "A summary of all your completed bookings.", currentPage, setCurrentPage)}
-=======
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>All car</CardTitle>
-                            <CardDescription>A summary of all Car Valutions</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>No.</TableHead>
-                                        <TableHead>Plate No</TableHead>
-                                        <TableHead>Make &amp; Model</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
-                                        <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
-                                        <TableHead>Customer Name</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="hidden xl:table-cell">Assessment Value (KES)</TableHead>
-                                        <TableHead className="hidden xl:table-cell">Forced Value (KES)</TableHead>
-                                        <TableHead className="text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {loading ? (
-                                        Array.from({ length: 5 }).map((_, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell><Skeleton className="h-5 w-8" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                                <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                                                <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                                <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                                <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                                <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                                <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : paginatedDashboardBookings.length > 0 ? (
-                                        paginatedDashboardBookings.map((booking, index) => (
-                                            <TableRow key={booking.id}>
-                                                <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
-                                                <TableCell>{booking.plateNumber}</TableCell>
-                                                <TableCell>{`${booking.carMake} ${booking.carModel}`}</TableCell>
-                                                <TableCell className="font-mono text-xs hidden sm:table-cell">{booking.bookingNumber}</TableCell>
-                                                <TableCell className="hidden md:table-cell">{booking.valuation?.assessmentDate ? new Date(booking.valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</TableCell>
-                                                <TableCell>{booking.customerName}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
-                                                </TableCell>
-                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.assessmentValue || 'N/A'}</TableCell>
-                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.forcedValue || 'N/A'}</TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
-                                                    >
-                                                        <Printer className="mr-2 h-4 w-4" />
-                                                        <span className="hidden sm:inline">View Report</span>
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={10} className="text-center h-24">
-                                                No bookings found.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                            <div className="flex items-center justify-end space-x-2 py-4">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                >
-                                    Previous
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalDashboardPages))}
-                                    disabled={currentPage === totalDashboardPages}
-                                >
-                                    Next
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
                </div>
             </TabsContent>
             
@@ -1719,12 +1595,6 @@ export default function ClientDashboardPage() {
             <TabsContent value="pending-valuation-bookings">
                 {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Pending Valuation", "Bookings assigned to a valuer and awaiting their report.", currentPage, setCurrentPage)}
             </TabsContent>
-<<<<<<< HEAD
-            <TabsContent value="pending-approval-bookings">
-                {renderBookingsTable(getFilteredBookingsByStatus("Pending Approval"), "Pending Approval", "Valuation reports that have been submitted and are awaiting your review.", currentPage, setCurrentPage)}
-            </TabsContent>
-=======
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
             <TabsContent value="completed-bookings">
                 {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "Approved Bookings", "All bookings that have been fully completed and approved.", currentPage, setCurrentPage)}
             </TabsContent>
@@ -1783,5 +1653,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    

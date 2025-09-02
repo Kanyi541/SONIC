@@ -9,11 +9,7 @@ import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-<<<<<<< HEAD
 import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle, FileSignature, FileWarning, ChevronLeft, ChevronRight } from 'lucide-react';
-=======
-import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle, FileSignature } from 'lucide-react';
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -33,7 +29,7 @@ import { Progress } from "@/components/ui/progress";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
+
 
 interface LoggedInUser {
     name: string;
@@ -107,18 +103,12 @@ export default function ValuerDashboardPage() {
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
     const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-<<<<<<< HEAD
     const [itemsPerPage] = useState(5);
     const [currentPage, setCurrentPage] = useState(1);
     const [allCarsCurrentPage, setAllCarsCurrentPage] = useState(1);
     const [pendingCurrentPage, setPendingCurrentPage] = useState(1);
     const [completedCurrentPage, setCompletedCurrentPage] = useState(1);
     const [rejectedCurrentPage, setRejectedCurrentPage] = useState(1);
-=======
-    const [activeView, setActiveView] = useState('dashboard');
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
 
     const form = useForm<ValuationFormValues>({
         resolver: zodResolver(valuationSchema),
@@ -247,11 +237,7 @@ export default function ValuerDashboardPage() {
                 comments: data.comments,
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
-<<<<<<< HEAD
                 status: "Completed",
-=======
-                status: "Approved",
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
             });
     
             const bookingDocRef = doc(db, "bookings", selectedBooking.id);
@@ -311,7 +297,6 @@ export default function ValuerDashboardPage() {
 
     const getFilteredBookingsByStatus = (status: string | string[]) => {
         const statuses = Array.isArray(status) ? status : [status];
-<<<<<<< HEAD
         return filteredBookings.filter(b => statuses.includes(b.status));
     };
     
@@ -319,33 +304,6 @@ export default function ValuerDashboardPage() {
     const rejectedBookings = getFilteredBookingsByStatus('Rejected');
     const completedBookings = getFilteredBookingsByStatus('Completed');
 
-=======
-        if (statuses.includes('All')) {
-            return filteredBookings;
-        }
-        return filteredBookings.filter(b => statuses.includes(b.status));
-    };
-
-    const allValuationsWithBookings = useMemo(() => {
-        return valuations
-            .map(valuation => {
-                const booking = bookings.find(b => b.id === valuation.bookingId);
-                return { ...valuation, booking };
-            })
-            .filter(item => item.booking) // Ensure booking exists
-            .filter(v => {
-                const searchTermLower = searchTerm.toLowerCase();
-                const booking = v.booking;
-                if (!booking) return false;
-                return (
-                    booking.plateNumber?.toLowerCase().includes(searchTermLower) ||
-                    booking.customerName?.toLowerCase().includes(searchTermLower) ||
-                    booking.bookingNumber?.toLowerCase().includes(searchTermLower) ||
-                    booking.insurerName?.toLowerCase().includes(searchTermLower)
-                );
-            });
-    }, [valuations, bookings, searchTerm]);
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
 
     const stats = {
         total: bookings.length,
@@ -354,7 +312,7 @@ export default function ValuerDashboardPage() {
         rejected: rejectedBookings.length,
     };
     
-      const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
+    const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
       <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
           <div className="flex items-start justify-between">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-muted`}>
@@ -384,38 +342,16 @@ export default function ValuerDashboardPage() {
       }
     } 
 
-    const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick: () => void, progress: number, colorClass: string }) => (
-        <Card onClick={onClick} className="cursor-pointer hover:bg-muted transition-colors p-4 flex flex-col justify-between">
-            <div className="flex items-start justify-between">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-muted`}>
-                    {icon}
-                </div>
-                <div className="text-3xl font-bold">{loading ? <Skeleton className="h-9 w-12" /> : value}</div>
-            </div>
-            <div className="mt-4">
-                <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                <Progress value={progress} className={`h-1 mt-1 ${colorClass}`} indicatorClassName={colorClass} />
-            </div>
-        </Card>
-    );
-
     const renderBookingsTable = (
         bookingsData: Booking[],
         title: string,
         description: string,
-<<<<<<< HEAD
         page: number,
         setPage: (page: number) => void
     ) => {
         const totalPages = Math.ceil(bookingsData.length / itemsPerPage);
         const startIndex = (page - 1) * itemsPerPage;
         const paginatedData = bookingsData.slice(startIndex, startIndex + itemsPerPage);
-=======
-        isPendingTable: boolean = false
-    ) => {
-        const totalPages = Math.ceil(bookingsData.length / itemsPerPage);
-        const paginatedData = bookingsData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
 
         return (
          <Card>
@@ -441,11 +377,7 @@ export default function ValuerDashboardPage() {
                  <Table>
                     <TableHeader>
                         <TableRow className="bg-muted/50">
-<<<<<<< HEAD
                             <TableHead className="font-semibold w-[50px]">No.</TableHead>
-=======
-                            <TableHead className="w-[50px]">No.</TableHead>
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
                             <TableHead className="font-semibold">Booking ID</TableHead>
                             <TableHead className="hidden sm:table-cell font-semibold">Customer</TableHead>
                             <TableHead className="hidden md:table-cell font-semibold">Vehicle</TableHead>
@@ -470,11 +402,7 @@ export default function ValuerDashboardPage() {
                     ) : paginatedData.length > 0 ? (
                         paginatedData.map((booking, index) => (
                         <TableRow key={booking.id}>
-<<<<<<< HEAD
                             <TableCell>{startIndex + index + 1}</TableCell>
-=======
-                             <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
                             <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
                             <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
                             <TableCell className="hidden md:table-cell">{booking.plateNumber}</TableCell>
@@ -505,7 +433,6 @@ export default function ValuerDashboardPage() {
                     )}
                     </TableBody>
                 </Table>
-<<<<<<< HEAD
                 <div className="flex justify-end items-center gap-2 mt-4">
                     <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page === 1}>
                         <ChevronLeft className="h-4 w-4" />
@@ -515,144 +442,11 @@ export default function ValuerDashboardPage() {
                     <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={page === totalPages}>
                         Next
                         <ChevronRight className="h-4 w-4" />
-=======
-                <div className="flex items-center justify-end space-x-2 py-4">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                    >
-                        Next
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
                     </Button>
                 </div>
             </CardContent>
         </Card>
-<<<<<<< HEAD
     )};
-=======
-        )
-    };
-
-    const renderValuationsDashboard = () => {
-        const totalPages = Math.ceil(allValuationsWithBookings.length / itemsPerPage);
-        const paginatedData = allValuationsWithBookings.slice(
-            (currentPage - 1) * itemsPerPage,
-            currentPage * itemsPerPage
-        );
-
-        return (
-            <Card>
-                <CardHeader>
-                   <div className="flex justify-between items-center">
-                        <div>
-                            <CardTitle>All car</CardTitle>
-                            <CardDescription>A summary of all Car Valutions</CardDescription>
-                        </div>
-                        <div className="relative w-full max-w-sm">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                type="search"
-                                placeholder="Search valuations..."
-                                className="w-full rounded-lg bg-background pl-8"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>No.</TableHead>
-                                <TableHead>Plate No</TableHead>
-                                <TableHead>Make &amp; Model</TableHead>
-                                <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
-                                <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
-                                <TableHead>Customer Name</TableHead>
-                                <TableHead className="hidden sm:table-cell">Client</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="hidden xl:table-cell">Assessment Value (KES)</TableHead>
-                                <TableHead className="hidden xl:table-cell">Forced Value (KES)</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                Array.from({ length: 5 }).map((_, index) => (
-                                <TableRow key={index}>
-                                    <TableCell><Skeleton className="h-5 w-8" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                    <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                </TableRow>
-                                ))
-                            ) : paginatedData.length > 0 ? (
-                                paginatedData.map((valuation, index) => (
-                                <TableRow key={valuation.id}>
-                                    <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
-                                    <TableCell>{valuation.booking?.plateNumber}</TableCell>
-                                    <TableCell>{`${valuation.booking?.carMake} ${valuation.booking?.carModel}`}</TableCell>
-                                    <TableCell className="font-mono text-xs hidden sm:table-cell">{valuation.booking?.bookingNumber}</TableCell>
-                                    <TableCell className="hidden md:table-cell">{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</TableCell>
-                                    <TableCell>{valuation.booking?.customerName}</TableCell>
-                                    <TableCell className="hidden sm:table-cell">{valuation.booking?.insurerName}</TableCell>
-                                    <TableCell>
-                                      <Badge variant={getStatusVariant(valuation.booking?.status || 'Unknown')}>
-                                        {valuation.booking?.status}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell className="font-mono hidden xl:table-cell">{valuation.assessmentValue}</TableCell>
-                                    <TableCell className="font-mono hidden xl:table-cell">{valuation.forcedValue}</TableCell>
-                                </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={10} className="h-24 text-center">
-                                        No recent valuations found.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                     <div className="flex items-center justify-end space-x-2 py-4">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                        >
-                            Previous
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                        >
-                            Next
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        )
-    };
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
     
     return (
         <UnifiedDashboardLayout
@@ -675,19 +469,11 @@ export default function ValuerDashboardPage() {
         >
             {(activeView, setActiveView) => (
                 <>
-<<<<<<< HEAD
                     <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
                         <TabsContent value="dashboard">
                             <div className="grid gap-8">
                                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                                    <StatCard 
-=======
-                    <Tabs value={activeView} onValueChange={(view) => { setActiveView(view); setCurrentPage(1); }}>
-                        <TabsContent value="dashboard">
-                            <div className="grid gap-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <StatCard 
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
                                         title="All Cars" 
                                         value={stats.total} 
                                         icon={<Car className="h-6 w-6 text-blue-500" />} 
@@ -695,7 +481,6 @@ export default function ValuerDashboardPage() {
                                         progress={100}
                                         colorClass="bg-blue-500"
                                     />
-<<<<<<< HEAD
                                      <StatCard 
                                         title="Pending Valuation" 
                                         value={stats.pendingValuation} 
@@ -713,22 +498,10 @@ export default function ValuerDashboardPage() {
                                         colorClass="bg-red-500"
                                     />
                                      <StatCard 
-=======
-                                    <StatCard 
-                                        title="Pending Valuation" 
-                                        value={stats.pending} 
-                                        icon={<FileSignature className="h-6 w-6 text-orange-500" />} 
-                                        onClick={() => setActiveView('pending-bookings')}
-                                        progress={(stats.pending / stats.total) * 100}
-                                        colorClass="bg-orange-500"
-                                    />
-                                    <StatCard 
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
                                         title="Approved" 
                                         value={stats.completed} 
                                         icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
                                         onClick={() => setActiveView('completed-bookings')}
-<<<<<<< HEAD
                                         progress={stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}
                                         colorClass="bg-green-500"
                                     />
@@ -747,37 +520,6 @@ export default function ValuerDashboardPage() {
                         </TabsContent>
                          <TabsContent value="rejected-bookings">
                            {renderBookingsTable(rejectedBookings, "Rejected Valuations", "A list of all valuations that have been rejected by clients.", rejectedCurrentPage, setRejectedCurrentPage)}
-=======
-                                        progress={(stats.completed / stats.total) * 100}
-                                        colorClass="bg-green-500"
-                                    />
-                                    <StatCard 
-                                        title="Rejected" 
-                                        value={stats.rejected} 
-                                        icon={<XCircle className="h-6 w-6 text-red-500" />} 
-                                        onClick={() => setActiveView('rejected-bookings')}
-                                        progress={(stats.rejected / stats.total) * 100}
-                                        colorClass="bg-red-500"
-                                    />
-                                </div>
-                                {renderValuationsDashboard()}
-                            </div>
-                        </TabsContent>
-                         <TabsContent value="all-bookings">
-                           {renderBookingsTable(getFilteredBookingsByStatus('All'), "All Assigned Bookings", "A complete list of all bookings assigned to you.", true)}
-                        </TabsContent>
-                        <TabsContent value="pending-bookings">
-                           {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Pending Valuations", "A list of all new vehicle valuations.", true)}
-                        </TabsContent>
-                        <TabsContent value="completed-bookings">
-                           {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "Approved Reports", "A list of all valuations that have been approved.")}
-                        </TabsContent>
-                        <TabsContent value="rejected-bookings">
-                           {renderBookingsTable(getFilteredBookingsByStatus("Rejected"), "Rejected Reports", "A list of all valuations that have been rejected by clients.")}
-                        </TabsContent>
-                        <TabsContent value="bookings">
-                           {renderBookingsTable(getFilteredBookingsByStatus(["Completed", "Rejected"]), "Finalized Reports", "A list of all valuations that have been approved or rejected by clients.")}
->>>>>>> 460822fc450c672aa86445034005b74ca515d213
                         </TabsContent>
                     </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
