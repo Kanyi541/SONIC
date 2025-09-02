@@ -45,10 +45,14 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+<<<<<<< HEAD
 import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight } from "lucide-react";
+=======
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, KeyRound } from "lucide-react";
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -122,11 +126,14 @@ interface Valuation {
     forcedValue: string;
 }
 
+<<<<<<< HEAD
 interface CombinedData extends Booking {
     valuation?: Valuation;
 }
 
 
+=======
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
 type ChartDataPoint = {
     day: string;
     Pending: number;
@@ -155,6 +162,20 @@ const agentSchema = z.object({
 });
 
 type AgentFormValues = z.infer<typeof agentSchema>;
+
+const resetPasswordSchema = z.object({
+    password: z.string().min(8, "Password must be at least 8 characters")
+      .refine((password) => /[A-Z]/.test(password), { message: "Password must contain at least one uppercase letter" })
+      .refine((password) => /[a-z]/.test(password), { message: "Password must contain at least one lowercase letter" })
+      .refine((password) => /\d/.test(password), { message: "Password must contain at least one number" })
+      .refine((password) => /[@$!%*?&]/.test(password), { message: "Password must contain at least one special character" }),
+    confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"]
+});
+
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 const staffSchema = z.object({
     name: z.string().min(1, "Staff name is required"),
@@ -207,7 +228,10 @@ const PasswordInput = ({ field }: { field: any }) => {
 export default function ClientDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [valuations, setValuations] = useState<Valuation[]>([]);
+<<<<<<< HEAD
   const [combinedData, setCombinedData] = useState<CombinedData[]>([]);
+=======
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -222,6 +246,8 @@ export default function ClientDashboardPage() {
   const [isAgentDialogOpen, setAgentDialogOpen] = useState(false);
   const [isStaffDialogOpen, setStaffDialogOpen] = useState(false);
   const [isComboboxOpen, setComboboxOpen] = useState(false);
+  const [isResetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [selectedAgentForPasswordReset, setSelectedAgentForPasswordReset] = useState<Agent | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
@@ -230,6 +256,8 @@ export default function ClientDashboardPage() {
   const [agentSearchTerm, setAgentSearchTerm] = useState("");
   const [staffSearchTerm, setStaffSearchTerm] = useState("");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const [itemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -264,6 +292,11 @@ export default function ClientDashboardPage() {
         authorisedBy: "",
         comments: "",
     }
+  });
+
+  const resetPasswordForm = useForm<ResetPasswordFormValues>({
+      resolver: zodResolver(resetPasswordSchema),
+      defaultValues: { password: "", confirmPassword: "" },
   });
 
   const {
@@ -321,6 +354,7 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     if (loggedInUser) {
         setLoading(true);
+
         const bookingsQuery = query(collection(db, "bookings"), where("insurerId", "==", loggedInUser.username));
         const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
@@ -427,6 +461,21 @@ export default function ClientDashboardPage() {
     }
   };
 
+  const handleResetPassword = async (data: ResetPasswordFormValues) => {
+    if (!selectedAgentForPasswordReset) return;
+    try {
+        const agentRef = doc(db, "insurers", selectedAgentForPasswordReset.id);
+        await updateDoc(agentRef, { password: data.password });
+        toast({ title: "Password Reset", description: `Password for ${selectedAgentForPasswordReset.name} has been updated.` });
+        setResetPasswordOpen(false);
+        setSelectedAgentForPasswordReset(null);
+        resetPasswordForm.reset();
+    } catch (error) {
+        console.error("Error resetting password:", error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to reset password." });
+    }
+  };
+
   const handleAddStaff = async (data: StaffFormValues) => {
     if (!loggedInUser) return;
     try {
@@ -484,7 +533,7 @@ export default function ClientDashboardPage() {
             ...data,
             bookingNumber,
             createdAt: new Date(),
-            status: "Pending Approval",
+            status: "Pending Valuation",
             insurerId: loggedInUser.username,
             insurerName: loggedInUser.name,
         });
@@ -526,9 +575,10 @@ export default function ClientDashboardPage() {
         total: bookings.length,
         pending: bookings.filter(b => b.status === 'Pending').length,
         pendingValuation: bookings.filter(b => b.status === 'Pending Valuation').length,
-        pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
         completed: bookings.filter(b => b.status === 'Completed').length,
         rejected: bookings.filter(b => b.status === 'Rejected').length,
+        totalStaff: staff.length,
+        totalAgents: agents.length,
     };
 
     const filteredBookings = combinedData.filter(booking => {
@@ -540,6 +590,23 @@ export default function ClientDashboardPage() {
         );
     });
     
+<<<<<<< HEAD
+=======
+    const combinedBookings = useMemo(() => {
+        return filteredBookings.map(booking => {
+            const valuation = valuations.find(v => v.bookingId === booking.id);
+            return { ...booking, valuation };
+        });
+    }, [filteredBookings, valuations]);
+
+    const paginatedDashboardBookings = combinedBookings.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+
+    const totalDashboardPages = Math.ceil(combinedBookings.length / itemsPerPage);
+    
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
     const getFilteredBookingsByStatus = (status: string | string[]) => {
         const statuses = Array.isArray(status) ? status : [status];
         return filteredBookings.filter(b => statuses.includes(b.status));
@@ -757,8 +824,6 @@ export default function ClientDashboardPage() {
     const allMenuItems = [
         { name: "Dashboard", view: "dashboard" },
         { name: "Customers", view: "customers", action: () => setBookingDialogOpen(true) },
-        { name: "Agents", view: "agents" },
-        { name: "Staff", view: "staff" },
         { name: "CASA Branches", view: "branches"},
       ];
     
@@ -1017,12 +1082,20 @@ export default function ClientDashboardPage() {
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <StatCard 
-                            title="All Cars" 
-                            value={stats.total} 
-                            icon={<Car className="h-6 w-6 text-blue-500" />} 
-                            onClick={() => setActiveView('all-bookings')}
+                            title="Staff" 
+                            value={stats.totalStaff} 
+                            icon={<Briefcase className="h-6 w-6 text-blue-500" />} 
+                            onClick={() => setActiveView('staff')}
                             progress={100}
                             colorClass="bg-blue-500"
+                        />
+                         <StatCard 
+                            title="Agents" 
+                            value={stats.totalAgents} 
+                            icon={<UserCog className="h-6 w-6 text-indigo-500" />} 
+                            onClick={() => setActiveView('agents')}
+                            progress={100}
+                            colorClass="bg-indigo-500"
                         />
                          <StatCard 
                             title="New Requests" 
@@ -1041,14 +1114,6 @@ export default function ClientDashboardPage() {
                             colorClass="bg-yellow-500"
                         />
                          <StatCard 
-                            title="Pending Approval" 
-                            value={stats.pendingApproval} 
-                            icon={<FileWarning className="h-6 w-6 text-purple-500" />} 
-                            onClick={() => setActiveView('pending-approval-bookings')}
-                            progress={(stats.pendingApproval / stats.total) * 100}
-                            colorClass="bg-purple-500"
-                        />
-                         <StatCard 
                             title="Approved" 
                             value={stats.completed} 
                             icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
@@ -1065,7 +1130,102 @@ export default function ClientDashboardPage() {
                             colorClass="bg-red-500"
                         />
                     </div>
+<<<<<<< HEAD
                     {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "All Cars", "A summary of all your completed bookings.", currentPage, setCurrentPage)}
+=======
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>All car</CardTitle>
+                            <CardDescription>A summary of all Car Valutions</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>No.</TableHead>
+                                        <TableHead>Plate No</TableHead>
+                                        <TableHead>Make &amp; Model</TableHead>
+                                        <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
+                                        <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
+                                        <TableHead>Customer Name</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="hidden xl:table-cell">Assessment Value (KES)</TableHead>
+                                        <TableHead className="hidden xl:table-cell">Forced Value (KES)</TableHead>
+                                        <TableHead className="text-right">Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {loading ? (
+                                        Array.from({ length: 5 }).map((_, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                                                <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                                <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                                <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                                <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : paginatedDashboardBookings.length > 0 ? (
+                                        paginatedDashboardBookings.map((booking, index) => (
+                                            <TableRow key={booking.id}>
+                                                <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                                                <TableCell>{booking.plateNumber}</TableCell>
+                                                <TableCell>{`${booking.carMake} ${booking.carModel}`}</TableCell>
+                                                <TableCell className="font-mono text-xs hidden sm:table-cell">{booking.bookingNumber}</TableCell>
+                                                <TableCell className="hidden md:table-cell">{booking.valuation?.assessmentDate ? new Date(booking.valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</TableCell>
+                                                <TableCell>{booking.customerName}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                                                </TableCell>
+                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.assessmentValue || 'N/A'}</TableCell>
+                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.forcedValue || 'N/A'}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
+                                                    >
+                                                        <Printer className="mr-2 h-4 w-4" />
+                                                        <span className="hidden sm:inline">View Report</span>
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={10} className="text-center h-24">
+                                                No bookings found.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                            <div className="flex items-center justify-end space-x-2 py-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalDashboardPages))}
+                                    disabled={currentPage === totalDashboardPages}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
                </div>
             </TabsContent>
             
@@ -1086,7 +1246,6 @@ export default function ClientDashboardPage() {
                                         className="w-full rounded-lg bg-background pl-8"
                                         value={customerSearchTerm}
                                         onChange={(e) => setCustomerSearchTerm(e.target.value)}
-                                        maxLength={10}
                                     />
                                 </div>
                                 <Dialog open={isCustomerDialogOpen} onOpenChange={setCustomerDialogOpen}>
@@ -1135,7 +1294,7 @@ export default function ClientDashboardPage() {
                                                         <FormItem>
                                                         <FormLabel>Phone Number</FormLabel>
                                                         <FormControl>
-                                                            <Input {...field} placeholder="e.g. 0712345678" type="number" maxLength={10} />
+                                                            <Input {...field} placeholder="e.g. 0712345678" type="tel" />
                                                         </FormControl>
                                                         <FormMessage />
                                                         </FormItem>
@@ -1159,6 +1318,7 @@ export default function ClientDashboardPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
+                                    <TableHead className="w-[50px]">No.</TableHead>
                                     <TableHead className="font-semibold text-left">Name</TableHead>
                                     <TableHead className="font-semibold text-left">Email</TableHead>
                                     <TableHead className="font-semibold text-left">Phone</TableHead>
@@ -1168,14 +1328,16 @@ export default function ClientDashboardPage() {
                                 {loadingCustomers ? (
                                     Array.from({ length: 5 }).map((_, index) => (
                                       <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-48" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                       </TableRow>
                                     ))
-                                ) : filteredCustomers.length > 0 ? (
-                                    filteredCustomers.map(customer => (
+                                ) : filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).length > 0 ? (
+                                    filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((customer, index) => (
                                         <TableRow key={customer.id}>
+                                            <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                             <TableCell className="font-medium flex items-center gap-3">
                                                 <div className="p-2 bg-muted rounded-full hidden sm:flex">
                                                     <User className="h-5 w-5 text-primary" />
@@ -1188,13 +1350,31 @@ export default function ClientDashboardPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="text-center h-24">
+                                        <TableCell colSpan={4} className="text-center h-24">
                                             No customers found.
                                         </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
                         </Table>
+                         <div className="flex items-center justify-end space-x-2 py-4">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredCustomers.length / itemsPerPage)))}
+                                disabled={currentPage === Math.ceil(filteredCustomers.length / itemsPerPage)}
+                            >
+                                Next
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </TabsContent>
@@ -1216,7 +1396,6 @@ export default function ClientDashboardPage() {
                                         className="w-full rounded-lg bg-background pl-8"
                                         value={agentSearchTerm}
                                         onChange={(e) => setAgentSearchTerm(e.target.value)}
-                                        maxLength={10}
                                     />
                                 </div>
                                 <Dialog open={isAgentDialogOpen} onOpenChange={setAgentDialogOpen}>
@@ -1237,7 +1416,7 @@ export default function ClientDashboardPage() {
                                                 <FormField control={agentForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. janesmith" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="password" render={({ field }) => (<FormItem><FormLabel>Password</FormLabel><FormControl><PasswordInput field={field} /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={agentForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. jane@example.com" /></FormControl><FormMessage /></FormItem>)} />
-                                                <FormField control={agentForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="number" maxLength={10} /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={agentForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="tel" /></FormControl><FormMessage /></FormItem>)} />
                                                 <DialogFooter className="pt-4">
                                                     <Button type="button" variant="outline" onClick={() => setAgentDialogOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={agentForm.formState.isSubmitting}>
@@ -1257,6 +1436,7 @@ export default function ClientDashboardPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
+                                    <TableHead className="w-[50px]">No.</TableHead>
                                     <TableHead className="font-semibold text-left">Name</TableHead>
                                     <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
                                     <TableHead className="font-semibold text-left">Email</TableHead>
@@ -1268,6 +1448,7 @@ export default function ClientDashboardPage() {
                                 {loadingAgents ? (
                                     Array.from({ length: 3 }).map((_, index) => (
                                       <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-48" /></TableCell>
@@ -1275,9 +1456,10 @@ export default function ClientDashboardPage() {
                                         <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                                       </TableRow>
                                     ))
-                                ) : filteredAgents.length > 0 ? (
-                                    filteredAgents.map(agent => (
+                                ) : filteredAgents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).length > 0 ? (
+                                    filteredAgents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((agent, index) => (
                                         <TableRow key={agent.id}>
+                                            <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                             <TableCell className="font-medium flex items-center gap-3">
                                                 <div className="p-2 bg-muted rounded-full hidden sm:flex">
                                                     <UserCog className="h-5 w-5 text-primary" />
@@ -1287,7 +1469,10 @@ export default function ClientDashboardPage() {
                                             <TableCell className="hidden sm:table-cell">{agent.username}</TableCell>
                                             <TableCell>{agent.email}</TableCell>
                                             <TableCell>{agent.phone}</TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right space-x-2">
+                                                 <Button variant="outline" size="icon" onClick={() => { setSelectedAgentForPasswordReset(agent); setResetPasswordOpen(true); }}>
+                                                    <KeyRound className="h-4 w-4" />
+                                                 </Button>
                                                  <AlertDialog>
                                                     <AlertDialogTrigger asChild>
                                                         <Button variant="destructive" size="icon">
@@ -1312,13 +1497,31 @@ export default function ClientDashboardPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">
+                                        <TableCell colSpan={6} className="text-center h-24">
                                             No agents found.
                                         </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
                         </Table>
+                         <div className="flex items-center justify-end space-x-2 py-4">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredAgents.length / itemsPerPage)))}
+                                disabled={currentPage === Math.ceil(filteredAgents.length / itemsPerPage)}
+                            >
+                                Next
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </TabsContent>
@@ -1340,7 +1543,6 @@ export default function ClientDashboardPage() {
                                         className="w-full rounded-lg bg-background pl-8"
                                         value={staffSearchTerm}
                                         onChange={(e) => setStaffSearchTerm(e.target.value)}
-                                        maxLength={10}
                                     />
                                 </div>
                                 <Dialog open={isStaffDialogOpen} onOpenChange={setStaffDialogOpen}>
@@ -1359,7 +1561,7 @@ export default function ClientDashboardPage() {
                                                 <FormField control={staffForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Alex Ray" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={staffForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. alexray" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={staffForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. alex@example.com" /></FormControl><FormMessage /></FormItem>)} />
-                                                <FormField control={staffForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="number" maxLength={10} /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={staffForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="tel" /></FormControl><FormMessage /></FormItem>)} />
                                                 <DialogFooter>
                                                     <Button type="button" variant="outline" onClick={() => setStaffDialogOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={staffForm.formState.isSubmitting}>
@@ -1378,6 +1580,7 @@ export default function ClientDashboardPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
+                                     <TableHead className="w-[50px]">No.</TableHead>
                                     <TableHead className="font-semibold text-left">Name</TableHead>
                                     <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
                                     <TableHead className="font-semibold text-left">Email</TableHead>
@@ -1389,6 +1592,7 @@ export default function ClientDashboardPage() {
                                 {loadingStaff ? (
                                     Array.from({ length: 3 }).map((_, index) => (
                                       <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-48" /></TableCell>
@@ -1396,9 +1600,10 @@ export default function ClientDashboardPage() {
                                         <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                                       </TableRow>
                                     ))
-                                ) : filteredStaff.length > 0 ? (
-                                    filteredStaff.map(staffMember => (
+                                ) : filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).length > 0 ? (
+                                    filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((staffMember, index) => (
                                         <TableRow key={staffMember.id}>
+                                             <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                             <TableCell className="font-medium flex items-center gap-3">
                                                 <div className="p-2 bg-muted rounded-full hidden sm:flex">
                                                     <Briefcase className="h-5 w-5 text-primary" />
@@ -1433,13 +1638,31 @@ export default function ClientDashboardPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">
+                                        <TableCell colSpan={6} className="text-center h-24">
                                             No staff found.
                                         </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
                         </Table>
+                        <div className="flex items-center justify-end space-x-2 py-4">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredStaff.length / itemsPerPage)))}
+                                disabled={currentPage === Math.ceil(filteredStaff.length / itemsPerPage)}
+                            >
+                                Next
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </TabsContent>
@@ -1496,9 +1719,12 @@ export default function ClientDashboardPage() {
             <TabsContent value="pending-valuation-bookings">
                 {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Pending Valuation", "Bookings assigned to a valuer and awaiting their report.", currentPage, setCurrentPage)}
             </TabsContent>
+<<<<<<< HEAD
             <TabsContent value="pending-approval-bookings">
                 {renderBookingsTable(getFilteredBookingsByStatus("Pending Approval"), "Pending Approval", "Valuation reports that have been submitted and are awaiting your review.", currentPage, setCurrentPage)}
             </TabsContent>
+=======
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
             <TabsContent value="completed-bookings">
                 {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "Approved Bookings", "All bookings that have been fully completed and approved.", currentPage, setCurrentPage)}
             </TabsContent>
@@ -1507,6 +1733,51 @@ export default function ClientDashboardPage() {
             </TabsContent>
 
           </Tabs>
+
+            <Dialog open={isResetPasswordOpen} onOpenChange={setResetPasswordOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reset Password for {selectedAgentForPasswordReset?.name}</DialogTitle>
+                        <DialogDescription>Enter a new password below.</DialogDescription>
+                    </DialogHeader>
+                    <Form {...resetPasswordForm}>
+                        <form onSubmit={resetPasswordForm.handleSubmit(handleResetPassword)} className="space-y-4">
+                            <FormField
+                                control={resetPasswordForm.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>New Password</FormLabel>
+                                        <FormControl>
+                                            <PasswordInput field={field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={resetPasswordForm.control}
+                                name="confirmPassword"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Confirm New Password</FormLabel>
+                                        <FormControl>
+                                            <PasswordInput field={field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setResetPasswordOpen(false)}>Cancel</Button>
+                                <Button type="submit" disabled={resetPasswordForm.formState.isSubmitting}>
+                                    {resetPasswordForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Reset Password"}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
         </>
       )}
     </UnifiedDashboardLayout>

@@ -6,7 +6,11 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
+<<<<<<< HEAD
 import { Loader2, ArrowLeft, XCircle } from 'lucide-react';
+=======
+import { Loader2, ArrowLeft, Phone, MapPin, Mail } from 'lucide-react';
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -44,25 +48,16 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
     }
 
     return (
-        <div className="bg-white p-14 shadow-2xl rounded-lg" id="report">
-            <header className="flex justify-between items-center pb-6 border-b-2 border-primary">
-              <div>
-                  <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
+        <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)]">
+            <header className="bg-[#1a1a1a] p-6 relative">
+              <div className="w-48">
+                <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
               </div>
-              <div className="text-left">
-                <h1 className="text-4xl font-extrabold text-black">CASA Motor Valuers & Assessors</h1>
-                <p className="text-base text-gray-700 mt-1">
-                  Highway Mall, Uhuru Highway<br />
-                  Nairobi, Kenya
-                </p>
-              </div>
-              <div className="text-right text-base text-gray-700">
-                <p><span className="font-semibold">Phone:</span> +254 712 345 678</p>
-                <p><span className="font-semibold">Email:</span> casamotorvaluers@gmail.com</p>
-              </div>
+              <div className="absolute right-0 top-0 h-full w-4 bg-primary" />
             </header>
 
-            <main className="mt-10">
+            <main className="flex-grow p-14 watermarked">
+             <div className="report-content">
               <h2 className="text-2xl font-bold text-center text-black uppercase tracking-widest mb-4">
                 Assessment Authorization Letter
               </h2>
@@ -82,7 +77,7 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
               
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8">
                 <h3 className="text-xl font-semibold text-black mb-4">Booking Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-base">
+                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-base">
                     <div className="flex justify-between py-2 border-b border-gray-100">
                         <span className="font-semibold text-gray-700">Client Name:</span>
                         <span className="text-gray-900 font-medium">{booking.customerName}</span>
@@ -148,9 +143,23 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
                       For Guarantor purpose only: <span className="font-normal text-gray-700">Please note that cover will revert to third party only if the vehicle is not valued within 14 days of cover inception.</span>
                   </p>
               </div>
+            </div>
             </main>
-            <footer className="text-center text-sm text-gray-500 mt-16 pt-6 border-t border-gray-300">
-                  © {new Date().getFullYear()} Casa Motor Valuers & Assessors. This is a computer-generated document and does not require a signature.
+             <footer className="bg-[#1a1a1a] p-4 text-white text-xs mt-auto">
+                <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                        <Phone size={14} className="text-primary"/>
+                        <span>0722924854 / 0737924854</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                        <MapPin size={14} className="text-primary"/>
+                        <span>Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                        <Mail size={14} className="text-primary"/>
+                        <span>casamotorvaluers@gmail.com</span>
+                    </div>
+                </div>
             </footer>
         </div>
     );
@@ -243,5 +252,3 @@ export default function BookingReportPage() {
     </Suspense>
   );
 }
-
-    

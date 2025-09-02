@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
@@ -161,6 +162,7 @@ function AdminDashboard() {
   const [isRejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
+<<<<<<< HEAD
 
   const [itemsPerPage] = useState(5);
   const [institutionsPage, setInstitutionsPage] = useState(1);
@@ -171,6 +173,11 @@ function AdminDashboard() {
   const [newBookingsPage, setNewBookingsPage] = useState(1);
   const [rejectedBookingsPage, setRejectedBookingsPage] = useState(1);
   const [recentValuationsPage, setRecentValuationsPage] = useState(1);
+=======
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerms, setSearchTerms] = useState({ clients: '', valuers: '', staff: '', branches: '', dashboard: '' });
+  const itemsPerPage = 5;
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
   
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -253,7 +260,11 @@ function AdminDashboard() {
     
 
     const bookingsQuery = query(collection(db, "bookings"));
+<<<<<<< HEAD
     const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings'];
+=======
+    const requiredBookingViews = ['dashboard', 'valuations'];
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
 
     if (requiredBookingViews.includes(activeView)) {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
@@ -428,6 +439,7 @@ function AdminDashboard() {
     window.open(url, '_blank');
   };
 
+<<<<<<< HEAD
   const handleBookingApproval = async (booking: Booking | null) => {
       if (!booking) return;
       const bookingDocRef = doc(db, "bookings", booking.id);
@@ -472,6 +484,8 @@ function AdminDashboard() {
     setRejectDialogOpen(true);
   }
 
+=======
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "Pending":
@@ -492,10 +506,10 @@ function AdminDashboard() {
   const stats = {
       totalCars: bookings.length,
       totalValuations: valuations.length,
-      pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
       totalInstitutions: institutions.length,
       totalValuers: valuers.length,
       totalStaff: staff.length,
+<<<<<<< HEAD
       approved: bookings.filter(b => b.status === 'Completed').length,
       rejected: bookings.filter(b => b.status === 'Rejected').length,
   };
@@ -504,6 +518,32 @@ function AdminDashboard() {
       ...v,
       booking: bookings.find(b => b.id === v.bookingId),
   })).filter(v => v.booking?.status === 'Completed');
+=======
+      totalValuers: valuers.length,
+  };
+    
+  const allValuations = valuations.map(valuation => {
+        const booking = bookings.find(b => b.id === valuation.bookingId);
+        return { ...valuation, booking };
+  });
+
+  const filteredDashboardValuations = allValuations.filter(v => {
+    const searchTerm = searchTerms.dashboard.toLowerCase();
+    const booking = v.booking;
+    if (!booking) return false;
+    return (
+        booking.plateNumber?.toLowerCase().includes(searchTerm) ||
+        booking.customerName?.toLowerCase().includes(searchTerm) ||
+        booking.bookingNumber?.toLowerCase().includes(searchTerm)
+    );
+  });
+
+  const totalPages = Math.ceil(filteredDashboardValuations.length / itemsPerPage);
+  const paginatedValuations = filteredDashboardValuations.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+  );
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
     
   const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
       <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
@@ -525,6 +565,7 @@ function AdminDashboard() {
     title: string,
     description: string,
     onAdd: () => void,
+<<<<<<< HEAD
     userType: 'institution' | 'valuer' | 'staff',
     currentPage: number,
     setCurrentPage: (page: number) => void
@@ -637,6 +678,143 @@ function AdminDashboard() {
         </Card>
     )
   };
+=======
+    userType: 'institution' | 'valuer' | 'staff'
+  ) => {
+    const searchTerm = searchTerms[userType === 'institution' ? 'clients' : userType];
+
+    const filteredData = data.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.username.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    return (
+    <Card className="shadow-lg border-primary/20">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder={`Search ${title}...`}
+              className="w-full rounded-lg bg-background pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerms(prev => ({...prev, [userType === 'institution' ? 'clients' : userType]: e.target.value}))}
+            />
+          </div>
+          <Button onClick={onAdd}>
+            <PlusCircle className="mr-2" />
+            Register New {userType === 'institution' ? 'Client' : (userType.charAt(0).toUpperCase() + userType.slice(1))}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-[50px] font-semibold">No.</TableHead>
+              <TableHead className="font-semibold text-left">Name</TableHead>
+              <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
+              <TableHead className="hidden sm:table-cell font-semibold text-left">Email</TableHead>
+              <TableHead className="hidden md:table-cell font-semibold text-left">Phone</TableHead>
+              <TableHead className="font-semibold text-center">Status</TableHead>
+              <TableHead className="text-right font-semibold">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedData.map((item, index) => (
+              <TableRow key={item.id}>
+                <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                <TableCell className="font-medium flex items-center gap-3">
+                  <div className="p-2 bg-muted rounded-full hidden sm:flex">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                  {item.name}
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">{item.username}</TableCell>
+                <TableCell className="hidden sm:table-cell">{item.email}</TableCell>
+                <TableCell className="hidden md:table-cell">{item.phone}</TableCell>
+                <TableCell className="text-center">
+                   <div className="flex items-center justify-center gap-2">
+                      <span className={`text-sm font-medium ${item.active ? 'text-green-500' : 'text-red-500'}`}>
+                        {item.active ? 'Active' : 'Inactive'}
+                      </span>
+                      <Switch
+                        checked={item.active}
+                        onCheckedChange={() => {
+                            let collectionName = '';
+                            if (userType === 'institution') collectionName = 'insurers';
+                            else if (userType === 'valuer') collectionName = 'valuers';
+                            else if (userType === 'staff') collectionName = 'staff';
+                            toggleStatus(item.id, item.active, collectionName, item.name);
+                        }}
+                        aria-label={`Toggle status for ${item.name}`}
+                      />
+                    </div>
+                </TableCell>
+                <TableCell className="text-right">
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                           <Button variant="outline" size="icon" className="bg-black text-primary hover:bg-black/90 hover:text-primary/90">
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the user {item.name}.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => {
+                                     let collectionName = '';
+                                     if (userType === 'institution') collectionName = 'insurers';
+                                     else if (userType === 'valuer') collectionName = 'valuers';
+                                     else if (userType === 'staff') collectionName = 'staff';
+                                    handleDeleteUser(item.id, item.name, collectionName)
+                                }}>
+                                    Continue
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <div className="flex items-center justify-end space-x-2 py-4">
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+            >
+                Previous
+            </Button>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+            >
+                Next
+            </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )};
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
 
   const renderUserDialog = (
     isOpen: boolean,
@@ -833,6 +1011,7 @@ function AdminDashboard() {
     </Card>
   )};
 
+<<<<<<< HEAD
   const renderNewBookingsTable = (
     bookingsData: Booking[],
     title: string,
@@ -1041,6 +1220,8 @@ function AdminDashboard() {
   );
 
 
+=======
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
   return (
     <SidebarProvider>
       <Sidebar variant="inset" side="left">
@@ -1062,18 +1243,22 @@ function AdminDashboard() {
             </SidebarMenuItem>
             
             <SidebarMenuItem>
+<<<<<<< HEAD
               <SidebarMenuButton onClick={() => setActiveView('clients')} isActive={activeView === 'clients'} tooltip="Institutions">
                 <Building />
                 Institutions
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
+=======
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
                 <SidebarMenuButton onClick={() => setActiveView('branches')} isActive={activeView === 'branches'} tooltip="Our Branches">
                     <Building2 />
                     Our Branches
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
+<<<<<<< HEAD
               <SidebarMenuButton onClick={() => setActiveView('new-bookings')} isActive={activeView === 'new-bookings'} tooltip="New Bookings">
                 <FileSignature />
                 New Bookings
@@ -1081,6 +1266,8 @@ function AdminDashboard() {
             </SidebarMenuItem>
             
             <SidebarMenuItem>
+=======
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
               <SidebarMenuButton onClick={() => setActiveView('settings')} isActive={activeView === 'settings'} tooltip="Settings">
                 <Settings />
                 Settings
@@ -1166,17 +1353,22 @@ function AdminDashboard() {
                         value={stats.totalStaff} 
                         icon={<Briefcase className="h-6 w-6 text-blue-500" />} 
                         onClick={() => setActiveView('staff')}
-                        progress={100}
+                        progress={stats.totalStaff > 0 ? (stats.totalStaff / (stats.totalStaff + stats.totalInstitutions)) * 100 : 0}
                         colorClass="bg-blue-500"
                     />
                      <StatCard 
+<<<<<<< HEAD
                         title="Institutions" 
+=======
+                        title="Institution" 
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
                         value={stats.totalInstitutions} 
                         icon={<Building className="h-6 w-6 text-orange-500" />} 
                         onClick={() => setActiveView('clients')}
-                        progress={100}
+                        progress={stats.totalInstitutions > 0 ? (stats.totalInstitutions / (stats.totalStaff + stats.totalInstitutions)) * 100 : 0}
                         colorClass="bg-orange-500"
                     />
+<<<<<<< HEAD
                      <StatCard 
                         title="Valuers" 
                         value={stats.totalValuers} 
@@ -1186,6 +1378,9 @@ function AdminDashboard() {
                         colorClass="bg-purple-500"
                     />
                      <StatCard 
+=======
+                    <StatCard 
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
                         title="Total Cars" 
                         value={stats.totalCars} 
                         icon={<Car className="h-6 w-6 text-indigo-500" />} 
@@ -1193,13 +1388,13 @@ function AdminDashboard() {
                         progress={100}
                         colorClass="bg-indigo-500"
                     />
-                     <StatCard 
-                        title="Pending Approval" 
-                        value={stats.pendingApproval} 
-                        icon={<FileSignature className="h-6 w-6 text-yellow-500" />} 
-                        onClick={() => setActiveView('new-bookings')}
-                        progress={stats.totalCars > 0 ? (stats.pendingApproval / stats.totalCars) * 100 : 0}
-                        colorClass="bg-yellow-500"
+                    <StatCard 
+                        title="Valued Cars" 
+                        value={stats.totalValuations} 
+                        icon={<FileSpreadsheet className="h-6 w-6 text-purple-500" />} 
+                        onClick={() => setActiveView('valuations')}
+                        progress={stats.totalCars > 0 ? (stats.totalValuations / stats.totalCars) * 100 : 0}
+                        colorClass="bg-purple-500"
                     />
                     <StatCard 
                         title="Approved" 
@@ -1221,14 +1416,37 @@ function AdminDashboard() {
 
                 <Card>
                     <CardHeader>
+<<<<<<< HEAD
                         <CardTitle>All Cars</CardTitle>
                         <CardDescription>A summary of all completed valuations.</CardDescription>
+=======
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>All car</CardTitle>
+                                <CardDescription>A summary of all Car Valutions</CardDescription>
+                            </div>
+                            <div className="relative w-full max-w-sm">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    placeholder="Search valuations..."
+                                    className="w-full rounded-lg bg-background pl-8"
+                                    value={searchTerms.dashboard}
+                                    onChange={(e) => setSearchTerms(prev => ({...prev, dashboard: e.target.value}))}
+                                />
+                            </div>
+                        </div>
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
+<<<<<<< HEAD
                                     <TableHead className="w-[50px]">No.</TableHead>
+=======
+                                    <TableHead>No.</TableHead>
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
                                     <TableHead>Plate No</TableHead>
                                     <TableHead>Make &amp; Model</TableHead>
                                     <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
@@ -1256,10 +1474,17 @@ function AdminDashboard() {
                                         <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                     </TableRow>
                                     ))
+<<<<<<< HEAD
                                 ) : paginatedRecentValuations.length > 0 ? (
                                     paginatedRecentValuations.map((valuation, index) => (
                                     <TableRow key={valuation.id}>
                                         <TableCell>{(recentValuationsPage - 1) * itemsPerPage + index + 1}</TableCell>
+=======
+                                ) : paginatedValuations.length > 0 ? (
+                                    paginatedValuations.map((valuation, index) => (
+                                    <TableRow key={valuation.id}>
+                                        <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
                                         <TableCell>{valuation.booking?.plateNumber}</TableCell>
                                         <TableCell>{`${valuation.booking?.carMake || ''} ${valuation.booking?.carModel || ''}`}</TableCell>
                                         <TableCell className="font-mono text-xs hidden sm:table-cell">{valuation.booking?.bookingNumber}</TableCell>
@@ -1284,6 +1509,7 @@ function AdminDashboard() {
                                 )}
                             </TableBody>
                         </Table>
+<<<<<<< HEAD
                          <div className="flex justify-end items-center gap-2 mt-4">
                             <Button variant="outline" size="sm" onClick={() => setRecentValuationsPage(recentValuationsPage - 1)} disabled={recentValuationsPage === 1}>
                                 <ChevronLeft className="h-4 w-4" />
@@ -1293,6 +1519,24 @@ function AdminDashboard() {
                             <Button variant="outline" size="sm" onClick={() => setRecentValuationsPage(recentValuationsPage + 1)} disabled={recentValuationsPage === totalRecentValuationPages}>
                                 Next
                                 <ChevronRight className="h-4 w-4" />
+=======
+                         <div className="flex items-center justify-end space-x-2 py-4">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                            >
+                                Next
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
                             </Button>
                         </div>
                     </CardContent>
@@ -1397,15 +1641,49 @@ function AdminDashboard() {
 
             {activeView === 'valuations' && renderValuationsTable(valuations, "All Valuations", "View and manage all submitted valuation reports.", valuationsPage, setValuationsPage)}
             
+<<<<<<< HEAD
             {activeView === 'new-bookings' && renderNewBookingsTable(bookings.filter(b => b.status === 'Pending Approval'), "New Bookings", "Review and approve or reject new bookings.", newBookingsPage, setNewBookingsPage)}
 
             {activeView === 'rejected-bookings' && renderRejectedBookingsTable(bookings.filter(b => b.status === 'Rejected'), "Rejected Bookings", "View all rejected bookings.", rejectedBookingsPage, setRejectedBookingsPage)}
+=======
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
 
             {activeView === 'settings' && (
-              <div>
-                <h2 className="text-2xl font-bold">Settings</h2>
-                <p>Manage application settings here.</p>
-              </div>
+                <div className="grid gap-6">
+                <Card>
+                    <CardHeader>
+                    <CardTitle>Application Settings</CardTitle>
+                    <CardDescription>Manage general application settings.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                    <p className="text-muted-foreground">
+                        General settings will be available here. (e.g., Site Name, Logo, Theme)
+                    </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                    <CardTitle>User Roles</CardTitle>
+                    <CardDescription>Manage permissions for different user roles.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                     <p className="text-muted-foreground">
+                        Role-based access control settings will be configured here.
+                    </p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                    <CardTitle>Notifications</CardTitle>
+                    <CardDescription>Configure email and in-app notification preferences.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">
+                           Notification settings will be available here.
+                        </p>
+                    </CardContent>
+                </Card>
+                </div>
             )}
         </main>
         <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
@@ -1419,6 +1697,7 @@ function AdminDashboard() {
             </div>
         </footer>
       </SidebarInset>
+<<<<<<< HEAD
 
         <Dialog open={isReviewDialogOpen} onOpenChange={setReviewDialogOpen}>
             <DialogContent className="sm:max-w-md">
@@ -1495,6 +1774,27 @@ function AdminDashboard() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+=======
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Reject Booking</DialogTitle>
+                <DialogDescription>
+                    Please provide a reason for rejecting this booking. This will be visible to the client.
+                </DialogDescription>
+            </DialogHeader>
+            <Textarea
+                placeholder="Enter rejection reason here..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+            />
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                </DialogClose>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+>>>>>>> 460822fc450c672aa86445034005b74ca515d213
     </SidebarProvider>
   );
 }
@@ -1506,5 +1806,7 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
 
     
