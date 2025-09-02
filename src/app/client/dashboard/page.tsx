@@ -111,7 +111,21 @@ interface Booking {
   carModel: string;
   createdAt: any;
   status: string;
+  insurerName?: string;
 }
+
+interface Valuation {
+    id: string;
+    bookingId: string;
+    assessmentDate: any;
+    assessmentValue: string;
+    forcedValue: string;
+}
+
+interface CombinedData extends Booking {
+    valuation?: Valuation;
+}
+
 
 type ChartDataPoint = {
     day: string;
@@ -192,6 +206,8 @@ const PasswordInput = ({ field }: { field: any }) => {
 
 export default function ClientDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [valuations, setValuations] = useState<Valuation[]>([]);
+  const [combinedData, setCombinedData] = useState<CombinedData[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -314,6 +330,12 @@ export default function ClientDashboardPage() {
             setLoading(false);
         });
 
+        const valuationsQuery = query(collection(db, "valuations"));
+        const valuationsUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
+            const valuationsData: Valuation[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Valuation));
+            setValuations(valuationsData);
+        });
+
         setLoadingCustomers(true);
         const customersQuery = query(collection(db, "customers"), where("insurerId", "==", loggedInUser.username));
         const customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
@@ -352,6 +374,7 @@ export default function ClientDashboardPage() {
 
         return () => {
             bookingsUnsubscribe();
+            valuationsUnsubscribe();
             customersUnsubscribe();
             agentsUnsubscribe();
             staffUnsubscribe();
@@ -359,6 +382,16 @@ export default function ClientDashboardPage() {
         };
     }
 }, [loggedInUser]);
+
+  useEffect(() => {
+    if (bookings.length > 0) {
+        const data: CombinedData[] = bookings.map(booking => {
+            const valuation = valuations.find(v => v.bookingId === booking.id);
+            return { ...booking, valuation };
+        });
+        setCombinedData(data);
+    }
+  }, [bookings, valuations]);
 
   const handleAddCustomer = async (data: CustomerFormValues) => {
       if (!loggedInUser) return;
@@ -498,7 +531,7 @@ export default function ClientDashboardPage() {
         rejected: bookings.filter(b => b.status === 'Rejected').length,
     };
 
-    const filteredBookings = bookings.filter(booking => {
+    const filteredBookings = combinedData.filter(booking => {
         const searchTermLower = searchTerm.toLowerCase();
         return (
             booking.bookingNumber.toLowerCase().includes(searchTermLower) ||
@@ -556,7 +589,7 @@ export default function ClientDashboardPage() {
   } 
 
     const renderBookingsTable = (
-        bookingsData: Booking[],
+        bookingsData: CombinedData[],
         title: string,
         description: string,
         page: number,
@@ -565,6 +598,8 @@ export default function ClientDashboardPage() {
         const totalPages = Math.ceil(bookingsData.length / itemsPerPage);
         const startIndex = (page - 1) * itemsPerPage;
         const paginatedData = bookingsData.slice(startIndex, startIndex + itemsPerPage);
+
+        const isAllCarsView = title === "All Cars";
 
         return (
             <Card>
@@ -593,53 +628,106 @@ export default function ClientDashboardPage() {
                         <TableHeader>
                             <TableRow className="bg-muted/50">
                                 <TableHead className="font-semibold w-[50px]">No.</TableHead>
-                                <TableHead className="font-semibold text-left">Booking ID</TableHead>
-                                <TableHead className="hidden sm:table-cell font-semibold text-left">Customer</TableHead>
-                                <TableHead className="hidden md:table-cell font-semibold text-left">Vehicle</TableHead>
-                                <TableHead className="hidden sm:table-cell font-semibold text-left">Date</TableHead>
-                                <TableHead className="font-semibold text-left">Status</TableHead>
-                                <TableHead className="text-right font-semibold">Action</TableHead>
+                                {isAllCarsView ? (
+                                    <>
+                                        <TableHead>Plate No</TableHead>
+                                        <TableHead>Make & Model</TableHead>
+                                        <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
+                                        <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
+                                        <TableHead>Customer Name</TableHead>
+                                        <TableHead className="hidden sm:table-cell">Institution</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="hidden xl:table-cell">Assessment Value (KES)</TableHead>
+                                        <TableHead className="hidden xl:table-cell">Forced Value (KES)</TableHead>
+                                    </>
+                                ) : (
+                                    <>
+                                        <TableHead className="font-semibold text-left">Booking ID</TableHead>
+                                        <TableHead className="hidden sm:table-cell font-semibold text-left">Customer</TableHead>
+                                        <TableHead className="hidden md:table-cell font-semibold text-left">Vehicle</TableHead>
+                                        <TableHead className="hidden sm:table-cell font-semibold text-left">Date</TableHead>
+                                        <TableHead className="font-semibold text-left">Status</TableHead>
+                                        <TableHead className="text-right font-semibold">Action</TableHead>
+                                    </>
+                                )}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {loading ? (
                                 Array.from({ length: itemsPerPage }).map((_, index) => (
                                     <TableRow key={index}>
-                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
-                                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                        <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
+                                      {isAllCarsView ? (
+                                        <>
+                                          <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                                          <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                          <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                                          <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                          <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                          <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                          <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                          <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                          <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                          <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                                          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                          <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                          <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+                                          <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                          <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                          <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
+                                        </>
+                                      )}
                                     </TableRow>
                                 ))
                             ) : paginatedData.length > 0 ? (
                                 paginatedData.map((booking, index) => (
                                     <TableRow key={booking.id}>
                                         <TableCell>{startIndex + index + 1}</TableCell>
-                                        <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
-                                        <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
-                                        <TableCell className="hidden md:table-cell">{booking.plateNumber}</TableCell>
-                                        <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
-                                            >
-                                                <Printer className="mr-2 h-4 w-4" />
-                                                <span className="hidden sm:inline">View Report</span>
-                                            </Button>
-                                        </TableCell>
+                                        {isAllCarsView ? (
+                                            <>
+                                                <TableCell>{booking.plateNumber}</TableCell>
+                                                <TableCell>{`${booking.carMake} ${booking.carModel}`}</TableCell>
+                                                <TableCell className="font-mono text-xs hidden sm:table-cell">{booking.bookingNumber}</TableCell>
+                                                <TableCell className="hidden md:table-cell">{booking.valuation?.assessmentDate ? new Date(booking.valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</TableCell>
+                                                <TableCell>{booking.customerName}</TableCell>
+                                                <TableCell className="hidden sm:table-cell">{booking.insurerName}</TableCell>
+                                                <TableCell>
+                                                  <Badge variant={getStatusVariant(booking.status || 'Unknown')}>
+                                                    {booking.status}
+                                                  </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.assessmentValue || 'N/A'}</TableCell>
+                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.forcedValue || 'N/A'}</TableCell>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
+                                                <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
+                                                <TableCell className="hidden md:table-cell">{booking.plateNumber}</TableCell>
+                                                <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
+                                                    >
+                                                        <Printer className="mr-2 h-4 w-4" />
+                                                        <span className="hidden sm:inline">View Report</span>
+                                                    </Button>
+                                                </TableCell>
+                                            </>
+                                        )}
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center h-24">
+                                    <TableCell colSpan={isAllCarsView ? 10 : 7} className="text-center h-24">
                                         No bookings found.
                                     </TableCell>
                                 </TableRow>
@@ -1424,3 +1512,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
