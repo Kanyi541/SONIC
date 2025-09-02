@@ -182,7 +182,7 @@ const PasswordInput = ({ field }: { field: any }) => {
                 variant="ghost"
                 size="icon"
                 className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                onClick={()={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword(!showPassword)}
             >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </Button>
@@ -1420,5 +1420,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
