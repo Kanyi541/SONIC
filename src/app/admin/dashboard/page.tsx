@@ -884,6 +884,10 @@ function AdminDashboard() {
                         <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => handleOpenReportInNewTab('booking', booking.id)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Preview
+                        </Button>
                         <Button variant="default" size="sm" onClick={() => handleBookingApproval(booking)}>
                             <ThumbsUp className="mr-2 h-4 w-4" />
                             Approve
@@ -959,6 +963,12 @@ function AdminDashboard() {
                     <Building2 />
                     Our Branches
                 </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setActiveView('new-bookings')} isActive={activeView === 'new-bookings'} tooltip="New Bookings">
+                <FileSignature />
+                New Bookings
+              </SidebarMenuButton>
             </SidebarMenuItem>
             
             <SidebarMenuItem>
@@ -1144,7 +1154,7 @@ function AdminDashboard() {
                                         <TableCell>{valuation.booking?.plateNumber}</TableCell>
                                         <TableCell>{`${valuation.booking?.carMake || ''} ${valuation.booking?.carModel || ''}`}</TableCell>
                                         <TableCell className="font-mono text-xs hidden sm:table-cell">{valuation.booking?.bookingNumber}</TableCell>
-                                        <TableCell className="hidden md:table-cell">{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</TableCell>
+                                        <TableCell className="hidden md:table-cell">{valuation.assessmentDate ? new Date(valuation.assessmentDate?.toDate()).toLocaleDateString() : 'N/A'}</TableCell>
                                         <TableCell>{valuation.booking?.customerName}</TableCell>
                                         <TableCell className="hidden sm:table-cell">{valuation.booking?.insurerName}</TableCell>
                                         <TableCell>
