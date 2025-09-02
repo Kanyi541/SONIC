@@ -427,10 +427,6 @@ export default function ValuerDashboardPage() {
             userEmail={loggedInUser?.email || ""}
             menuItems={[
                 { name: 'Dashboard', view: 'dashboard' },
-                { name: 'All Cars', view: 'all-bookings' },
-                { name: 'Pending Valuations', view: 'pending-valuation-bookings', notificationCount: stats.pendingValuation },
-                { name: 'Completed', view: 'completed-bookings' },
-                { name: 'Rejected', view: 'rejected-bookings' },
             ]}
             footerContent={(
                  <>
@@ -693,4 +689,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
