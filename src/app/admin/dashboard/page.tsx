@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
@@ -228,7 +227,14 @@ function AdminDashboard() {
         if (requiredViews.includes(activeView) || activeView === 'dashboard') {
             const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
             const unsubscribe = onSnapshot(q, (snapshot) => {
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                let data;
+                if (collectionName === 'insurers') {
+                    data = snapshot.docs
+                        .map(doc => ({ id: doc.id, ...doc.data() }))
+                        .filter(item => (item as any).role !== 'Agent');
+                } else {
+                    data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                }
                 setter(data);
                 setLoading(false);
             }, (error) => {
@@ -238,7 +244,7 @@ function AdminDashboard() {
         }
     };
     
-    subscribeToCollection("insurers", setInstitutions, ["clients"]);
+    subscribeToCollection("insurers", setInstitutions, ["institutions"]);
     subscribeToCollection("valuers", setValuers, ["valuers"]);
     subscribeToCollection("staff", setStaff, ["staff"]);
     subscribeToCollection("branches", setBranches, ["branches"]);
@@ -273,7 +279,7 @@ function AdminDashboard() {
     
     // Fallback for views that don't subscribe to anything
     const viewsWithoutSubscriptions = ['settings'];
-    if (![...requiredBookingViews, 'clients', 'valuers', 'staff', 'branches'].includes(activeView) && !viewsWithoutSubscriptions.includes(activeView)) {
+    if (![...requiredBookingViews, 'institutions', 'valuers', 'staff', 'branches'].includes(activeView) && !viewsWithoutSubscriptions.includes(activeView)) {
       setLoading(false);
     }
 
@@ -340,14 +346,14 @@ function AdminDashboard() {
       setControlActive(true);
       setShowPassword(false);
       let userTypeDisplay = 'User';
-      if (userType === 'institution') userTypeDisplay = 'Client';
+      if (userType === 'institution') userTypeDisplay = 'Institution';
       if (userType === 'valuer') userTypeDisplay = 'Valuer';
       if (userType === 'staff') userTypeDisplay = 'Staff';
 
       toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.`});
     } catch (error: any) {
        let userTypeDisplay = 'User';
-        if (userType === 'institution') userTypeDisplay = 'Client';
+        if (userType === 'institution') userTypeDisplay = 'Institution';
         if (userType === 'valuer') userTypeDisplay = 'Valuer';
         if (userType === 'staff') userTypeDisplay = 'Staff';
        console.error(`Error adding ${userType}: `, error);
@@ -412,7 +418,7 @@ function AdminDashboard() {
     try {
         await deleteDoc(docRef);
         let userTypeDisplay = 'User';
-        if (collectionName === 'insurers') userTypeDisplay = 'Client';
+        if (collectionName === 'insurers') userTypeDisplay = 'Institution';
         if (collectionName === 'valuers') userTypeDisplay = 'Valuer';
         if (collectionName === 'staff') userTypeDisplay = 'Staff';
         toast({ title: `${userTypeDisplay} Deleted`, description: `${name} has been successfully deleted.` });
@@ -542,7 +548,7 @@ function AdminDashboard() {
             </div>
             <Button onClick={onAdd}>
             <PlusCircle className="mr-2" />
-            Register New {userType === 'institution' ? 'Client' : (userType.charAt(0).toUpperCase() + userType.slice(1))}
+            Register New {userType === 'institution' ? 'Institution' : (userType.charAt(0).toUpperCase() + userType.slice(1))}
             </Button>
         </CardHeader>
         <CardContent>
@@ -643,7 +649,7 @@ function AdminDashboard() {
     onOpenChange: (open: boolean) => void,
     userType: 'institution' | 'valuer' | 'staff'
   ) => {
-    const userTypeDisplay = userType === 'institution' ? 'Client' : userType.charAt(0).toUpperCase() + userType.slice(1);
+    const userTypeDisplay = userType === 'institution' ? 'Institution' : userType.charAt(0).toUpperCase() + userType.slice(1);
     return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -1062,7 +1068,7 @@ function AdminDashboard() {
             </SidebarMenuItem>
             
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('clients')} isActive={activeView === 'clients'} tooltip="Institutions">
+              <SidebarMenuButton onClick={() => setActiveView('institutions')} isActive={activeView === 'institutions'} tooltip="Institutions">
                 <Building />
                 Institutions
               </SidebarMenuButton>
@@ -1173,7 +1179,7 @@ function AdminDashboard() {
                         title="Institutions" 
                         value={stats.totalInstitutions} 
                         icon={<Building className="h-6 w-6 text-orange-500" />} 
-                        onClick={() => setActiveView('clients')}
+                        onClick={() => setActiveView('institutions')}
                         progress={stats.totalInstitutions > 0 ? (stats.totalInstitutions / (stats.totalStaff + stats.totalInstitutions)) * 100 : 0}
                         colorClass="bg-orange-500"
                     />
@@ -1299,7 +1305,7 @@ function AdminDashboard() {
                 </Card>
               </div>
             )}
-            {activeView === 'clients' && renderUserTable(institutions, "Manage Institutions", "View and manage all registered institutions.", () => setAddInstitutionOpen(true), "institution", institutionsPage, setInstitutionsPage)}
+            {activeView === 'institutions' && renderUserTable(institutions, "Manage Institutions", "View and manage all registered institutions.", () => setAddInstitutionOpen(true), "institution", institutionsPage, setInstitutionsPage)}
             {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuer", valuersPage, setValuersPage)}
             {activeView === 'staff' && renderUserTable(staff, "Manage Staff", "View and manage all registered staff members.", () => setAddStaffOpen(true), "staff", staffPage, setStaffPage)}
             {activeView === 'branches' && (
@@ -1427,8 +1433,8 @@ function AdminDashboard() {
                 </Card>
                  <Card>
                     <CardHeader>
-                    <CardTitle>Notifications</CardTitle>
-                    <CardDescription>Configure email and in-app notification preferences.</CardDescription>
+                        <CardTitle>Notifications</CardTitle>
+                        <CardDescription>Configure email and in-app notification preferences.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">
@@ -1537,3 +1543,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
