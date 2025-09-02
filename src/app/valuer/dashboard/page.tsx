@@ -84,9 +84,12 @@ export default function ValuerDashboardPage() {
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
     const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-    const [activeView, setActiveView] = useState('dashboard');
     const [itemsPerPage] = useState(5);
     const [currentPage, setCurrentPage] = useState(1);
+    const [allCarsCurrentPage, setAllCarsCurrentPage] = useState(1);
+    const [pendingCurrentPage, setPendingCurrentPage] = useState(1);
+    const [completedCurrentPage, setCompletedCurrentPage] = useState(1);
+    const [rejectedCurrentPage, setRejectedCurrentPage] = useState(1);
 
     const form = useForm<ValuationFormValues>({
         resolver: zodResolver(valuationSchema),
@@ -479,39 +482,20 @@ export default function ValuerDashboardPage() {
                                         colorClass="bg-green-500"
                                     />
                                 </div>
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Valuation Statistics ({format(new Date(), 'MMMM')})</CardTitle>
-                                        <CardDescription>Daily trends for your valuation statuses this month.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                                           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis dataKey="day" />
-                                                <YAxis domain={[0, 'dataMax + 5']} />
-                                                <Tooltip content={<ChartTooltipContent />} />
-                                                <Legend />
-                                                <Line type="monotone" dataKey="Pending" stroke={chartConfig.Pending.color} strokeWidth={2} name="Pending Valuation"/>
-                                                <Line type="monotone" dataKey="Approved" stroke={chartConfig.Approved.color} strokeWidth={2} />
-                                                <Line type="monotone" dataKey="Rejected" stroke={chartConfig.Rejected.color} strokeWidth={2} />
-                                            </LineChart>
-                                        </ChartContainer>
-                                    </CardContent>
-                                </Card>
+                                {renderBookingsTable(completedBookings, "All Cars", "A summary of all completed valuations.", completedCurrentPage, setCompletedCurrentPage)}
                             </div>
                         </TabsContent>
                         <TabsContent value="all-bookings">
-                           {renderBookingsTable(filteredBookings, "All Bookings", "A list of all assigned bookings.", currentPage, setCurrentPage)}
+                           {renderBookingsTable(filteredBookings, "All Bookings", "A list of all assigned bookings.", allCarsCurrentPage, setAllCarsCurrentPage)}
                         </TabsContent>
                          <TabsContent value="pending-valuation-bookings">
-                           {renderBookingsTable(pendingValuationBookings, "Pending Valuations", "A list of all new vehicle valuations.", currentPage, setCurrentPage)}
+                           {renderBookingsTable(pendingValuationBookings, "Pending Valuations", "A list of all new vehicle valuations.", pendingCurrentPage, setPendingCurrentPage)}
                         </TabsContent>
                          <TabsContent value="completed-bookings">
-                           {renderBookingsTable(completedBookings, "Completed Valuations", "A list of all valuations that have been completed.", currentPage, setCurrentPage)}
+                           {renderBookingsTable(completedBookings, "Completed Valuations", "A list of all valuations that have been completed.", completedCurrentPage, setCompletedCurrentPage)}
                         </TabsContent>
                          <TabsContent value="rejected-bookings">
-                           {renderBookingsTable(rejectedBookings, "Rejected Valuations", "A list of all valuations that have been rejected by clients.", currentPage, setCurrentPage)}
+                           {renderBookingsTable(rejectedBookings, "Rejected Valuations", "A list of all valuations that have been rejected by clients.", rejectedCurrentPage, setRejectedCurrentPage)}
                         </TabsContent>
                     </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
@@ -710,4 +694,3 @@ export default function ValuerDashboardPage() {
     );
 }
 
-    
