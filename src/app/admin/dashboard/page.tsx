@@ -962,13 +962,6 @@ function AdminDashboard() {
             </SidebarMenuItem>
             
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('valuations')} isActive={activeView === 'valuations'} tooltip="Valuations">
-                <FileSpreadsheet />
-                Valuations
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setActiveView('settings')} isActive={activeView === 'settings'} tooltip="Settings">
                 <Settings />
                 Settings
