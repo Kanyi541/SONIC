@@ -459,6 +459,7 @@ function AdminDashboard() {
       totalValuations: valuations.length,
       pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
       totalInstitutions: institutions.length,
+      totalValuers: valuers.length,
       totalStaff: staff.length,
   };
     
@@ -974,7 +975,7 @@ function AdminDashboard() {
                     <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, Admin!</h1>
                     <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Valuers & Assessors.</p>
                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     <StatCard 
                         title="Staff" 
                         value={stats.totalStaff} 
@@ -984,12 +985,20 @@ function AdminDashboard() {
                         colorClass="bg-blue-500"
                     />
                      <StatCard 
-                        title="Clients" 
+                        title="Institutions" 
                         value={stats.totalInstitutions} 
                         icon={<Building className="h-6 w-6 text-orange-500" />} 
                         onClick={() => setActiveView('clients')}
                         progress={100}
                         colorClass="bg-orange-500"
+                    />
+                     <StatCard 
+                        title="Valuers" 
+                        value={stats.totalValuers} 
+                        icon={<UserCog className="h-6 w-6 text-purple-500" />} 
+                        onClick={() => setActiveView('valuers')}
+                        progress={100}
+                        colorClass="bg-purple-500"
                     />
                      <StatCard 
                         title="Total Cars" 
