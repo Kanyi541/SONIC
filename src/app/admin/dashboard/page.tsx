@@ -1102,8 +1102,8 @@ function AdminDashboard() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Recent Valuations</CardTitle>
-                        <CardDescription>A summary of the latest valuation reports submitted.</CardDescription>
+                        <CardTitle>All Cars</CardTitle>
+                        <CardDescription>A summary of all vehicles valued or pending valuation.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
