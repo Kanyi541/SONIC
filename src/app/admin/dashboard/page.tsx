@@ -53,7 +53,7 @@ import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Ca
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress"
 
 
@@ -120,6 +120,7 @@ interface Valuation {
     valuedAt: any;
     status: 'Approved' | 'Rejected' | 'Pending Approval';
     rejectionReason?: string;
+    booking?: Booking;
 }
 
 type ChartDataPoint = {
@@ -322,7 +323,7 @@ function AdminDashboard() {
 
       if (userType === 'institution') setAddInstitutionOpen(false);
       else if (userType === 'valuer') setAddValuerOpen(false);
-      else setAddStaffOpen(false);
+      else if (userType === 'staff') setAddStaffOpen(false);
 
       form.reset();
       setControlActive(true);
@@ -472,7 +473,10 @@ function AdminDashboard() {
       totalStaff: staff.length,
   };
     
-  const recentValuations = valuations;
+  const recentValuations = valuations.map(v => ({
+      ...v,
+      booking: bookings.find(b => b.id === v.bookingId),
+  }));
     
   const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
       <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
