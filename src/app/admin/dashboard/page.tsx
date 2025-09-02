@@ -65,6 +65,7 @@ interface Institution {
   phone: string;
   active: boolean;
   uid?: string;
+  createdAt?: any;
 }
 
 interface Valuer {
@@ -74,6 +75,7 @@ interface Valuer {
   email: string;
   phone: string;
   active: boolean;
+  createdAt?: any;
 }
 
 interface Staff {
@@ -83,6 +85,7 @@ interface Staff {
   email: string;
   phone: string;
   active: boolean;
+  createdAt?: any;
 }
 
 interface Branch {
@@ -216,7 +219,7 @@ function AdminDashboard() {
         requiredViews: string[]
     ) => {
         if (requiredViews.includes(activeView) || activeView === 'dashboard') {
-            const q = query(collection(db, collectionName), orderBy("name"));
+            const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
             const unsubscribe = onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setter(data);
@@ -319,6 +322,7 @@ function AdminDashboard() {
         phone,
         password,
         active: isControlActive,
+        createdAt: serverTimestamp(),
       });
 
       if (userType === 'institution') setAddInstitutionOpen(false);
@@ -471,6 +475,8 @@ function AdminDashboard() {
       totalInstitutions: institutions.length,
       totalValuers: valuers.length,
       totalStaff: staff.length,
+      approved: bookings.filter(b => b.status === 'Completed').length,
+      rejected: bookings.filter(b => b.status === 'Rejected').length,
   };
     
   const recentValuations = valuations.map(v => ({
@@ -1042,7 +1048,7 @@ function AdminDashboard() {
                     <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, Admin!</h1>
                     <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Valuers & Assessors.</p>
                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard 
                         title="Staff" 
                         value={stats.totalStaff} 
@@ -1070,10 +1076,10 @@ function AdminDashboard() {
                      <StatCard 
                         title="Total Cars" 
                         value={stats.totalCars} 
-                        icon={<Car className="h-6 w-6 text-green-500" />} 
+                        icon={<Car className="h-6 w-6 text-indigo-500" />} 
                         onClick={() => setActiveView('valuations')}
                         progress={100}
-                        colorClass="bg-green-500"
+                        colorClass="bg-indigo-500"
                     />
                      <StatCard 
                         title="Pending Approval" 
@@ -1082,6 +1088,22 @@ function AdminDashboard() {
                         onClick={() => setActiveView('new-bookings')}
                         progress={stats.totalCars > 0 ? (stats.pendingApproval / stats.totalCars) * 100 : 0}
                         colorClass="bg-yellow-500"
+                    />
+                    <StatCard 
+                        title="Approved" 
+                        value={stats.approved} 
+                        icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
+                        onClick={() => setActiveView('valuations')}
+                        progress={stats.totalCars > 0 ? (stats.approved / stats.totalCars) * 100 : 0}
+                        colorClass="bg-green-500"
+                    />
+                    <StatCard 
+                        title="Rejected" 
+                        value={stats.rejected} 
+                        icon={<XCircle className="h-6 w-6 text-red-500" />} 
+                        onClick={() => setActiveView('valuations')}
+                        progress={stats.totalCars > 0 ? (stats.rejected / stats.totalCars) * 100 : 0}
+                        colorClass="bg-red-500"
                     />
                 </div>
 
@@ -1127,7 +1149,7 @@ function AdminDashboard() {
                                     <TableRow key={valuation.id}>
                                         <TableCell>{(recentValuationsPage - 1) * itemsPerPage + index + 1}</TableCell>
                                         <TableCell>{valuation.booking?.plateNumber}</TableCell>
-                                        <TableCell>{`${valuation.booking?.carMake} ${valuation.booking?.carModel}`}</TableCell>
+                                        <TableCell>{`${valuation.booking?.carMake || ''} ${valuation.booking?.carModel || ''}`}</TableCell>
                                         <TableCell className="font-mono text-xs hidden sm:table-cell">{valuation.booking?.bookingNumber}</TableCell>
                                         <TableCell className="hidden md:table-cell">{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</TableCell>
                                         <TableCell>{valuation.booking?.customerName}</TableCell>
