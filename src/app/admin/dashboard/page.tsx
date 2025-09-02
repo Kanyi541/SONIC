@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
@@ -100,9 +100,11 @@ interface Booking {
   bookingNumber: string;
   customerName: string;
   customerEmail: string;
+  customerPhone: string;
   plateNumber: string;
   carMake: string;
   carModel: string;
+  policyNumber?: string;
   createdAt: any;
   status: string;
   insurerName?: string;
@@ -154,6 +156,9 @@ function AdminDashboard() {
   const [showPassword, setShowPassword] = useState(false);
   const [bookingSearchTerm, setBookingSearchTerm] = useState('');
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  
+  const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [isRejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
 
@@ -422,11 +427,14 @@ function AdminDashboard() {
     window.open(url, '_blank');
   };
 
-  const handleBookingApproval = async (booking: Booking) => {
+  const handleBookingApproval = async (booking: Booking | null) => {
+      if (!booking) return;
       const bookingDocRef = doc(db, "bookings", booking.id);
       try {
           await updateDoc(bookingDocRef, { status: "Pending Valuation" });
           toast({ title: "Booking Approved", description: `Booking #${booking.bookingNumber} approved for valuation.` });
+          setReviewDialogOpen(false);
+          setSelectedBookingForAction(null);
       } catch (error) {
           console.error("Error approving booking: ", error);
           toast({ variant: "destructive", title: "Approval Failed", description: "Could not approve booking." });
@@ -444,12 +452,24 @@ function AdminDashboard() {
           await updateDoc(bookingDocRef, { status: "Rejected", rejectionReason });
           toast({ title: "Booking Rejected", description: `Booking #${bookingNumber} has been rejected.` });
           setRejectionReason("");
+          setRejectDialogOpen(false);
+          setReviewDialogOpen(false);
           setSelectedBookingForAction(null);
       } catch (error) {
           console.error("Error rejecting booking: ", error);
           toast({ variant: "destructive", title: "Rejection Failed", description: "Could not reject booking." });
       }
   };
+  
+  const openReviewDialog = (booking: Booking) => {
+    setSelectedBookingForAction(booking);
+    setReviewDialogOpen(true);
+  };
+  
+  const openRejectDialog = () => {
+    setReviewDialogOpen(false);
+    setRejectDialogOpen(true);
+  }
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
@@ -884,20 +904,10 @@ function AdminDashboard() {
                         <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleOpenReportInNewTab('booking', booking.id)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Preview
+                        <Button variant="outline" size="sm" onClick={() => openReviewDialog(booking)}>
+                            <FileSearch className="mr-2 h-4 w-4" />
+                            Review
                         </Button>
-                        <Button variant="default" size="sm" onClick={() => handleBookingApproval(booking)}>
-                            <ThumbsUp className="mr-2 h-4 w-4" />
-                            Approve
-                        </Button>
-                        <DialogTrigger asChild>
-                            <Button variant="destructive" size="sm" onClick={() => setSelectedBookingForAction(booking)}>
-                                <ThumbsDown className="mr-2 h-4 w-4" />
-                                Reject
-                            </Button>
-                        </DialogTrigger>
                     </TableCell>
                     </TableRow>
                 ))
@@ -981,7 +991,7 @@ function AdminDashboard() {
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-      <Dialog onOpenChange={(open) => !open && setSelectedBookingForAction(null)}>
+
       <SidebarInset>
         <header className="sticky top-0 z-40 w-full border-b bg-black shadow-sm">
             <div className="container flex h-16 items-center justify-between">
@@ -1308,28 +1318,82 @@ function AdminDashboard() {
             </div>
         </footer>
       </SidebarInset>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Reject Booking</DialogTitle>
-                <DialogDescription>
-                    Please provide a reason for rejecting this booking. This will be visible to the client.
-                </DialogDescription>
-            </DialogHeader>
-            <Textarea
-                placeholder="Enter rejection reason here..."
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-            />
-            <DialogFooter>
-                <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button variant="destructive" onClick={handleBookingRejection}>
-                    Confirm Rejection
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+        <Dialog open={isReviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Review Booking #{selectedBookingForAction?.bookingNumber}</DialogTitle>
+                    <DialogDescription>Review the details below and take action.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4 text-sm">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <span className="font-semibold text-muted-foreground">Customer:</span>
+                        <span>{selectedBookingForAction?.customerName}</span>
+
+                        <span className="font-semibold text-muted-foreground">Email:</span>
+                        <span>{selectedBookingForAction?.customerEmail}</span>
+
+                        <span className="font-semibold text-muted-foreground">Phone:</span>
+                        <span>{selectedBookingForAction?.customerPhone}</span>
+                        
+                        <span className="font-semibold text-muted-foreground col-span-2 mt-2">Vehicle Details</span>
+
+                        <span className="font-semibold text-muted-foreground">Make & Model:</span>
+                        <span>{selectedBookingForAction?.carMake} {selectedBookingForAction?.carModel}</span>
+                        
+                        <span className="font-semibold text-muted-foreground">Plate No:</span>
+                        <span>{selectedBookingForAction?.plateNumber}</span>
+
+                        <span className="font-semibold text-muted-foreground">Policy No:</span>
+                        <span>{selectedBookingForAction?.policyNumber}</span>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="destructive" onClick={openRejectDialog}>Reject</Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                             <Button variant="default">Approve</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Confirm Approval</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Are you sure you want to approve this booking for valuation?
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>No, Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleBookingApproval(selectedBookingForAction)}>Yes, Approve</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        
+        <Dialog open={isRejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Reject Booking</DialogTitle>
+                    <DialogDescription>
+                        Please provide a reason for rejecting this booking. This will be visible to the client.
+                    </DialogDescription>
+                </DialogHeader>
+                <Textarea
+                    placeholder="Enter rejection reason here..."
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                />
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button variant="destructive" onClick={handleBookingRejection}>
+                        Confirm Rejection
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </SidebarProvider>
   );
 }
@@ -1341,5 +1405,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    
