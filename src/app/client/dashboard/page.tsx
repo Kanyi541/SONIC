@@ -938,10 +938,10 @@ export default function ClientDashboardPage() {
                         />
                          <StatCard 
                             title="New Requests" 
-                            value={stats.pending} 
+                            value={stats.pendingApproval} 
                             icon={<FileSignature className="h-6 w-6 text-orange-500" />} 
                             onClick={() => setActiveView('pending-bookings')}
-                            progress={(stats.pending / stats.total) * 100}
+                            progress={(stats.pendingApproval / stats.total) * 100}
                             colorClass="bg-orange-500"
                         />
                          <StatCard 
@@ -1403,7 +1403,7 @@ export default function ClientDashboardPage() {
                 {renderBookingsTable(filteredBookings, "All Bookings", "A complete list of all your bookings.", currentPage, setCurrentPage)}
             </TabsContent>
             <TabsContent value="pending-bookings">
-                {renderBookingsTable(getFilteredBookingsByStatus("Pending"), "New Requests", "Bookings that are new and awaiting assignment to a valuer.", currentPage, setCurrentPage)}
+                {renderBookingsTable(getFilteredBookingsByStatus("Pending Approval"), "New Requests", "Bookings that have been created and are awaiting approval.", currentPage, setCurrentPage)}
             </TabsContent>
             <TabsContent value="pending-valuation-bookings">
                 {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Pending Valuation", "Bookings assigned to a valuer and awaiting their report.", currentPage, setCurrentPage)}
