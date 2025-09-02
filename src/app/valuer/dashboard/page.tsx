@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle, FileSignature, FileWarning } from 'lucide-react';
+import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle, FileSignature, FileWarning, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -85,6 +85,8 @@ export default function ValuerDashboardPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
     const [activeView, setActiveView] = useState('dashboard');
+    const [itemsPerPage] = useState(5);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const form = useForm<ValuationFormValues>({
         resolver: zodResolver(valuationSchema),
@@ -313,8 +315,14 @@ export default function ValuerDashboardPage() {
         bookingsData: Booking[],
         title: string,
         description: string,
-        isPendingTable: boolean = false
-    ) => (
+        page: number,
+        setPage: (page: number) => void
+    ) => {
+        const totalPages = Math.ceil(bookingsData.length / itemsPerPage);
+        const startIndex = (page - 1) * itemsPerPage;
+        const paginatedData = bookingsData.slice(startIndex, startIndex + itemsPerPage);
+
+        return (
          <Card>
             <CardHeader>
                <div className="flex justify-between items-center">
@@ -338,6 +346,7 @@ export default function ValuerDashboardPage() {
                  <Table>
                     <TableHeader>
                         <TableRow className="bg-muted/50">
+                            <TableHead className="font-semibold w-[50px]">No.</TableHead>
                             <TableHead className="font-semibold">Booking ID</TableHead>
                             <TableHead className="hidden sm:table-cell font-semibold">Customer</TableHead>
                             <TableHead className="hidden md:table-cell font-semibold">Vehicle</TableHead>
@@ -348,8 +357,9 @@ export default function ValuerDashboardPage() {
                     </TableHeader>
                     <TableBody>
                     {loading ? (
-                        Array.from({ length: 5 }).map((_, index) => (
+                        Array.from({ length: itemsPerPage }).map((_, index) => (
                         <TableRow key={index}>
+                            <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                             <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                             <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
@@ -358,9 +368,10 @@ export default function ValuerDashboardPage() {
                             <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                         </TableRow>
                         ))
-                    ) : bookingsData.length > 0 ? (
-                        bookingsData.map((booking) => (
+                    ) : paginatedData.length > 0 ? (
+                        paginatedData.map((booking, index) => (
                         <TableRow key={booking.id}>
+                            <TableCell>{startIndex + index + 1}</TableCell>
                             <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
                             <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
                             <TableCell className="hidden md:table-cell">{booking.plateNumber}</TableCell>
@@ -384,16 +395,27 @@ export default function ValuerDashboardPage() {
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center h-24">
+                            <TableCell colSpan={7} className="text-center h-24">
                                 No bookings found.
                             </TableCell>
                         </TableRow>
                     )}
                     </TableBody>
                 </Table>
+                <div className="flex justify-end items-center gap-2 mt-4">
+                    <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page === 1}>
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                    </Button>
+                    <span className="text-sm">Page {page} of {totalPages}</span>
+                    <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={page === totalPages}>
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
             </CardContent>
         </Card>
-    );
+    )};
     
     return (
         <UnifiedDashboardLayout
@@ -480,16 +502,16 @@ export default function ValuerDashboardPage() {
                             </div>
                         </TabsContent>
                         <TabsContent value="all-bookings">
-                           {renderBookingsTable(filteredBookings, "All Bookings", "A list of all assigned bookings.")}
+                           {renderBookingsTable(filteredBookings, "All Bookings", "A list of all assigned bookings.", currentPage, setCurrentPage)}
                         </TabsContent>
                          <TabsContent value="pending-valuation-bookings">
-                           {renderBookingsTable(pendingValuationBookings, "Pending Valuations", "A list of all new vehicle valuations.")}
+                           {renderBookingsTable(pendingValuationBookings, "Pending Valuations", "A list of all new vehicle valuations.", currentPage, setCurrentPage)}
                         </TabsContent>
                          <TabsContent value="completed-bookings">
-                           {renderBookingsTable(completedBookings, "Completed Valuations", "A list of all valuations that have been completed.")}
+                           {renderBookingsTable(completedBookings, "Completed Valuations", "A list of all valuations that have been completed.", currentPage, setCurrentPage)}
                         </TabsContent>
                          <TabsContent value="rejected-bookings">
-                           {renderBookingsTable(rejectedBookings, "Rejected Valuations", "A list of all valuations that have been rejected by clients.")}
+                           {renderBookingsTable(rejectedBookings, "Rejected Valuations", "A list of all valuations that have been rejected by clients.", currentPage, setCurrentPage)}
                         </TabsContent>
                     </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
@@ -687,3 +709,5 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    

@@ -48,7 +48,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -182,7 +182,7 @@ const PasswordInput = ({ field }: { field: any }) => {
                 variant="ghost"
                 size="icon"
                 className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={()={() => setShowPassword(!showPassword)}
             >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </Button>
@@ -214,6 +214,9 @@ export default function ClientDashboardPage() {
   const [agentSearchTerm, setAgentSearchTerm] = useState("");
   const [staffSearchTerm, setStaffSearchTerm] = useState("");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+
+  const [itemsPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const customerForm = useForm<CustomerFormValues>({
       resolver: zodResolver(customerSchema),
@@ -500,8 +503,6 @@ export default function ClientDashboardPage() {
         );
     });
     
-    const recentBookings = filteredBookings.slice(0, 5);
-    
     const getFilteredBookingsByStatus = (status: string | string[]) => {
         const statuses = Array.isArray(status) ? status : [status];
         return filteredBookings.filter(b => statuses.includes(b.status));
@@ -553,87 +554,109 @@ export default function ClientDashboardPage() {
     const renderBookingsTable = (
         bookingsData: Booking[],
         title: string,
-        description: string
-    ) => (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <div>
-                        <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
-                        <CardDescription>{description}</CardDescription>
-                    </div>
-                     <div className="flex items-center gap-4">
-                        <div className="relative w-full max-w-sm">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                type="search"
-                                placeholder="Search bookings..."
-                                className="w-full rounded-lg bg-background pl-8"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+        description: string,
+        page: number,
+        setPage: (page: number) => void
+    ) => {
+        const totalPages = Math.ceil(bookingsData.length / itemsPerPage);
+        const startIndex = (page - 1) * itemsPerPage;
+        const paginatedData = bookingsData.slice(startIndex, startIndex + itemsPerPage);
+
+        return (
+            <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
+                            <CardDescription>{description}</CardDescription>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="relative w-full max-w-sm">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    placeholder="Search bookings..."
+                                    className="w-full rounded-lg bg-background pl-8"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-muted/50">
-                            <TableHead className="font-semibold text-left">Booking ID</TableHead>
-                            <TableHead className="hidden sm:table-cell font-semibold text-left">Customer</TableHead>
-                            <TableHead className="hidden md:table-cell font-semibold text-left">Vehicle</TableHead>
-                            <TableHead className="hidden sm:table-cell font-semibold text-left">Date</TableHead>
-                            <TableHead className="font-semibold text-left">Status</TableHead>
-                            <TableHead className="text-right font-semibold">Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            Array.from({ length: 5 }).map((_, index) => (
-                                <TableRow key={index}>
-                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
-                                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                    <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
-                                </TableRow>
-                            ))
-                        ) : bookingsData.length > 0 ? (
-                            bookingsData.map((booking) => (
-                                <TableRow key={booking.id}>
-                                    <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
-                                    <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
-                                    <TableCell className="hidden md:table-cell">{booking.plateNumber}</TableCell>
-                                    <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
-                                        >
-                                            <Printer className="mr-2 h-4 w-4" />
-                                            <span className="hidden sm:inline">View Report</span>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24">
-                                    No bookings found.
-                                </TableCell>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-muted/50">
+                                <TableHead className="font-semibold w-[50px]">No.</TableHead>
+                                <TableHead className="font-semibold text-left">Booking ID</TableHead>
+                                <TableHead className="hidden sm:table-cell font-semibold text-left">Customer</TableHead>
+                                <TableHead className="hidden md:table-cell font-semibold text-left">Vehicle</TableHead>
+                                <TableHead className="hidden sm:table-cell font-semibold text-left">Date</TableHead>
+                                <TableHead className="font-semibold text-left">Status</TableHead>
+                                <TableHead className="text-right font-semibold">Action</TableHead>
                             </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    );
+                        </TableHeader>
+                        <TableBody>
+                            {loading ? (
+                                Array.from({ length: itemsPerPage }).map((_, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+                                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                        <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
+                                    </TableRow>
+                                ))
+                            ) : paginatedData.length > 0 ? (
+                                paginatedData.map((booking, index) => (
+                                    <TableRow key={booking.id}>
+                                        <TableCell>{startIndex + index + 1}</TableCell>
+                                        <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
+                                        <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
+                                        <TableCell className="hidden md:table-cell">{booking.plateNumber}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
+                                            >
+                                                <Printer className="mr-2 h-4 w-4" />
+                                                <span className="hidden sm:inline">View Report</span>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center h-24">
+                                        No bookings found.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                    <div className="flex justify-end items-center gap-2 mt-4">
+                        <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page === 1}>
+                            <ChevronLeft className="h-4 w-4" />
+                            Previous
+                        </Button>
+                        <span className="text-sm">Page {page} of {totalPages}</span>
+                        <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={page === totalPages}>
+                            Next
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    };
 
       const userDisplayRole = loggedInUser?.agentName
       ? `${loggedInUser.agentName} Panel - ${loggedInUser.name}`
@@ -950,68 +973,7 @@ export default function ClientDashboardPage() {
                             colorClass="bg-red-500"
                         />
                     </div>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Recent Bookings</CardTitle>
-                            <CardDescription>A summary of your 5 most recent bookings.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Booking ID</TableHead>
-                                        <TableHead>Customer</TableHead>
-                                        <TableHead>Vehicle</TableHead>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {loading ? (
-                                        Array.from({ length: 5 }).map((_, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                                <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                                <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : recentBookings.length > 0 ? (
-                                        recentBookings.map((booking) => (
-                                            <TableRow key={booking.id}>
-                                                <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
-                                                <TableCell>{booking.customerName}</TableCell>
-                                                <TableCell>{booking.plateNumber}</TableCell>
-                                                <TableCell>{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
-                                                    >
-                                                        <Printer className="mr-2 h-4 w-4" />
-                                                        View Report
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="text-center h-24">
-                                                No recent bookings found.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                    {renderBookingsTable(filteredBookings, "All Cars", "A summary of all your bookings.", currentPage, setCurrentPage)}
                </div>
             </TabsContent>
             
@@ -1434,22 +1396,22 @@ export default function ClientDashboardPage() {
             </TabsContent>
             
             <TabsContent value="all-bookings">
-                {renderBookingsTable(filteredBookings, "All Bookings", "A complete list of all your bookings.")}
+                {renderBookingsTable(filteredBookings, "All Bookings", "A complete list of all your bookings.", currentPage, setCurrentPage)}
             </TabsContent>
             <TabsContent value="pending-bookings">
-                {renderBookingsTable(getFilteredBookingsByStatus("Pending"), "New Requests", "Bookings that are new and awaiting assignment to a valuer.")}
+                {renderBookingsTable(getFilteredBookingsByStatus("Pending"), "New Requests", "Bookings that are new and awaiting assignment to a valuer.", currentPage, setCurrentPage)}
             </TabsContent>
             <TabsContent value="pending-valuation-bookings">
-                {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Pending Valuation", "Bookings assigned to a valuer and awaiting their report.")}
+                {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Pending Valuation", "Bookings assigned to a valuer and awaiting their report.", currentPage, setCurrentPage)}
             </TabsContent>
             <TabsContent value="pending-approval-bookings">
-                {renderBookingsTable(getFilteredBookingsByStatus("Pending Approval"), "Pending Approval", "Valuation reports that have been submitted and are awaiting your review.")}
+                {renderBookingsTable(getFilteredBookingsByStatus("Pending Approval"), "Pending Approval", "Valuation reports that have been submitted and are awaiting your review.", currentPage, setCurrentPage)}
             </TabsContent>
             <TabsContent value="completed-bookings">
-                {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "Approved Bookings", "All bookings that have been fully completed and approved.")}
+                {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "Approved Bookings", "All bookings that have been fully completed and approved.", currentPage, setCurrentPage)}
             </TabsContent>
             <TabsContent value="rejected-bookings">
-                {renderBookingsTable(getFilteredBookingsByStatus("Rejected"), "Rejected Bookings", "Bookings that have been rejected during the approval process.")}
+                {renderBookingsTable(getFilteredBookingsByStatus("Rejected"), "Rejected Bookings", "Bookings that have been rejected during the approval process.", currentPage, setCurrentPage)}
             </TabsContent>
 
           </Tabs>
@@ -1458,3 +1420,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
