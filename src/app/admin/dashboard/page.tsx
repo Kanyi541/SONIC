@@ -943,23 +943,10 @@ function AdminDashboard() {
             </SidebarMenuItem>
             
             <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('staff')} isActive={activeView === 'staff'} tooltip="Manage Staff">
-                    <Briefcase />
-                    Manage Staff
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setActiveView('clients')} isActive={activeView === 'clients'} tooltip="Institutions">
                 <Building />
                 Institutions
               </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Manage Valuers">
-                    <UserCog />
-                    Manage Valuers
-                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => setActiveView('branches')} isActive={activeView === 'branches'} tooltip="Our Branches">
