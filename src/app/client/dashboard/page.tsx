@@ -1109,7 +1109,7 @@ export default function ClientDashboardPage() {
                             colorClass="bg-red-500"
                         />
                     </div>
-                    {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "All Cars", "A summary of all your completed bookings.", currentPage, setCurrentPage)}
+                    {renderBookingsTable(filteredBookings, "All Cars", "A summary of all your bookings.", currentPage, setCurrentPage)}
                </div>
             </TabsContent>
             
@@ -1661,5 +1661,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
