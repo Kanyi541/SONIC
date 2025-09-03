@@ -1233,37 +1233,49 @@ function AdminDashboard() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[50px]">No.</TableHead>
+                                    <TableHead>Plate Number</TableHead>
                                     <TableHead>Booking ID</TableHead>
+                                    <TableHead>Make and Model</TableHead>
                                     <TableHead>Customer</TableHead>
-                                    <TableHead>Vehicle</TableHead>
                                     <TableHead>Institution</TableHead>
+                                    <TableHead>Assessment Value (KSH)</TableHead>
+                                    <TableHead>Forced Value (KSH)</TableHead>
+                                    <TableHead>Noted Value WS (KSH)</TableHead>
+                                    <TableHead>Noted Value RS (KSH)</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {loading ? (
                                     Array.from({ length: 5 }).map((_, index) => (
                                     <TableRow key={index}>
-                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
                                     </TableRow>
                                     ))
                                 ) : paginatedRecentValuations.length > 0 ? (
                                     paginatedRecentValuations.map((valuation, index) => (
                                     <TableRow key={valuation.id}>
-                                        <TableCell>{(recentValuationsPage - 1) * itemsPerPage + index + 1}</TableCell>
+                                        <TableCell>{valuation.booking?.plateNumber}</TableCell>
                                         <TableCell className="font-mono text-xs">{valuation.booking?.bookingNumber}</TableCell>
-                                        <TableCell>{valuation.booking?.customerName}</TableCell>
                                         <TableCell>{`${valuation.booking?.carMake || ''} ${valuation.booking?.carModel || ''}`}</TableCell>
+                                        <TableCell>{valuation.booking?.customerName}</TableCell>
                                         <TableCell>{valuation.booking?.insurerName}</TableCell>
+                                        <TableCell>{valuation.assessmentValue}</TableCell>
+                                        <TableCell>{valuation.forcedValue}</TableCell>
+                                        <TableCell>{valuation.wsValue}</TableCell>
+                                        <TableCell>{valuation.rsValue}</TableCell>
                                     </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">
+                                        <TableCell colSpan={9} className="h-24 text-center">
                                             No recent valuations found.
                                         </TableCell>
                                     </TableRow>
@@ -1523,3 +1535,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
