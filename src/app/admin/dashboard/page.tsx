@@ -236,7 +236,9 @@ function AdminDashboard() {
                     data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 }
                 setter(data);
-                setLoading(false);
+                if(collectionName !== 'insurers') {
+                  setLoading(false);
+                }
             }, (error) => {
                  console.error(`Error in ${collectionName} listener:`, error);
             });
@@ -244,7 +246,16 @@ function AdminDashboard() {
         }
     };
     
-    subscribeToCollection("insurers", setInstitutions, ["institutions"]);
+    // Always fetch institutions for the dashboard stat card
+    const insurersQuery = query(collection(db, "insurers"), where("role", "!=", "Agent"));
+    const insurersUnsubscribe = onSnapshot(insurersQuery, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Institution }));
+        setInstitutions(data);
+    }, (error) => {
+        console.error("Error fetching institutions:", error);
+    });
+    subscriptions.push(insurersUnsubscribe);
+    
     subscribeToCollection("valuers", setValuers, ["valuers"]);
     subscribeToCollection("staff", setStaff, ["staff"]);
     subscribeToCollection("branches", setBranches, ["branches"]);
@@ -262,7 +273,7 @@ function AdminDashboard() {
     const bookingsQuery = query(collection(db, "bookings"));
     const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings'];
 
-    if (requiredBookingViews.includes(activeView)) {
+    if (requiredBookingViews.includes(activeView) || activeView === 'dashboard') {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const bookingsData = data as Booking[];
@@ -278,8 +289,7 @@ function AdminDashboard() {
     }
     
     // Fallback for views that don't subscribe to anything
-    const viewsWithoutSubscriptions = ['settings'];
-    if (![...requiredBookingViews, 'institutions', 'valuers', 'staff', 'branches'].includes(activeView) && !viewsWithoutSubscriptions.includes(activeView)) {
+    if (activeView === 'settings') {
       setLoading(false);
     }
 
@@ -504,6 +514,7 @@ function AdminDashboard() {
       totalStaff: staff.length,
       approved: bookings.filter(b => b.status === 'Completed').length,
       rejected: bookings.filter(b => b.status === 'Rejected').length,
+      pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
   };
     
   const recentValuations = valuations.map(v => ({
@@ -1073,6 +1084,18 @@ function AdminDashboard() {
                 Institutions
               </SidebarMenuButton>
             </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Valuers">
+                    <UserCog />
+                    Valuers
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView('staff')} isActive={activeView === 'staff'} tooltip="Our Staff">
+                    <Briefcase />
+                    Our Staff
+                </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => setActiveView('branches')} isActive={activeView === 'branches'} tooltip="Our Branches">
                     <Building2 />
@@ -1085,7 +1108,18 @@ function AdminDashboard() {
                 New Bookings
               </SidebarMenuButton>
             </SidebarMenuItem>
-            
+            <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView('valuations')} isActive={activeView === 'valuations'} tooltip="Valuations">
+                    <FileSpreadsheet />
+                    Valuations
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView('rejected-bookings')} isActive={activeView === 'rejected-bookings'} tooltip="Rejected">
+                    <FileX />
+                    Rejected
+                </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setActiveView('settings')} isActive={activeView === 'settings'} tooltip="Settings">
                 <Settings />
@@ -1191,13 +1225,13 @@ function AdminDashboard() {
                         progress={100}
                         colorClass="bg-purple-500"
                     />
-                     <StatCard 
-                        title="Total Cars" 
-                        value={stats.totalCars} 
-                        icon={<Car className="h-6 w-6 text-indigo-500" />} 
-                        onClick={() => setActiveView('valuations')}
-                        progress={100}
-                        colorClass="bg-indigo-500"
+                    <StatCard 
+                        title="New Requests" 
+                        value={stats.pendingApproval} 
+                        icon={<FileSignature className="h-6 w-6 text-yellow-500" />} 
+                        onClick={() => setActiveView('new-bookings')}
+                        progress={stats.totalCars > 0 ? (stats.pendingApproval / stats.totalCars) * 100 : 0}
+                        colorClass="bg-yellow-500"
                     />
                     <StatCard 
                         title="Valued Cars" 
@@ -1222,6 +1256,14 @@ function AdminDashboard() {
                         onClick={() => setActiveView('rejected-bookings')}
                         progress={stats.totalCars > 0 ? (stats.rejected / stats.totalCars) * 100 : 0}
                         colorClass="bg-red-500"
+                    />
+                     <StatCard 
+                        title="Total Cars" 
+                        value={stats.totalCars} 
+                        icon={<Car className="h-6 w-6 text-indigo-500" />} 
+                        onClick={() => setActiveView('valuations')}
+                        progress={100}
+                        colorClass="bg-indigo-500"
                     />
                 </div>
 
