@@ -236,8 +236,7 @@ function AdminDashboard() {
                     data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 }
                 setter(data);
-                // Keep loading until all initial fetches are done
-                if(requiredViews.includes(activeView)) {
+                if(requiredViews.includes(activeView) || activeView === 'dashboard') {
                   setLoading(false);
                 }
             }, (error) => {
@@ -247,7 +246,6 @@ function AdminDashboard() {
         }
     };
     
-    // Subscribe to collections needed for dashboard and specific views
     subscribeToCollection("insurers", setInstitutions, ["institutions", "dashboard"]);
     subscribeToCollection("valuers", setValuers, ["valuers", "dashboard"]);
     subscribeToCollection("staff", setStaff, ["staff", "dashboard"]);
@@ -280,7 +278,6 @@ function AdminDashboard() {
         subscriptions.push(unsubscribe);
     }
     
-    // Fallback for views that don't subscribe to anything
     if (activeView === 'settings') {
       setLoading(false);
     }
@@ -1063,6 +1060,12 @@ function AdminDashboard() {
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
+             <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setActiveView('dashboard')} isActive={activeView === 'dashboard'} tooltip="Dashboard">
+                <LayoutDashboard />
+                Dashboard
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setActiveView('institutions')} isActive={activeView === 'institutions'} tooltip="Institutions">
                 <Building />
