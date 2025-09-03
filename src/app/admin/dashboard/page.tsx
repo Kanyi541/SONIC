@@ -236,7 +236,8 @@ function AdminDashboard() {
                     data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 }
                 setter(data);
-                if(collectionName !== 'insurers') {
+                // Keep loading until all initial fetches are done
+                if(requiredViews.includes(activeView)) {
                   setLoading(false);
                 }
             }, (error) => {
@@ -246,19 +247,11 @@ function AdminDashboard() {
         }
     };
     
-    // Always fetch institutions for the dashboard stat card
-    const insurersQuery = query(collection(db, "insurers"), where("role", "!=", "Agent"));
-    const insurersUnsubscribe = onSnapshot(insurersQuery, (snapshot) => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Institution }));
-        setInstitutions(data);
-    }, (error) => {
-        console.error("Error fetching institutions:", error);
-    });
-    subscriptions.push(insurersUnsubscribe);
-    
-    subscribeToCollection("valuers", setValuers, ["valuers"]);
-    subscribeToCollection("staff", setStaff, ["staff"]);
-    subscribeToCollection("branches", setBranches, ["branches"]);
+    // Subscribe to collections needed for dashboard and specific views
+    subscribeToCollection("insurers", setInstitutions, ["institutions", "dashboard"]);
+    subscribeToCollection("valuers", setValuers, ["valuers", "dashboard"]);
+    subscribeToCollection("staff", setStaff, ["staff", "dashboard"]);
+    subscribeToCollection("branches", setBranches, ["branches", "dashboard"]);
     
     if (['dashboard', 'valuations'].includes(activeView)) {
         const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"));
@@ -269,7 +262,6 @@ function AdminDashboard() {
         subscriptions.push(valUnsubscribe);
     }
     
-
     const bookingsQuery = query(collection(db, "bookings"));
     const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings'];
 
@@ -1528,5 +1520,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    
