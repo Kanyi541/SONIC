@@ -1239,12 +1239,10 @@ function AdminDashboard() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="w-[50px]">No.</TableHead>
-                                    <TableHead>Plate No</TableHead>
-                                    <TableHead>Make &amp; Model</TableHead>
-                                    <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
-                                    <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
-                                    <TableHead>Customer Name</TableHead>
-                                    <TableHead className="hidden sm:table-cell">Institution</TableHead>
+                                    <TableHead>Booking ID</TableHead>
+                                    <TableHead>Customer</TableHead>
+                                    <TableHead>Vehicle</TableHead>
+                                    <TableHead>Institution</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -1252,29 +1250,25 @@ function AdminDashboard() {
                                     Array.from({ length: 5 }).map((_, index) => (
                                     <TableRow key={index}>
                                         <TableCell><Skeleton className="h-5 w-8" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                     </TableRow>
                                     ))
                                 ) : paginatedRecentValuations.length > 0 ? (
                                     paginatedRecentValuations.map((valuation, index) => (
                                     <TableRow key={valuation.id}>
                                         <TableCell>{(recentValuationsPage - 1) * itemsPerPage + index + 1}</TableCell>
-                                        <TableCell>{valuation.booking?.plateNumber}</TableCell>
-                                        <TableCell>{`${valuation.booking?.carMake || ''} ${valuation.booking?.carModel || ''}`}</TableCell>
-                                        <TableCell className="font-mono text-xs hidden sm:table-cell">{valuation.booking?.bookingNumber}</TableCell>
-                                        <TableCell className="hidden md:table-cell">{valuation.assessmentDate ? new Date(valuation.assessmentDate?.toDate()).toLocaleDateString() : 'N/A'}</TableCell>
+                                        <TableCell className="font-mono text-xs">{valuation.booking?.bookingNumber}</TableCell>
                                         <TableCell>{valuation.booking?.customerName}</TableCell>
-                                        <TableCell className="hidden sm:table-cell">{valuation.booking?.insurerName}</TableCell>
+                                        <TableCell>{`${valuation.booking?.carMake || ''} ${valuation.booking?.carModel || ''}`}</TableCell>
+                                        <TableCell>{valuation.booking?.insurerName}</TableCell>
                                     </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="h-24 text-center">
+                                        <TableCell colSpan={5} className="h-24 text-center">
                                             No recent valuations found.
                                         </TableCell>
                                     </TableRow>
@@ -1534,3 +1528,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
