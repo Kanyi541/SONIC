@@ -120,6 +120,8 @@ interface Valuation {
     assessmentDate: any;
     assessmentValue: string;
     forcedValue: string;
+    wsValue: string;
+    rsValue: string;
 }
 
 interface CombinedData extends Booking {
@@ -677,6 +679,8 @@ export default function ClientDashboardPage() {
                                         <TableHead>Status</TableHead>
                                         <TableHead className="hidden xl:table-cell">Assessment Value (KES)</TableHead>
                                         <TableHead className="hidden xl:table-cell">Forced Value (KES)</TableHead>
+                                        <TableHead className="hidden xl:table-cell">Noted Value WS (KSH)</TableHead>
+                                        <TableHead className="hidden xl:table-cell">Noted Value RS (KSH)</TableHead>
                                     </>
                                 ) : (
                                     <>
@@ -704,6 +708,8 @@ export default function ClientDashboardPage() {
                                           <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                           <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                           <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                          <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                          <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                           <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                           <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                         </>
@@ -739,6 +745,8 @@ export default function ClientDashboardPage() {
                                                 </TableCell>
                                                 <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.assessmentValue || 'N/A'}</TableCell>
                                                 <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.forcedValue || 'N/A'}</TableCell>
+                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.wsValue || 'N/A'}</TableCell>
+                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.rsValue || 'N/A'}</TableCell>
                                             </>
                                         ) : (
                                             <>
@@ -765,7 +773,7 @@ export default function ClientDashboardPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={isAllCarsView ? 10 : 7} className="text-center h-24">
+                                    <TableCell colSpan={isAllCarsView ? 12 : 7} className="text-center h-24">
                                         No bookings found.
                                     </TableCell>
                                 </TableRow>
@@ -1653,3 +1661,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
