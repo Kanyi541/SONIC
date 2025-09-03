@@ -429,7 +429,7 @@ function AdminDashboard() {
         await deleteDoc(docRef);
         let userTypeDisplay = 'User';
         if (collectionName === 'insurers') userTypeDisplay = 'Institution';
-        if (collectionName === 'valuers') userTypeDisplay = 'Valuer';
+        if (collectionName === 'valuer') userTypeDisplay = 'Valuer';
         if (collectionName === 'staff') userTypeDisplay = 'Staff';
         toast({ title: `${userTypeDisplay} Deleted`, description: `${name} has been successfully deleted.` });
     } catch (error) {
@@ -1072,23 +1072,10 @@ function AdminDashboard() {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('dashboard')} isActive={activeView === 'dashboard'} tooltip="Dashboard">
-                <LayoutDashboard />
-                Dashboard
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setActiveView('institutions')} isActive={activeView === 'institutions'} tooltip="Institutions">
                 <Building />
                 Institutions
               </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Valuers">
-                    <UserCog />
-                    Valuers
-                </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => setActiveView('staff')} isActive={activeView === 'staff'} tooltip="Our Staff">
@@ -1102,31 +1089,6 @@ function AdminDashboard() {
                     Our Branches
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('new-bookings')} isActive={activeView === 'new-bookings'} tooltip="New Bookings">
-                <FileSignature />
-                New Bookings
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('valuations')} isActive={activeView === 'valuations'} tooltip="Valuations">
-                    <FileSpreadsheet />
-                    Valuations
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('rejected-bookings')} isActive={activeView === 'rejected-bookings'} tooltip="Rejected">
-                    <FileX />
-                    Rejected
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('settings')} isActive={activeView === 'settings'} tooltip="Settings">
-                <Settings />
-                Settings
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -1155,7 +1117,7 @@ function AdminDashboard() {
                             <div className="p-2 max-h-80 overflow-y-auto">
                                 {pendingBookingsForNotif.length > 0 ? (
                                     pendingBookingsForNotif.map(booking => (
-                                        <div key={booking.id} className="p-2 hover:bg-muted rounded-md text-sm">
+                                        <div key={booking.id} className="p-2 hover:bg-muted rounded-md text-sm cursor-pointer" onClick={() => openReviewDialog(booking)}>
                                             <p className="font-semibold">{booking.customerName}</p>
                                             <p className="text-muted-foreground">New booking for {booking.carMake} {booking.carModel}</p>
                                         </div>
@@ -1283,9 +1245,6 @@ function AdminDashboard() {
                                     <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
                                     <TableHead>Customer Name</TableHead>
                                     <TableHead className="hidden sm:table-cell">Institution</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="hidden xl:table-cell">Assessment Value (KES)</TableHead>
-                                    <TableHead className="hidden xl:table-cell">Forced Value (KES)</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -1299,9 +1258,6 @@ function AdminDashboard() {
                                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                        <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                        <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                     </TableRow>
                                     ))
                                 ) : paginatedRecentValuations.length > 0 ? (
@@ -1314,18 +1270,11 @@ function AdminDashboard() {
                                         <TableCell className="hidden md:table-cell">{valuation.assessmentDate ? new Date(valuation.assessmentDate?.toDate()).toLocaleDateString() : 'N/A'}</TableCell>
                                         <TableCell>{valuation.booking?.customerName}</TableCell>
                                         <TableCell className="hidden sm:table-cell">{valuation.booking?.insurerName}</TableCell>
-                                        <TableCell>
-                                          <Badge variant={getStatusVariant(valuation.booking?.status || 'Unknown')}>
-                                            {valuation.booking?.status}
-                                          </Badge>
-                                        </TableCell>
-                                        <TableCell className="font-mono hidden xl:table-cell">{valuation.assessmentValue}</TableCell>
-                                        <TableCell className="font-mono hidden xl:table-cell">{valuation.forcedValue}</TableCell>
                                     </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={10} className="h-24 text-center">
+                                        <TableCell colSpan={7} className="h-24 text-center">
                                             No recent valuations found.
                                         </TableCell>
                                     </TableRow>
@@ -1585,5 +1534,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    
