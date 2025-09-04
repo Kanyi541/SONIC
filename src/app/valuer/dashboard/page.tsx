@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate, subDays } from 'date-fns';
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -165,7 +165,7 @@ export default function ValuerDashboardPage() {
             setLoading(true);
             const bookingsQuery = query(collection(db, "bookings"), where("status", "in", ["Pending Valuation", "Completed", "Rejected"]));
             const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
-                const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
+                const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Booking }));
                 setBookings(bookingsData);
                 generateChartData(bookingsData);
             });
@@ -569,9 +569,7 @@ export default function ValuerDashboardPage() {
                                                         mode="single"
                                                         selected={field.value}
                                                         onSelect={field.onChange}
-                                                        disabled={(date) =>
-                                                            date > new Date() || date < new Date("2000-01-01")
-                                                        }
+                                                        disabled={(date) => date < subDays(new Date(), 1)}
                                                         initialFocus
                                                     />
                                                     </PopoverContent>
@@ -717,3 +715,5 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    
