@@ -226,12 +226,10 @@ export default function ClientDashboardPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [loadingAgents, setLoadingAgents] = useState(true);
   const [loadingStaff, setLoadingStaff] = useState(true);
-  const [loadingBranches, setLoadingBranches] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [isCustomerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [isAgentDialogOpen, setAgentDialogOpen] = useState(false);
@@ -387,13 +385,6 @@ export default function ClientDashboardPage() {
             setLoadingStaff(false);
         });
         
-        setLoadingBranches(true);
-        const branchesQuery = query(collection(db, "branches"));
-        const branchesUnsubscribe = onSnapshot(branchesQuery, (snapshot) => {
-            const branchesData: Branch[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Branch));
-            setBranches(branchesData);
-            setLoadingBranches(false);
-        });
 
         return () => {
             bookingsUnsubscribe();
@@ -401,7 +392,6 @@ export default function ClientDashboardPage() {
             customersUnsubscribe();
             agentsUnsubscribe();
             staffUnsubscribe();
-            branchesUnsubscribe();
         };
     }
 }, [loggedInUser]);
@@ -803,7 +793,6 @@ export default function ClientDashboardPage() {
     const allMenuItems = [
         { name: "Dashboard", view: "dashboard" },
         { name: "Customers", view: "customers", action: () => setBookingDialogOpen(true) },
-        { name: "CASA Branches", view: "branches"},
       ];
     
     const filteredMenuItems = loggedInUser?.agentName 
@@ -1551,49 +1540,6 @@ export default function ClientDashboardPage() {
                 </Card>
             </TabsContent>
             
-            <TabsContent value="branches">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline text-3xl text-primary">Our Branches</CardTitle>
-                        <CardDescription>Find a CASA Motor Valuers & Assessors branch near you.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Branch Name</TableHead>
-                                    <TableHead>Location</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loadingBranches ? (
-                                     Array.from({ length: 3 }).map((_, index) => (
-                                      <TableRow key={index}>
-                                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                                      </TableRow>
-                                     ))
-                                ) : branches.length > 0 ? (
-                                    branches.map((branch) => (
-                                        <TableRow key={branch.id}>
-                                            <TableCell className="font-medium flex items-center gap-3">
-                                                <Building2 className="h-5 w-5 text-primary" />
-                                                {branch.name}
-                                            </TableCell>
-                                            <TableCell>{branch.location}</TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={2} className="text-center h-24">No branches found.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            
             <TabsContent value="all-bookings">
                 {renderBookingsTable(filteredBookings, "All Bookings", "A complete list of all your bookings.", currentPage, setCurrentPage)}
             </TabsContent>
@@ -1661,3 +1607,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
