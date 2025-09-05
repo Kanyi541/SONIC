@@ -279,9 +279,10 @@ function AdminDashboard() {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const bookingsData = data as Booking[];
-            setBookings(bookingsData);
+            const sortedBookings = bookingsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+            setBookings(sortedBookings);
             if(activeView === 'dashboard') {
-              generateChartData(bookingsData);
+              generateChartData(sortedBookings);
             }
             setLoading(false);
         }, (error) => {
@@ -1555,7 +1556,7 @@ function AdminDashboard() {
                  <Card>
                     <CardHeader>
                         <CardTitle>Notifications</CardTitle>
-                        <CardDescription>Configure email and in-app notification preferences.</CardDescription>
+                        <CardDescription>Configure email and in-app notification preferences.</CardHeader>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">
@@ -1668,3 +1669,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
