@@ -75,13 +75,6 @@ type ChartDataPoint = {
 };
 
 const valuationSchema = z.object({
-  assessmentDate: z.date({
-    required_error: "A date of assessment is required.",
-  }),
-  assessmentValue: z.string().min(1, "Assessment value is required"),
-  forcedValue: z.string().min(1, "Forced value is required"),
-  wsValue: z.string().min(1, "WS value is required"),
-  rsValue: z.string().min(1, "RS value is required"),
   images: z.array(z.string().url()).min(1, "At least one image is required."),
   comments: z.string().optional(),
 });
@@ -113,10 +106,6 @@ export default function ValuerDashboardPage() {
     const form = useForm<ValuationFormValues>({
         resolver: zodResolver(valuationSchema),
         defaultValues: {
-            assessmentValue: "",
-            forcedValue: "",
-            wsValue: "",
-            rsValue: "",
             images: [],
             comments: "",
         }
@@ -233,11 +222,6 @@ export default function ValuerDashboardPage() {
         try {
             await addDoc(collection(db, "valuations"), {
                 bookingId: selectedBooking.id,
-                assessmentDate: data.assessmentDate,
-                assessmentValue: data.assessmentValue,
-                forcedValue: data.forcedValue,
-                wsValue: data.wsValue,
-                rsValue: data.rsValue,
                 imageUrls: imageDataUrls,
                 comments: data.comments,
                 valuedBy: loggedInUser.name,
@@ -530,7 +514,7 @@ export default function ValuerDashboardPage() {
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
                         <DialogContent className="sm:max-w-2xl grid-rows-[auto_1fr_auto] max-h-[90vh]">
                             <DialogHeader>
-                                <DialogTitle>Submit Valuation Report</DialogTitle>
+                                <DialogTitle>Valuation Form</DialogTitle>
                                 <DialogDescription>
                                     Fill in the details below for booking #{selectedBooking?.bookingNumber}.
                                 </DialogDescription>
@@ -545,94 +529,7 @@ export default function ValuerDashboardPage() {
                                         <div><Label>Plate Number</Label><Input value={selectedBooking?.plateNumber} disabled /></div>
                                         <div><Label>Booking Number</Label><Input value={selectedBooking?.bookingNumber} disabled /></div>
                                     </div>
-                                    
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                         <FormField
-                                            control={form.control}
-                                            name="assessmentDate"
-                                            render={({ field }) => (
-                                                <FormItem className="flex flex-col">
-                                                <FormLabel>Date of Assessment</FormLabel>
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                        variant={"outline"}
-                                                        className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                                                        >
-                                                        {field.value ? (
-                                                            format(field.value, "PPP")
-                                                        ) : (
-                                                            <span>Pick a date</span>
-                                                        )}
-                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={field.value}
-                                                        onSelect={field.onChange}
-                                                        disabled={(date) => date < subDays(new Date(), 1)}
-                                                        initialFocus
-                                                    />
-                                                    </PopoverContent>
-                                                </Popover>
-                                                <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                         <FormField
-                                            control={form.control}
-                                            name="assessmentValue"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Assessment Value (KES)</FormLabel>
-                                                    <FormControl><Input placeholder="e.g. 1,500,000" {...field} /></FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="forcedValue"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Forced Sale Value (KES)</FormLabel>
-                                                    <FormControl><Input placeholder="e.g. 1,200,000" {...field} /></FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="wsValue"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Noted Value: WS (KES)</FormLabel>
-                                                    <FormControl><Input placeholder="e.g. 20,000" {...field} /></FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                       <FormField
-                                            control={form.control}
-                                            name="rsValue"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Noted Value: RS (KES)</FormLabel>
-                                                    <FormControl><Input placeholder="e.g. 15,000" {...field} /></FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                    
+
                                      <FormField
                                         control={form.control}
                                         name="comments"
