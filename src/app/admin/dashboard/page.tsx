@@ -1183,7 +1183,7 @@ function AdminDashboard() {
                         colorClass="bg-purple-500"
                     />
                     <StatCard 
-                        title="New Requests" 
+                        title="Pending Approval" 
                         value={stats.pendingApproval} 
                         icon={<FileSignature className="h-6 w-6 text-yellow-500" />} 
                         onClick={() => setActiveView('new-bookings')}
@@ -1538,3 +1538,4 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
