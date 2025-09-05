@@ -1570,5 +1570,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    
