@@ -51,6 +51,8 @@ const getIconForView = (view: string) => {
             return <UserCog />;
         case 'staff':
             return <Briefcase />;
+        case 'new-booking':
+            return <PlusCircle />
         case 'pending-approval':
             return <Hourglass />;
         case 'pending-bookings':
@@ -100,8 +102,8 @@ export default function UnifiedDashboardLayout({
     
     const isValuerDashboard = userRole !== "Admin" && !menuItems.some(item => item.view === 'customers');
 
-    const sidebarPanelTitle = userRole.includes('Panel -')
-        ? userRole
+    const sidebarPanelTitle = userRole.includes(' - ')
+        ? userRole.split(' - ')[0] + ' Panel'
         : `${userRole} Panel`;
 
     const handleMenuItemClick = (item: MenuItem) => {
@@ -204,3 +206,5 @@ export default function UnifiedDashboardLayout({
         </SidebarProvider>
     );
 }
+
+    

@@ -237,19 +237,42 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
     const onSubmit = async (data: UserLoginFormValues) => {
         setIsLoading(true);
         try {
-            // Check in insurers collection (for main client/institution)
             const insurersRef = collection(db, "insurers");
+
+            // Check in insurers collection (for main client/institution AND agents)
             const qInsurers = query(insurersRef, where("username", "==", data.username));
             const insurerSnapshot = await getDocs(qInsurers);
 
             if (!insurerSnapshot.empty) {
-                const insurerDoc = insurerSnapshot.docs[0];
-                const insurerData = insurerDoc.data();
+                const userDoc = insurerSnapshot.docs[0];
+                const userData = userDoc.data();
 
-                if (insurerData.password === data.password && insurerData.active) {
-                    sessionStorage.setItem('loggedInUser', JSON.stringify({ name: insurerData.name, username: insurerData.username, email: insurerData.email, role: 'Client' }));
-                    router.push('/client/dashboard');
-                    toast({ title: "Client Login Successful", description: `Welcome back, ${insurerData.name}!` });
+                if (userData.password === data.password && userData.active) {
+                    if (userData.role === 'Agent') {
+                        // This is an Agent
+                        const clientQuery = query(insurersRef, where("username", "==", userData.clientId));
+                        const clientSnapshot = await getDocs(clientQuery);
+
+                        if (!clientSnapshot.empty) {
+                            const clientData = clientSnapshot.docs[0].data();
+                            sessionStorage.setItem('loggedInUser', JSON.stringify({ 
+                                name: clientData.name,
+                                username: clientData.username, 
+                                email: clientData.email,
+                                role: 'Client',
+                                agentName: userData.name // Agent's own name
+                            }));
+                            router.push('/client/dashboard');
+                            toast({ title: "Agent Login Successful", description: `Welcome back, ${userData.name}!` });
+                        } else {
+                            throw new Error("Could not find parent institution for agent.");
+                        }
+                    } else {
+                        // This is a main Client/Institution
+                        sessionStorage.setItem('loggedInUser', JSON.stringify({ name: userData.name, username: userData.username, email: userData.email, role: 'Client' }));
+                        router.push('/client/dashboard');
+                        toast({ title: "Client Login Successful", description: `Welcome back, ${userData.name}!` });
+                    }
                     setIsLoading(false);
                     return;
                 }
@@ -272,11 +295,11 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                     if (!clientSnapshot.empty) {
                         const clientData = clientSnapshot.docs[0].data();
                         sessionStorage.setItem('loggedInUser', JSON.stringify({ 
-                            name: clientData.name,
-                            username: clientData.username, 
-                            email: clientData.email,
+                            name: clientData.name, // Institution name
+                            username: clientData.username, // Institution username
+                            email: clientData.email, // Institution email
                             role: 'Client',
-                            agentName: staffData.name // Using agentName to display staff's name
+                            agentName: staffData.name // Staff's own name
                         }));
                         router.push('/client/dashboard');
                         toast({ title: "Staff Login Successful", description: `Welcome back, ${staffData.name}!` });
@@ -286,36 +309,6 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                 }
             }
             
-            // If not found in staff, check in agents (who are also in insurers collection)
-            const qAgents = query(insurersRef, where("username", "==", data.username), where("role", "==", "Agent"));
-            const agentSnapshot = await getDocs(qAgents);
-
-            if (!agentSnapshot.empty) {
-                const agentDoc = agentSnapshot.docs[0];
-                const agentData = agentDoc.data();
-
-                if (agentData.password === data.password && agentData.active) {
-                    // Find the client this agent belongs to
-                    const clientQuery = query(insurersRef, where("username", "==", agentData.clientId));
-                    const clientSnapshot = await getDocs(clientQuery);
-
-                    if (!clientSnapshot.empty) {
-                        const clientData = clientSnapshot.docs[0].data();
-                        sessionStorage.setItem('loggedInUser', JSON.stringify({ 
-                            name: clientData.name,
-                            username: clientData.username, 
-                            email: clientData.email,
-                            role: 'Client',
-                            agentName: agentData.name 
-                        }));
-                        router.push('/client/dashboard');
-                        toast({ title: "Agent Login Successful", description: `Welcome back, ${agentData.name}!` });
-                        setIsLoading(false);
-                        return;
-                    }
-                }
-            }
-
             // If no user is found or password doesn't match
             toast({
                 variant: "destructive",
@@ -558,7 +551,7 @@ export default function LoginTabs() {
   }
 
   return (
-    <Tabs defaultValue="Admin" className="w-full">
+    <Tabs defaultValue="Client" className="w-full">
       <TabsList className="grid w-full grid-cols-3 h-auto sm:h-10 bg-black/20 text-white">
         {roles.map((role) => (
           <TabsTrigger key={role} value={role} className="data-[state=active]:bg-primary/80 data-[state=active]:text-black">{role}</TabsTrigger>
@@ -572,6 +565,5 @@ export default function LoginTabs() {
     </Tabs>
   );
 }
-
 
     
