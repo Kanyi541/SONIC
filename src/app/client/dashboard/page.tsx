@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight, KeyRound } from "lucide-react";
@@ -417,6 +417,7 @@ export default function ClientDashboardPage() {
           await addDoc(collection(db, "customers"), {
               ...data,
               insurerId: loggedInUser.username,
+              createdAt: serverTimestamp()
           });
           toast({ title: "Customer Added", description: `${data.name} has been successfully registered.` });
           setCustomerDialogOpen(false);
@@ -434,7 +435,8 @@ export default function ClientDashboardPage() {
             ...data,
             clientId: loggedInUser.username,
             role: 'Agent',
-            active: true
+            active: true,
+            createdAt: serverTimestamp()
         });
         toast({ title: "Agent Added", description: `${data.name} has been successfully registered.` });
         setAgentDialogOpen(false);
@@ -466,6 +468,7 @@ export default function ClientDashboardPage() {
         await addDoc(collection(db, "staff"), {
             ...data,
             clientId: loggedInUser.username,
+            createdAt: serverTimestamp()
         });
         toast({ title: "Staff Added", description: `${data.name} has been successfully registered.` });
         setStaffDialogOpen(false);
@@ -476,7 +479,7 @@ export default function ClientDashboardPage() {
     }
   };
   
-  const handleDeleteUser = async (userId: string, collectionName: 'insurers' | 'staff') => {
+  const handleDeleteUser = async (userId: string, collectionName: 'insurers' | 'staff' | 'customers') => {
     try {
         await deleteDoc(doc(db, collectionName, userId));
         toast({ title: "User Deleted", description: `The user has been successfully removed.` });
@@ -670,7 +673,6 @@ export default function ClientDashboardPage() {
                                         <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
                                         <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
                                         <TableHead>Customer Name</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Institution</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead className="hidden xl:table-cell">Assessment Value (KES)</TableHead>
                                         <TableHead className="hidden xl:table-cell">Forced Value (KES)</TableHead>
@@ -701,7 +703,6 @@ export default function ClientDashboardPage() {
                                           <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                           <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                           <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                          <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                                           <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                                           <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                           <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
@@ -732,7 +733,6 @@ export default function ClientDashboardPage() {
                                                 <TableCell className="font-mono text-xs hidden sm:table-cell">{booking.bookingNumber}</TableCell>
                                                 <TableCell className="hidden md:table-cell">{booking.valuation?.assessmentDate ? new Date(booking.valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</TableCell>
                                                 <TableCell>{booking.customerName}</TableCell>
-                                                <TableCell className="hidden sm:table-cell">{booking.insurerName}</TableCell>
                                                 <TableCell>
                                                   <Badge variant={getStatusVariant(booking.status || 'Unknown')}>
                                                     {booking.status}
@@ -768,7 +768,7 @@ export default function ClientDashboardPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={isAllCarsView ? 12 : 7} className="text-center h-24">
+                                    <TableCell colSpan={isAllCarsView ? 11 : 7} className="text-center h-24">
                                         No bookings found.
                                     </TableCell>
                                 </TableRow>
@@ -792,20 +792,23 @@ export default function ClientDashboardPage() {
     };
 
       const userDisplayRole = loggedInUser?.agentName
-      ? `${loggedInUser.agentName} Panel - ${loggedInUser.name}`
+      ? `${loggedInUser.name} - ${loggedInUser.agentName}`
       : loggedInUser?.name || "Client";
     
     const allMenuItems = [
         { name: "Dashboard", view: "dashboard" },
-        { name: "Customers", view: "customers", action: () => setBookingDialogOpen(true) },
+        { name: "New Booking", view: "new-booking", action: () => setBookingDialogOpen(true) },
+        { name: "Customers", view: "customers" },
+        { name: "Agents", view: "agents" },
+        { name: "Staff", view: "staff" },
       ];
     
     const filteredMenuItems = loggedInUser?.agentName 
         ? allMenuItems.filter(item => item.view !== 'agents' && item.view !== 'staff') 
         : allMenuItems;
 
-    const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick: () => void, progress: number, colorClass: string }) => (
-      <Card onClick={onClick} className="cursor-pointer hover:bg-muted transition-colors p-4 flex flex-col justify-between">
+    const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
+      <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
           <div className="flex items-start justify-between">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-muted`}>
                   {icon}
@@ -1058,7 +1061,7 @@ export default function ClientDashboardPage() {
                             title="Staff" 
                             value={stats.totalStaff} 
                             icon={<Briefcase className="h-6 w-6 text-blue-500" />} 
-                            onClick={() => setActiveView('staff')}
+                            onClick={!loggedInUser?.agentName ? () => setActiveView('staff') : undefined}
                             progress={100}
                             colorClass="bg-blue-500"
                         />
@@ -1066,7 +1069,7 @@ export default function ClientDashboardPage() {
                             title="Agents" 
                             value={stats.totalAgents} 
                             icon={<UserCog className="h-6 w-6 text-indigo-500" />} 
-                            onClick={() => setActiveView('agents')}
+                            onClick={!loggedInUser?.agentName ? () => setActiveView('agents') : undefined}
                             progress={100}
                             colorClass="bg-indigo-500"
                         />
@@ -1615,7 +1618,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
-
-    

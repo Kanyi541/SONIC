@@ -103,20 +103,10 @@ export default function UnifiedDashboardLayout({
     const isValuerDashboard = userRole !== "Admin" && !menuItems.some(item => item.view === 'customers');
 
     const sidebarPanelTitle = userRole.includes(' - ')
-        ? userRole.split(' - ')[0] + ' Panel'
-        : `${userRole} Panel`;
+      ? userRole.split(' - ')[0] + ' Panel'
+      : `${userRole} Panel`;
 
     const handleMenuItemClick = (item: MenuItem) => {
-        const restrictedViews = ['agents', 'staff'];
-        if (isAgent && restrictedViews.includes(item.view)) {
-            toast({
-                variant: 'destructive',
-                title: 'Access Denied',
-                description: 'You do not have the rights to open this page.',
-            });
-            return;
-        }
-
         if (item.action) {
             item.action();
         } else {
@@ -206,5 +196,3 @@ export default function UnifiedDashboardLayout({
         </SidebarProvider>
     );
 }
-
-    
