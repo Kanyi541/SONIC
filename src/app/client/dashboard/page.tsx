@@ -232,7 +232,6 @@ export default function ClientDashboardPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [loadingAgents, setLoadingAgents] = useState(true);
   const [loadingStaff, setLoadingStaff] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
@@ -361,14 +360,6 @@ export default function ClientDashboardPage() {
             const valuationsData: Valuation[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Valuation));
             setValuations(valuationsData);
         });
-
-        setLoadingCustomers(true);
-        const customersQuery = query(collection(db, "customers"), where("insurerId", "==", loggedInUser.username));
-        const customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
-            const customersData: Customer[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
-            setCustomers(customersData);
-            setLoadingCustomers(false);
-        });
         
         setLoadingAgents(true);
         const agentsQuery = query(
@@ -394,7 +385,6 @@ export default function ClientDashboardPage() {
         return () => {
             bookingsUnsubscribe();
             valuationsUnsubscribe();
-            customersUnsubscribe();
             agentsUnsubscribe();
             staffUnsubscribe();
         };
@@ -797,7 +787,7 @@ export default function ClientDashboardPage() {
     
     const allMenuItems = [
         { name: "Dashboard", view: "dashboard" },
-        { name: "New Booking", view: "new-booking", action: () => setBookingDialogOpen(true) },
+        { name: "Customers", view: "customers", action: () => setBookingDialogOpen(true) },
         { name: "Agents", view: "agents" },
         { name: "Staff", view: "staff" },
       ];
@@ -1407,7 +1397,7 @@ export default function ClientDashboardPage() {
                 {renderBookingsTable(getFilteredBookingsByStatus("Pending Approval"), "New Requests", "Bookings that have been created and are awaiting approval.", currentPage, setCurrentPage)}
             </TabsContent>
             <TabsContent value="pending-valuation-bookings">
-                {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Pending Valuation", "Bookings assigned to a valuer and awaiting their report.", currentPage, setCurrentPage)}
+                {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Bookings assigned to a valuer and awaiting their report.", currentPage, setCurrentPage)}
             </TabsContent>
             <TabsContent value="completed-bookings">
                 {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "Approved Bookings", "All bookings that have been fully completed and approved.", currentPage, setCurrentPage)}
