@@ -155,7 +155,7 @@ export default function ValuerDashboardPage() {
             const bookingsQuery = query(
                 collection(db, "bookings"),
                 where("assignedValuerId", "==", loggedInUser.username),
-                where("status", "in", ["Pending Valuation", "Completed", "Rejected"])
+                where("status", "in", ["Pending Valuation", "Completed", "Rejected", "Valuated"])
             );
 
             const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
@@ -226,17 +226,17 @@ export default function ValuerDashboardPage() {
                 comments: data.comments,
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
-                status: "Completed",
+                status: "Pending Approval", 
             });
     
             const bookingDocRef = doc(db, "bookings", selectedBooking.id);
             await updateDoc(bookingDocRef, {
-                status: "Completed"
+                status: "Valuated"
             });
     
             toast({
                 title: "Valuation Submitted",
-                description: `Report for ${selectedBooking.bookingNumber} has been submitted successfully.`,
+                description: `Report for ${selectedBooking.bookingNumber} has been submitted for admin approval.`,
             });
             
             setValuationDialogOpen(false);
@@ -268,6 +268,7 @@ export default function ValuerDashboardPage() {
             case "Pending": return "secondary";
             case "Pending Valuation": return "outline";
             case "Pending Approval": return "outline";
+            case "Valuated": return "secondary";
             case "Completed": return "default";
             case "Rejected": return "destructive";
             default: return "default";
@@ -292,6 +293,7 @@ export default function ValuerDashboardPage() {
     const pendingValuationBookings = getFilteredBookingsByStatus('Pending Valuation');
     const rejectedBookings = getFilteredBookingsByStatus('Rejected');
     const completedBookings = getFilteredBookingsByStatus('Completed');
+    const valuatedBookings = getFilteredBookingsByStatus('Valuated');
 
 
     const stats = {
@@ -299,6 +301,7 @@ export default function ValuerDashboardPage() {
         pendingValuation: pendingValuationBookings.length,
         completed: completedBookings.length,
         rejected: rejectedBookings.length,
+        valuated: valuatedBookings.length,
     };
     
     const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
@@ -617,5 +620,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
-    

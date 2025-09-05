@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
@@ -5,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
@@ -50,6 +51,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -61,6 +63,8 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate, isToday }
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress"
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 
 interface Institution {
@@ -143,6 +147,15 @@ type ChartDataPoint = {
     Rejected: number;
 };
 
+const adminValuationSchema = z.object({
+  assessmentValue: z.string().min(1, "Assessment value is required."),
+  forcedValue: z.string().min(1, "Forced sale value is required."),
+  wsValue: z.string().min(1, "WS value is required."),
+  rsValue: z.string().min(1, "RS value is required."),
+});
+
+type AdminValuationFormValues = z.infer<typeof adminValuationSchema>;
+
 
 function AdminDashboard() {
   const { user } = useAuth();
@@ -168,6 +181,7 @@ function AdminDashboard() {
   
   const [isAssignDialogOpen, setAssignDialogOpen] = useState(false);
   const [isRejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [isCompleteValuationOpen, setCompleteValuationOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
   const [selectedValuerId, setSelectedValuerId] = useState<string>("");
@@ -182,6 +196,12 @@ function AdminDashboard() {
   const [newBookingsPage, setNewBookingsPage] = useState(1);
   const [rejectedBookingsPage, setRejectedBookingsPage] = useState(1);
   const [recentValuationsPage, setRecentValuationsPage] = useState(1);
+  const [valuatedBookingsPage, setValuatedBookingsPage] = useState(1);
+
+  const adminValuationForm = useForm<AdminValuationFormValues>({
+    resolver: zodResolver(adminValuationSchema),
+    defaultValues: { assessmentValue: "", forcedValue: "", wsValue: "", rsValue: "" },
+  });
   
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -219,7 +239,6 @@ function AdminDashboard() {
     setLoading(true);
     const subscriptions: (() => void)[] = [];
 
-    // Subscription for notifications (latest 5 pending bookings)
     const notifQuery = query(collection(db, "bookings"), where("status", "==", "Pending Approval"));
     const notifUnsubscribe = onSnapshot(notifQuery, (snapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Booking }));
@@ -262,7 +281,7 @@ function AdminDashboard() {
     subscribeToCollection("staff", setStaff, ["staff", "dashboard"]);
     subscribeToCollection("branches", setBranches, ["branches", "dashboard"]);
     
-    if (['dashboard', 'valuations', 'pending-valuation'].includes(activeView)) {
+    if (['dashboard', 'valuations', 'pending-valuation', 'valuated-bookings'].includes(activeView)) {
         const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"));
         const valUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
@@ -271,13 +290,13 @@ function AdminDashboard() {
         subscriptions.push(valUnsubscribe);
     }
     
-    const bookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
-    const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings', 'pending-valuation'];
+    const bookingsQuery = query(collection(db, "bookings"));
+    const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings', 'pending-valuation', 'valuated-bookings'];
 
     if (requiredBookingViews.includes(activeView) || activeView === 'dashboard') {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const bookingsData = data as Booking[];
+            let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const bookingsData = data.sort((a,b) => b.createdAt.toMillis() - a.createdAt.toMillis()) as Booking[];
             setBookings(bookingsData);
             if(activeView === 'dashboard') {
               generateChartData(bookingsData);
@@ -458,7 +477,6 @@ function AdminDashboard() {
         return;
     }
 
-    // Check valuer's daily limit
     const todaysAssignments = bookings.filter(b => 
         b.assignedValuerId === selectedValuer.username && 
         b.assignmentDate && 
@@ -508,6 +526,43 @@ function AdminDashboard() {
       }
   };
   
+    const handleCompleteValuation = async (data: AdminValuationFormValues) => {
+        if (!selectedBookingForAction) return;
+
+        try {
+            const q = query(collection(db, "valuations"), where("bookingId", "==", selectedBookingForAction.id));
+            const valuationSnapshot = await getDocs(q);
+
+            if (valuationSnapshot.empty) {
+                toast({ variant: "destructive", title: "Error", description: "No initial valuation found for this booking." });
+                return;
+            }
+
+            const valuationDoc = valuationSnapshot.docs[0];
+            const valuationRef = doc(db, "valuations", valuationDoc.id);
+
+            await updateDoc(valuationRef, {
+                ...data,
+                assessmentDate: serverTimestamp(),
+                status: "Approved",
+            });
+
+            const bookingRef = doc(db, "bookings", selectedBookingForAction.id);
+            await updateDoc(bookingRef, {
+                status: "Completed",
+            });
+
+            toast({ title: "Valuation Completed", description: "The valuation has been finalized." });
+            setCompleteValuationOpen(false);
+            setSelectedBookingForAction(null);
+            adminValuationForm.reset();
+
+        } catch (error) {
+            console.error("Error completing valuation:", error);
+            toast({ variant: "destructive", title: "Error", description: "Failed to complete valuation." });
+        }
+    };
+
   const openAssignDialog = (booking: Booking) => {
     setSelectedBookingForAction(booking);
     setAssignDialogOpen(true);
@@ -517,22 +572,22 @@ function AdminDashboard() {
     setAssignDialogOpen(false);
     setRejectDialogOpen(true);
   }
+  
+  const openCompleteValuationDialog = (booking: Booking) => {
+    setSelectedBookingForAction(booking);
+    setCompleteValuationOpen(true);
+  };
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-      case "Pending":
-        return "secondary";
-       case "Pending Valuation":
-        return "outline";
-      case "Pending Approval":
-        return "outline";
+      case "Pending": return "secondary";
+       case "Pending Valuation": return "outline";
+      case "Pending Approval": return "outline";
+      case "Valuated": return "secondary";
       case "Completed":
-      case "Approved":
-        return "default";
-      case "Rejected":
-        return "destructive";
-      default:
-        return "outline";
+      case "Approved": return "default";
+      case "Rejected": return "destructive";
+      default: return "outline";
     }
   };
   
@@ -546,6 +601,7 @@ function AdminDashboard() {
       rejected: bookings.filter(b => b.status === 'Rejected').length,
       pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
       pendingValuation: bookings.filter(b => b.status === 'Pending Valuation').length,
+      valuated: bookings.filter(b => b.status === 'Valuated').length,
   };
     
   const recentValuations = valuations.map(v => ({
@@ -1080,6 +1136,92 @@ function AdminDashboard() {
       </CardContent>
     </Card>
   )};
+  
+  const renderValuatedTable = (
+    bookingsData: Booking[],
+    title: string,
+    description: string,
+    currentPage: number,
+    setCurrentPage: (page: number) => void
+  ) => {
+    const totalPages = Math.ceil(bookingsData.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = bookingsData.slice(startIndex, startIndex + itemsPerPage);
+
+    return (
+     <Card className="shadow-lg border-primary/20">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
+              <CardDescription>{description}</CardDescription>
+            </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="font-semibold w-[50px]">No.</TableHead>
+              <TableHead className="font-semibold">Booking No.</TableHead>
+              <TableHead className="font-semibold hidden sm:table-cell">Valued By</TableHead>
+              <TableHead className="font-semibold text-left">Status</TableHead>
+              <TableHead className="text-right font-semibold">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              Array.from({ length: itemsPerPage }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-40 ml-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : paginatedData.length > 0 ? (
+                paginatedData.map((booking, index) => (
+                    <TableRow key={booking.id}>
+                    <TableCell>{startIndex + index + 1}</TableCell>
+                    <TableCell className="font-mono text-xs truncate">{booking?.bookingNumber}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                        <Badge variant="secondary">{booking.assignedValuerName}</Badge>
+                    </TableCell>
+                    <TableCell>
+                        <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Button variant="default" size="sm" onClick={() => openCompleteValuationDialog(booking)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Complete Valuation
+                        </Button>
+                    </TableCell>
+                    </TableRow>
+                ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center h-24">
+                  No bookings to complete.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <div className="flex justify-end items-center gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+            </Button>
+            <span className="text-sm">Page {currentPage} of {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                Next
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )};
 
   const renderRejectedBookingsTable = (
     bookingsData: Booking[],
@@ -1322,12 +1464,12 @@ function AdminDashboard() {
                         colorClass="bg-orange-500"
                     />
                     <StatCard 
-                        title="Valued Cars" 
-                        value={stats.totalValuations} 
-                        icon={<FileSpreadsheet className="h-6 w-6 text-purple-500" />} 
-                        onClick={() => setActiveView('valuations')}
-                        progress={stats.totalCars > 0 ? (stats.totalValuations / stats.totalCars) * 100 : 0}
-                        colorClass="bg-purple-500"
+                        title="Valuated" 
+                        value={stats.valuated} 
+                        icon={<FileCheck className="h-6 w-6 text-blue-500" />}
+                        onClick={() => setActiveView('valuated-bookings')}
+                        progress={stats.totalCars > 0 ? (stats.valuated / stats.totalCars) * 100 : 0}
+                        colorClass="bg-blue-500"
                     />
                     <StatCard 
                         title="Approved" 
@@ -1524,6 +1666,8 @@ function AdminDashboard() {
             {activeView === 'new-bookings' && renderNewBookingsTable(bookings.filter(b => b.status === 'Pending Approval'), "New Bookings", "Review and approve or reject new bookings.", newBookingsPage, setNewBookingsPage)}
 
             {activeView === 'pending-valuation' && renderPendingValuationTable(bookings.filter(b => b.status === 'Pending Valuation'), "Pending Valuations", "Bookings assigned to a valuer and awaiting their report.", pendingValuationPage, setPendingValuationPage)}
+            
+            {activeView === 'valuated-bookings' && renderValuatedTable(bookings.filter(b => b.status === 'Valuated'), "Valuated Bookings", "Bookings that have been valuated and are awaiting final approval.", valuatedBookingsPage, setValuatedBookingsPage)}
 
             {activeView === 'rejected-bookings' && renderRejectedBookingsTable(bookings.filter(b => b.status === 'Rejected'), "Rejected Bookings", "View all rejected bookings.", rejectedBookingsPage, setRejectedBookingsPage)}
 
@@ -1656,6 +1800,78 @@ function AdminDashboard() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <Dialog open={isCompleteValuationOpen} onOpenChange={setCompleteValuationOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Complete Valuation for #{selectedBookingForAction?.bookingNumber}</DialogTitle>
+                    <DialogDescription>Enter the final valuation details below.</DialogDescription>
+                </DialogHeader>
+                <Form {...adminValuationForm}>
+                    <form onSubmit={adminValuationForm.handleSubmit(handleCompleteValuation)} className="space-y-4">
+                        <FormField
+                            control={adminValuationForm.control}
+                            name="assessmentValue"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Assessment Value (KES)</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g., 1,500,000" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={adminValuationForm.control}
+                            name="forcedValue"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Forced Sale Value (KES)</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g., 1,200,000" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={adminValuationForm.control}
+                            name="wsValue"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Noted Value: WS (KES)</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g., 20,000" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={adminValuationForm.control}
+                            name="rsValue"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Noted Value: RS (KES)</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g., 25,000" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setCompleteValuationOpen(false)}>Cancel</Button>
+                            <Button type="submit" disabled={adminValuationForm.formState.isSubmitting}>
+                                {adminValuationForm.formState.isSubmitting ? "Saving..." : "Save & Complete"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+
     </SidebarProvider>
   );
 }
