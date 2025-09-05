@@ -163,7 +163,12 @@ export default function ValuerDashboardPage() {
     useEffect(() => {
         if (loggedInUser) {
             setLoading(true);
-            const bookingsQuery = query(collection(db, "bookings"), where("status", "in", ["Pending Valuation", "Completed", "Rejected"]));
+            const bookingsQuery = query(
+                collection(db, "bookings"),
+                where("assignedValuerId", "==", loggedInUser.username),
+                where("status", "in", ["Pending Valuation", "Completed", "Rejected"])
+            );
+
             const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
                 const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Booking }));
                 setBookings(bookingsData);
@@ -176,7 +181,7 @@ export default function ValuerDashboardPage() {
                 setValuations(valuationsData);
                 setLoading(false);
             }, (error) => {
-                 console.error("Error fetching bookings:", error);
+                 console.error("Error fetching valuations:", error);
                  setLoading(false);
             });
 
