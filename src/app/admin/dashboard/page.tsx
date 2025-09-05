@@ -179,6 +179,7 @@ function AdminDashboard() {
   const [staffPage, setStaffPage] = useState(1);
   const [branchesPage, setBranchesPage] = useState(1);
   const [valuationsPage, setValuationsPage] = useState(1);
+  const [pendingValuationPage, setPendingValuationPage] = useState(1);
   const [newBookingsPage, setNewBookingsPage] = useState(1);
   const [rejectedBookingsPage, setRejectedBookingsPage] = useState(1);
   const [recentValuationsPage, setRecentValuationsPage] = useState(1);
@@ -984,6 +985,101 @@ function AdminDashboard() {
     </Card>
   )};
 
+    const renderPendingValuationTable = (
+    bookingsData: Booking[],
+    title: string,
+    description: string,
+    currentPage: number,
+    setCurrentPage: (page: number) => void
+  ) => {
+    const totalPages = Math.ceil(bookingsData.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = bookingsData.slice(startIndex, startIndex + itemsPerPage);
+
+    return (
+     <Card className="shadow-lg border-primary/20">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
+              <CardDescription>{description}</CardDescription>
+            </div>
+            <div className="relative w-full max-w-sm">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Search bookings..."
+                    className="w-full rounded-lg bg-background pl-8"
+                    value={bookingSearchTerm}
+                    onChange={(e) => setBookingSearchTerm(e.target.value)}
+                />
+            </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="font-semibold w-[50px]">No.</TableHead>
+              <TableHead className="font-semibold">Booking No.</TableHead>
+              <TableHead className="font-semibold hidden md:table-cell">Customer</TableHead>
+              <TableHead className="font-semibold hidden lg:table-cell">Client</TableHead>
+              <TableHead className="font-semibold hidden sm:table-cell">Vehicle</TableHead>
+              <TableHead className="font-semibold hidden md:table-cell">Plate No.</TableHead>
+              <TableHead className="font-semibold text-left">Assigned To</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              Array.from({ length: itemsPerPage }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
+                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                </TableRow>
+              ))
+            ) : paginatedData.length > 0 ? (
+                paginatedData.map((booking, index) => (
+                    <TableRow key={booking.id}>
+                    <TableCell>{startIndex + index + 1}</TableCell>
+                    <TableCell className="font-mono text-xs truncate">{booking?.bookingNumber}</TableCell>
+                    <TableCell className="font-medium hidden md:table-cell">{booking?.customerName}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{booking?.insurerName}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{booking?.carMake}</TableCell>
+                    <TableCell className="font-mono hidden md:table-cell">{booking?.plateNumber}</TableCell>
+                    <TableCell>
+                        <Badge variant="secondary">{booking.assignedValuerName}</Badge>
+                    </TableCell>
+                    </TableRow>
+                ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center h-24">
+                  No bookings pending valuation.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <div className="flex justify-end items-center gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+            </Button>
+            <span className="text-sm">Page {currentPage} of {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                Next
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )};
+
   const renderRejectedBookingsTable = (
     bookingsData: Booking[],
     title: string,
@@ -1426,7 +1522,7 @@ function AdminDashboard() {
             
             {activeView === 'new-bookings' && renderNewBookingsTable(bookings.filter(b => b.status === 'Pending Approval'), "New Bookings", "Review and approve or reject new bookings.", newBookingsPage, setNewBookingsPage)}
 
-            {activeView === 'pending-valuation' && renderValuationsTable(valuations.filter(v => v.booking?.status === 'Pending Valuation'), "Pending Valuations", "Bookings assigned to a valuer and awaiting their report.", valuationsPage, setValuationsPage)}
+            {activeView === 'pending-valuation' && renderPendingValuationTable(bookings.filter(b => b.status === 'Pending Valuation'), "Pending Valuations", "Bookings assigned to a valuer and awaiting their report.", pendingValuationPage, setPendingValuationPage)}
 
             {activeView === 'rejected-bookings' && renderRejectedBookingsTable(bookings.filter(b => b.status === 'Rejected'), "Rejected Bookings", "View all rejected bookings.", rejectedBookingsPage, setRejectedBookingsPage)}
 
