@@ -171,7 +171,7 @@ function AdminDashboard() {
   const [isRejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
-  const [selectedValuer, setSelectedValuer] = useState<string>("");
+  const [selectedValuerId, setSelectedValuerId] = useState<string>("");
 
   const [itemsPerPage] = useState(5);
   const [institutionsPage, setInstitutionsPage] = useState(1);
@@ -262,7 +262,7 @@ function AdminDashboard() {
     subscribeToCollection("staff", setStaff, ["staff", "dashboard"]);
     subscribeToCollection("branches", setBranches, ["branches", "dashboard"]);
     
-    if (['dashboard', 'valuations'].includes(activeView)) {
+    if (['dashboard', 'valuations', 'pending-valuation'].includes(activeView)) {
         const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"));
         const valUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
@@ -447,41 +447,45 @@ function AdminDashboard() {
   };
 
   const handleAssignmentAndApproval = async () => {
-      if (!selectedBookingForAction || !selectedValuer) {
-          toast({ variant: "destructive", title: "Validation Error", description: "A valuer must be selected." });
-          return;
-      }
-      
-      const valuerName = valuers.find(v => v.id === selectedValuer)?.name || "Unknown Valuer";
+    if (!selectedBookingForAction || !selectedValuerId) {
+        toast({ variant: "destructive", title: "Validation Error", description: "A valuer must be selected." });
+        return;
+    }
+    
+    const selectedValuer = valuers.find(v => v.id === selectedValuerId);
+    if (!selectedValuer) {
+        toast({ variant: "destructive", title: "Validation Error", description: "Selected valuer not found." });
+        return;
+    }
 
-      // Check valuer's daily limit
-      const todaysAssignments = bookings.filter(b => 
-          b.assignedValuerId === selectedValuer && 
-          b.assignmentDate && 
-          isToday(b.assignmentDate.toDate())
-      ).length;
+    // Check valuer's daily limit
+    const todaysAssignments = bookings.filter(b => 
+        b.assignedValuerId === selectedValuer.username && 
+        b.assignmentDate && 
+        isToday(b.assignmentDate.toDate())
+    ).length;
 
-      if (todaysAssignments >= 5) {
-           toast({ variant: "destructive", title: "Assignment Limit Reached", description: `${valuerName} already has 5 bookings assigned for today.` });
-           return;
-      }
+    if (todaysAssignments >= 5) {
+         toast({ variant: "destructive", title: "Assignment Limit Reached", description: `${selectedValuer.name} already has 5 bookings assigned for today.` });
+         return;
+    }
 
-      const bookingDocRef = doc(db, "bookings", selectedBookingForAction.id);
-      try {
-          await updateDoc(bookingDocRef, { 
-              status: "Pending Valuation",
-              assignedValuerId: selectedValuer,
-              assignedValuerName: valuerName,
-              assignmentDate: serverTimestamp()
-          });
-          toast({ title: "Booking Approved & Assigned", description: `Booking #${selectedBookingForAction.bookingNumber} assigned to ${valuerName}.` });
-          setAssignDialogOpen(false);
-          setSelectedBookingForAction(null);
-          setSelectedValuer("");
-      } catch (error) {
-          console.error("Error approving booking: ", error);
-          toast({ variant: "destructive", title: "Approval Failed", description: "Could not approve and assign booking." });
-      }
+    const bookingDocRef = doc(db, "bookings", selectedBookingForAction.id);
+    try {
+        await updateDoc(bookingDocRef, { 
+            status: "Pending Valuation",
+            assignedValuerId: selectedValuer.username,
+            assignedValuerName: selectedValuer.name,
+            assignmentDate: serverTimestamp()
+        });
+        toast({ title: "Booking Approved & Assigned", description: `Booking #${selectedBookingForAction.bookingNumber} assigned to ${selectedValuer.name}.` });
+        setAssignDialogOpen(false);
+        setSelectedBookingForAction(null);
+        setSelectedValuerId("");
+    } catch (error) {
+        console.error("Error approving booking: ", error);
+        toast({ variant: "destructive", title: "Approval Failed", description: "Could not approve and assign booking." });
+    }
   };
 
   const handleBookingRejection = async () => {
@@ -1453,7 +1457,7 @@ function AdminDashboard() {
                  <Card>
                     <CardHeader>
                         <CardTitle>Notifications</CardTitle>
-                        <CardDescription>Configure email and in-app notification preferences.</CardDescription>
+                        <CardDescription>Configure email and in-app notification preferences.</CardHeader>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">
@@ -1495,7 +1499,7 @@ function AdminDashboard() {
                     </div>
                      <div className="space-y-2 mt-4">
                         <Label htmlFor="valuer-select">Assign Valuer</Label>
-                        <Select value={selectedValuer} onValueChange={setSelectedValuer}>
+                        <Select value={selectedValuerId} onValueChange={setSelectedValuerId}>
                             <SelectTrigger id="valuer-select" className="w-full">
                                 <SelectValue placeholder="Select a valuer" />
                             </SelectTrigger>
@@ -1513,7 +1517,7 @@ function AdminDashboard() {
                     <Button variant="destructive" onClick={openRejectDialog}>Reject</Button>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                             <Button variant="default" disabled={!selectedValuer}>Approve & Assign</Button>
+                             <Button variant="default" disabled={!selectedValuerId}>Approve & Assign</Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
@@ -1566,5 +1570,7 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
 
     
