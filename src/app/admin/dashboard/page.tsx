@@ -1457,7 +1457,7 @@ function AdminDashboard() {
                  <Card>
                     <CardHeader>
                         <CardTitle>Notifications</CardTitle>
-                        <CardDescription>Configure email and in-app notification preferences.</CardHeader>
+                        <CardDescription>Configure email and in-app notification preferences.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">
@@ -1570,7 +1570,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    
 
     
