@@ -37,6 +37,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -51,7 +58,7 @@ import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid, PieChart, Pie, Cell } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate, isToday } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress"
@@ -109,6 +116,9 @@ interface Booking {
   status: string;
   insurerName?: string;
   rejectionReason?: string;
+  assignedValuerId?: string;
+  assignedValuerName?: string;
+  assignmentDate?: any;
 }
 
 interface Valuation {
@@ -157,10 +167,11 @@ function AdminDashboard() {
   const [bookingSearchTerm, setBookingSearchTerm] = useState('');
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   
-  const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [isAssignDialogOpen, setAssignDialogOpen] = useState(false);
   const [isRejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
+  const [selectedValuer, setSelectedValuer] = useState<string>("");
 
   const [itemsPerPage] = useState(5);
   const [institutionsPage, setInstitutionsPage] = useState(1);
@@ -224,7 +235,7 @@ function AdminDashboard() {
         setter: React.Dispatch<React.SetStateAction<any[]>>, 
         requiredViews: string[]
     ) => {
-        if (requiredViews.includes(activeView) || activeView === 'dashboard') {
+        if (requiredViews.includes(activeView) || activeView === 'dashboard' || activeView === 'new-bookings') {
             const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
             const unsubscribe = onSnapshot(q, (snapshot) => {
                 let data;
@@ -247,7 +258,7 @@ function AdminDashboard() {
     };
     
     subscribeToCollection("insurers", setInstitutions, ["institutions", "dashboard"]);
-    subscribeToCollection("valuers", setValuers, ["valuers", "dashboard"]);
+    subscribeToCollection("valuers", setValuers, ["valuers", "dashboard", "new-bookings"]);
     subscribeToCollection("staff", setStaff, ["staff", "dashboard"]);
     subscribeToCollection("branches", setBranches, ["branches", "dashboard"]);
     
@@ -261,7 +272,7 @@ function AdminDashboard() {
     }
     
     const bookingsQuery = query(collection(db, "bookings"));
-    const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings'];
+    const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings', 'pending-valuation'];
 
     if (requiredBookingViews.includes(activeView) || activeView === 'dashboard') {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
@@ -376,6 +387,7 @@ function AdminDashboard() {
             name,
             manager,
             location,
+            createdAt: serverTimestamp()
         });
         toast({ title: "Branch Added", description: `${name} has been successfully added.` });
         setAddBranchOpen(false);
@@ -434,17 +446,41 @@ function AdminDashboard() {
     window.open(url, '_blank');
   };
 
-  const handleBookingApproval = async (booking: Booking | null) => {
-      if (!booking) return;
-      const bookingDocRef = doc(db, "bookings", booking.id);
+  const handleAssignmentAndApproval = async () => {
+      if (!selectedBookingForAction || !selectedValuer) {
+          toast({ variant: "destructive", title: "Validation Error", description: "A valuer must be selected." });
+          return;
+      }
+      
+      const valuerName = valuers.find(v => v.id === selectedValuer)?.name || "Unknown Valuer";
+
+      // Check valuer's daily limit
+      const todaysAssignments = bookings.filter(b => 
+          b.assignedValuerId === selectedValuer && 
+          b.assignmentDate && 
+          isToday(b.assignmentDate.toDate())
+      ).length;
+
+      if (todaysAssignments >= 5) {
+           toast({ variant: "destructive", title: "Assignment Limit Reached", description: `${valuerName} already has 5 bookings assigned for today.` });
+           return;
+      }
+
+      const bookingDocRef = doc(db, "bookings", selectedBookingForAction.id);
       try {
-          await updateDoc(bookingDocRef, { status: "Pending Valuation" });
-          toast({ title: "Booking Approved", description: `Booking #${booking.bookingNumber} approved for valuation.` });
-          setReviewDialogOpen(false);
+          await updateDoc(bookingDocRef, { 
+              status: "Pending Valuation",
+              assignedValuerId: selectedValuer,
+              assignedValuerName: valuerName,
+              assignmentDate: serverTimestamp()
+          });
+          toast({ title: "Booking Approved & Assigned", description: `Booking #${selectedBookingForAction.bookingNumber} assigned to ${valuerName}.` });
+          setAssignDialogOpen(false);
           setSelectedBookingForAction(null);
+          setSelectedValuer("");
       } catch (error) {
           console.error("Error approving booking: ", error);
-          toast({ variant: "destructive", title: "Approval Failed", description: "Could not approve booking." });
+          toast({ variant: "destructive", title: "Approval Failed", description: "Could not approve and assign booking." });
       }
   };
 
@@ -460,7 +496,7 @@ function AdminDashboard() {
           toast({ title: "Booking Rejected", description: `Booking #${bookingNumber} has been rejected.` });
           setRejectionReason("");
           setRejectDialogOpen(false);
-          setReviewDialogOpen(false);
+          setAssignDialogOpen(false);
           setSelectedBookingForAction(null);
       } catch (error) {
           console.error("Error rejecting booking: ", error);
@@ -468,21 +504,22 @@ function AdminDashboard() {
       }
   };
   
-  const openReviewDialog = (booking: Booking) => {
+  const openAssignDialog = (booking: Booking) => {
     setSelectedBookingForAction(booking);
-    setReviewDialogOpen(true);
+    setAssignDialogOpen(true);
   };
   
   const openRejectDialog = () => {
-    setReviewDialogOpen(false);
+    setAssignDialogOpen(false);
     setRejectDialogOpen(true);
   }
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "Pending":
-      case "Pending Valuation":
         return "secondary";
+       case "Pending Valuation":
+        return "outline";
       case "Pending Approval":
         return "outline";
       case "Completed":
@@ -504,6 +541,7 @@ function AdminDashboard() {
       approved: bookings.filter(b => b.status === 'Completed').length,
       rejected: bookings.filter(b => b.status === 'Rejected').length,
       pendingApproval: bookings.filter(b => b.status === 'Pending Approval').length,
+      pendingValuation: bookings.filter(b => b.status === 'Pending Valuation').length,
   };
     
   const recentValuations = valuations.map(v => ({
@@ -911,9 +949,9 @@ function AdminDashboard() {
                         <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => openReviewDialog(booking)}>
+                        <Button variant="outline" size="sm" onClick={() => openAssignDialog(booking)}>
                             <FileSearch className="mr-2 h-4 w-4" />
-                            Review
+                            Assign & Approve
                         </Button>
                     </TableCell>
                     </TableRow>
@@ -1112,7 +1150,7 @@ function AdminDashboard() {
                             <div className="p-2 max-h-80 overflow-y-auto">
                                 {pendingBookingsForNotif.length > 0 ? (
                                     pendingBookingsForNotif.map(booking => (
-                                        <div key={booking.id} className="p-2 hover:bg-muted rounded-md text-sm cursor-pointer" onClick={() => openReviewDialog(booking)}>
+                                        <div key={booking.id} className="p-2 hover:bg-muted rounded-md text-sm cursor-pointer" onClick={() => openAssignDialog(booking)}>
                                             <p className="font-semibold">{booking.customerName}</p>
                                             <p className="text-muted-foreground">New booking for {booking.carMake} {booking.carModel}</p>
                                         </div>
@@ -1159,22 +1197,6 @@ function AdminDashboard() {
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard 
-                        title="Staff" 
-                        value={stats.totalStaff} 
-                        icon={<Briefcase className="h-6 w-6 text-blue-500" />} 
-                        onClick={() => setActiveView('staff')}
-                        progress={stats.totalStaff > 0 ? (stats.totalStaff / (stats.totalStaff + stats.totalInstitutions)) * 100 : 0}
-                        colorClass="bg-blue-500"
-                    />
-                     <StatCard 
-                        title="Institutions" 
-                        value={stats.totalInstitutions} 
-                        icon={<Building className="h-6 w-6 text-orange-500" />} 
-                        onClick={() => setActiveView('institutions')}
-                        progress={stats.totalInstitutions > 0 ? (stats.totalInstitutions / (stats.totalStaff + stats.totalInstitutions)) * 100 : 0}
-                        colorClass="bg-orange-500"
-                    />
-                     <StatCard 
                         title="Valuers" 
                         value={stats.totalValuers} 
                         icon={<UserCog className="h-6 w-6 text-purple-500" />} 
@@ -1189,6 +1211,14 @@ function AdminDashboard() {
                         onClick={() => setActiveView('new-bookings')}
                         progress={stats.totalCars > 0 ? (stats.pendingApproval / stats.totalCars) * 100 : 0}
                         colorClass="bg-yellow-500"
+                    />
+                     <StatCard 
+                        title="Pending Valuation" 
+                        value={stats.pendingValuation} 
+                        icon={<FileClock className="h-6 w-6 text-orange-500" />} 
+                        onClick={() => setActiveView('pending-valuation')}
+                        progress={stats.totalCars > 0 ? (stats.pendingValuation / stats.totalCars) * 100 : 0}
+                        colorClass="bg-orange-500"
                     />
                     <StatCard 
                         title="Valued Cars" 
@@ -1213,14 +1243,6 @@ function AdminDashboard() {
                         onClick={() => setActiveView('rejected-bookings')}
                         progress={stats.totalCars > 0 ? (stats.rejected / stats.totalCars) * 100 : 0}
                         colorClass="bg-red-500"
-                    />
-                     <StatCard 
-                        title="Total Cars" 
-                        value={stats.totalCars} 
-                        icon={<Car className="h-6 w-6 text-indigo-500" />} 
-                        onClick={() => setActiveView('valuations')}
-                        progress={100}
-                        colorClass="bg-indigo-500"
                     />
                 </div>
 
@@ -1400,6 +1422,8 @@ function AdminDashboard() {
             
             {activeView === 'new-bookings' && renderNewBookingsTable(bookings.filter(b => b.status === 'Pending Approval'), "New Bookings", "Review and approve or reject new bookings.", newBookingsPage, setNewBookingsPage)}
 
+            {activeView === 'pending-valuation' && renderValuationsTable(valuations.filter(v => v.booking?.status === 'Pending Valuation'), "Pending Valuations", "Bookings assigned to a valuer and awaiting their report.", valuationsPage, setValuationsPage)}
+
             {activeView === 'rejected-bookings' && renderRejectedBookingsTable(bookings.filter(b => b.status === 'Rejected'), "Rejected Bookings", "View all rejected bookings.", rejectedBookingsPage, setRejectedBookingsPage)}
 
             {activeView === 'settings' && (
@@ -1452,51 +1476,55 @@ function AdminDashboard() {
         </footer>
       </SidebarInset>
 
-        <Dialog open={isReviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <Dialog open={isAssignDialogOpen} onOpenChange={setAssignDialogOpen}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Review Booking #{selectedBookingForAction?.bookingNumber}</DialogTitle>
-                    <DialogDescription>Review the details below and take action.</DialogDescription>
+                    <DialogTitle>Assign & Approve Booking #{selectedBookingForAction?.bookingNumber}</DialogTitle>
+                    <DialogDescription>Review details, assign a valuer, and approve the booking.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4 text-sm">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                        <span className="font-semibold text-muted-foreground">Customer:</span>
+                         <span className="font-semibold text-muted-foreground">Customer:</span>
                         <span>{selectedBookingForAction?.customerName}</span>
 
-                        <span className="font-semibold text-muted-foreground">Email:</span>
-                        <span>{selectedBookingForAction?.customerEmail}</span>
-
-                        <span className="font-semibold text-muted-foreground">Phone:</span>
-                        <span>{selectedBookingForAction?.customerPhone}</span>
-                        
-                        <span className="font-semibold text-muted-foreground col-span-2 mt-2">Vehicle Details</span>
-
-                        <span className="font-semibold text-muted-foreground">Make & Model:</span>
+                        <span className="font-semibold text-muted-foreground">Vehicle:</span>
                         <span>{selectedBookingForAction?.carMake} {selectedBookingForAction?.carModel}</span>
                         
                         <span className="font-semibold text-muted-foreground">Plate No:</span>
                         <span>{selectedBookingForAction?.plateNumber}</span>
-
-                        <span className="font-semibold text-muted-foreground">Policy No:</span>
-                        <span>{selectedBookingForAction?.policyNumber}</span>
+                    </div>
+                     <div className="space-y-2 mt-4">
+                        <Label htmlFor="valuer-select">Assign Valuer</Label>
+                        <Select value={selectedValuer} onValueChange={setSelectedValuer}>
+                            <SelectTrigger id="valuer-select" className="w-full">
+                                <SelectValue placeholder="Select a valuer" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {valuers.map(valuer => (
+                                    <SelectItem key={valuer.id} value={valuer.id} disabled={!valuer.active}>
+                                        {valuer.name} {!valuer.active && "(Inactive)"}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
                 <DialogFooter>
                     <Button variant="destructive" onClick={openRejectDialog}>Reject</Button>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                             <Button variant="default">Approve</Button>
+                             <Button variant="default" disabled={!selectedValuer}>Approve & Assign</Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Confirm Approval</AlertDialogTitle>
+                                <AlertDialogTitle>Confirm Approval & Assignment</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Are you sure you want to approve this booking for valuation?
+                                    Are you sure you want to approve this booking and assign it to the selected valuer?
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>No, Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleBookingApproval(selectedBookingForAction)}>Yes, Approve</AlertDialogAction>
+                                <AlertDialogAction onClick={handleAssignmentAndApproval}>Yes, Approve & Assign</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -1539,3 +1567,4 @@ export default function AdminDashboardPage() {
   );
 }
 
+    
