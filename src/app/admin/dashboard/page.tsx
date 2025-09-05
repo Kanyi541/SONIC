@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
@@ -272,17 +271,16 @@ function AdminDashboard() {
         subscriptions.push(valUnsubscribe);
     }
     
-    const bookingsQuery = query(collection(db, "bookings"));
+    const bookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
     const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings', 'pending-valuation'];
 
     if (requiredBookingViews.includes(activeView) || activeView === 'dashboard') {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const bookingsData = data as Booking[];
-            const sortedBookings = bookingsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-            setBookings(sortedBookings);
+            setBookings(bookingsData);
             if(activeView === 'dashboard') {
-              generateChartData(sortedBookings);
+              generateChartData(bookingsData);
             }
             setLoading(false);
         }, (error) => {
@@ -1556,7 +1554,7 @@ function AdminDashboard() {
                  <Card>
                     <CardHeader>
                         <CardTitle>Notifications</CardTitle>
-                        <CardDescription>Configure email and in-app notification preferences.</CardHeader>
+                        <CardDescription>Configure email and in-app notification preferences.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">
@@ -1669,5 +1667,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    
