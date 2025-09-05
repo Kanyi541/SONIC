@@ -174,6 +174,11 @@ type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 const staffSchema = z.object({
     name: z.string().min(1, "Staff name is required"),
     username: z.string().min(1, "Username is required"),
+    password: z.string().min(8, "Password must be at least 8 characters")
+      .refine((password) => /[A-Z]/.test(password), { message: "Password must contain at least one uppercase letter" })
+      .refine((password) => /[a-z]/.test(password), { message: "Password must contain at least one lowercase letter" })
+      .refine((password) => /\d/.test(password), { message: "Password must contain at least one number" })
+      .refine((password) => /[@$!%*?&]/.test(password), { message: "Password must contain at least one special character" }),
     email: z.string().email("Invalid email address"),
     phone: z.string().min(1, "Staff phone is required"),
 });
@@ -261,7 +266,7 @@ export default function ClientDashboardPage() {
 
   const staffForm = useForm<StaffFormValues>({
     resolver: zodResolver(staffSchema),
-    defaultValues: { name: "", email: "", phone: "", username: "" },
+    defaultValues: { name: "", email: "", phone: "", username: "", password: "" },
   });
 
   const bookingForm = useForm<BookingFormValues>({
@@ -1422,20 +1427,22 @@ export default function ClientDashboardPage() {
                                     <DialogTrigger asChild>
                                         <Button><Briefcase className="mr-2" /> Register Staff</Button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-[425px]">
+                                    <DialogContent className="sm:max-w-[425px] grid-rows-[auto_1fr_auto] max-h-[90vh]">
                                     <DialogHeader>
                                         <DialogTitle>Register New Staff</DialogTitle>
                                         <DialogDescription>
                                             Fill in the details to add a new staff member.
                                         </DialogDescription>
                                     </DialogHeader>
+                                      <div className="overflow-y-auto pr-4 -mr-4">
                                         <Form {...staffForm}>
-                                            <form onSubmit={staffForm.handleSubmit(handleAddStaff)} className="space-y-6 pt-4">
+                                            <form onSubmit={staffForm.handleSubmit(handleAddStaff)} className="space-y-4">
                                                 <FormField control={staffForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Alex Ray" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={staffForm.control} name="username" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input {...field} placeholder="e.g. alexray" /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={staffForm.control} name="password" render={({ field }) => (<FormItem><FormLabel>Password</FormLabel><FormControl><PasswordInput field={field} /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={staffForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. alex@example.com" /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={staffForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} placeholder="e.g. 0712345678" type="tel" /></FormControl><FormMessage /></FormItem>)} />
-                                                <DialogFooter>
+                                                <DialogFooter className="pt-4">
                                                     <Button type="button" variant="outline" onClick={() => setStaffDialogOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={staffForm.formState.isSubmitting}>
                                                          {staffForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -1444,6 +1451,7 @@ export default function ClientDashboardPage() {
                                                 </DialogFooter>
                                             </form>
                                         </Form>
+                                      </div>
                                     </DialogContent>
                                 </Dialog>
                             </div>
@@ -1607,5 +1615,7 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
 
     

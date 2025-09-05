@@ -47,18 +47,11 @@ const userLoginSchema = z.object({
   password: z.string().min(1, { message: "Password is required." }),
 });
 
-const agentLoginSchema = z.object({
-  clientUsername: z.string().min(1, { message: "Client username is required." }),
-  username: z.string().min(1, { message: "Your username is required." }),
-  password: z.string().min(1, { message: "Password is required." }),
-});
-
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 type UserLoginFormValues = z.infer<typeof userLoginSchema>;
-type AgentLoginFormValues = z.infer<typeof agentLoginSchema>;
-type Role = "Admin" | "Client" | "Valuer" | "Agent";
+type Role = "Admin" | "Client" | "Valuer";
 
 const PasswordInput = ({ field, ...props }: { field: any, [key: string]: any }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -233,74 +226,119 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
 
 
 const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
-  const router = useRouter();
-  const { toast } = useToast();
+    const router = useRouter();
+    const { toast } = useToast();
 
-  const form = useForm<UserLoginFormValues>({
-    resolver: zodResolver(userLoginSchema),
-    defaultValues: { username: "", password: "" },
-  });
+    const form = useForm<UserLoginFormValues>({
+        resolver: zodResolver(userLoginSchema),
+        defaultValues: { username: "", password: "" },
+    });
 
-  const onSubmit = async (data: UserLoginFormValues) => {
-    setIsLoading(true);
-    try {
-      const insurersRef = collection(db, "insurers");
-      const q = query(insurersRef, where("username", "==", data.username));
-      const querySnapshot = await getDocs(q);
+    const onSubmit = async (data: UserLoginFormValues) => {
+        setIsLoading(true);
+        try {
+            // Check in insurers collection (for main client/institution)
+            const insurersRef = collection(db, "insurers");
+            const qInsurers = query(insurersRef, where("username", "==", data.username));
+            const insurerSnapshot = await getDocs(qInsurers);
 
-      if (querySnapshot.empty) {
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: "Invalid credentials.",
-        });
-        setIsLoading(false);
-        return;
-      }
+            if (!insurerSnapshot.empty) {
+                const insurerDoc = insurerSnapshot.docs[0];
+                const insurerData = insurerDoc.data();
 
-      const insurerDoc = querySnapshot.docs[0];
-      const insurerData = insurerDoc.data();
+                if (insurerData.password === data.password && insurerData.active) {
+                    sessionStorage.setItem('loggedInUser', JSON.stringify({ name: insurerData.name, username: insurerData.username, email: insurerData.email, role: 'Client' }));
+                    router.push('/client/dashboard');
+                    toast({ title: "Client Login Successful", description: `Welcome back, ${insurerData.name}!` });
+                    setIsLoading(false);
+                    return;
+                }
+            }
 
-      if (insurerData.password !== data.password) {
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: "Invalid credentials.",
-        });
-        setIsLoading(false);
-        return;
-      }
+            // If not found in insurers, check in staff collection
+            const staffRef = collection(db, "staff");
+            const qStaff = query(staffRef, where("username", "==", data.username));
+            const staffSnapshot = await getDocs(qStaff);
 
-      if (!insurerData.active) {
-        toast({
-          variant: "destructive",
-          title: "Account Inactive",
-          description: "Your account is inactive. Please contact the administrator.",
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: insurerData.name, username: insurerData.username, email: insurerData.email, role: 'Client' }));
-      router.push('/client/dashboard');
-      toast({ title: "Client Login Successful", description: `Welcome back, ${insurerData.name}!` });
+            if (!staffSnapshot.empty) {
+                const staffDoc = staffSnapshot.docs[0];
+                const staffData = staffDoc.data();
 
-    } catch (error) {
-      console.error("Client login error:", error);
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: "An unexpected error occurred. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+                if (staffData.password === data.password) {
+                     // Find the client this staff belongs to
+                    const clientQuery = query(insurersRef, where("username", "==", staffData.clientId));
+                    const clientSnapshot = await getDocs(clientQuery);
+
+                    if (!clientSnapshot.empty) {
+                        const clientData = clientSnapshot.docs[0].data();
+                        sessionStorage.setItem('loggedInUser', JSON.stringify({ 
+                            name: clientData.name,
+                            username: clientData.username, 
+                            email: clientData.email,
+                            role: 'Client',
+                            agentName: staffData.name // Using agentName to display staff's name
+                        }));
+                        router.push('/client/dashboard');
+                        toast({ title: "Staff Login Successful", description: `Welcome back, ${staffData.name}!` });
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+            }
+            
+            // If not found in staff, check in agents (who are also in insurers collection)
+            const qAgents = query(insurersRef, where("username", "==", data.username), where("role", "==", "Agent"));
+            const agentSnapshot = await getDocs(qAgents);
+
+            if (!agentSnapshot.empty) {
+                const agentDoc = agentSnapshot.docs[0];
+                const agentData = agentDoc.data();
+
+                if (agentData.password === data.password && agentData.active) {
+                    // Find the client this agent belongs to
+                    const clientQuery = query(insurersRef, where("username", "==", agentData.clientId));
+                    const clientSnapshot = await getDocs(clientQuery);
+
+                    if (!clientSnapshot.empty) {
+                        const clientData = clientSnapshot.docs[0].data();
+                        sessionStorage.setItem('loggedInUser', JSON.stringify({ 
+                            name: clientData.name,
+                            username: clientData.username, 
+                            email: clientData.email,
+                            role: 'Client',
+                            agentName: agentData.name 
+                        }));
+                        router.push('/client/dashboard');
+                        toast({ title: "Agent Login Successful", description: `Welcome back, ${agentData.name}!` });
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+            }
+
+            // If no user is found or password doesn't match
+            toast({
+                variant: "destructive",
+                title: "Login Failed",
+                description: "Invalid credentials or account is inactive.",
+            });
+
+        } catch (error) {
+            console.error("Unified client/staff/agent login error:", error);
+            toast({
+                variant: "destructive",
+                title: "Login Failed",
+                description: "An unexpected error occurred. Please try again.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
   return (
     <Card className="bg-white/90 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="font-headline text-primary">Client/Institution Login</CardTitle>
+        <CardTitle className="font-headline text-primary">Client/Staff/Agent Login</CardTitle>
         <CardDescription>
           Enter your credentials to access the client dashboard.
         </CardDescription>
@@ -315,7 +353,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                 <FormItem>
                   <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="Institution Username" {...field} />
+                    <Input placeholder="Enter your username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -494,162 +532,15 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   );
 };
 
-const AgentLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
-  const router = useRouter();
-  const { toast } = useToast();
-
-  const form = useForm<AgentLoginFormValues>({
-    resolver: zodResolver(agentLoginSchema),
-    defaultValues: { clientUsername: "", username: "", password: "" },
-  });
-
-  const onSubmit = async (data: AgentLoginFormValues) => {
-    setIsLoading(true);
-    try {
-      const insurersRef = collection(db, "insurers");
-      
-      const clientQuery = query(insurersRef, where("username", "==", data.clientUsername));
-      const clientSnapshot = await getDocs(clientQuery);
-
-      if (clientSnapshot.empty) {
-        toast({ variant: "destructive", title: "Login Failed", description: "Could not find the specified institution/client." });
-        setIsLoading(false);
-        return;
-      }
-      
-      const clientData = clientSnapshot.docs[0].data();
-
-      // Fetch all agents for the client and filter in code
-      const agentsQuery = query(insurersRef, 
-        where("clientId", "==", data.clientUsername),
-        where("role", "==", "Agent")
-      );
-      const agentsSnapshot = await getDocs(agentsQuery);
-      
-      if (agentsSnapshot.empty) {
-        toast({ variant: "destructive", title: "Login Failed", description: "No agents found for this client." });
-        setIsLoading(false);
-        return;
-      }
-
-      const agentDoc = agentsSnapshot.docs.find(doc => doc.data().username === data.username);
-
-      if (!agentDoc) {
-        toast({ variant: "destructive", title: "Login Failed", description: "Invalid agent username for this client." });
-        setIsLoading(false);
-        return;
-      }
-      
-      const agentData = agentDoc.data();
-
-      if (agentData.password !== data.password) {
-        toast({ variant: "destructive", title: "Login Failed", description: "Invalid agent password." });
-        setIsLoading(false);
-        return;
-      }
-
-      sessionStorage.setItem('loggedInUser', JSON.stringify({ 
-        name: clientData.name,
-        username: clientData.username, 
-        email: clientData.email,
-        role: 'Client',
-        agentName: agentData.name 
-      }));
-      
-      router.push('/client/dashboard');
-      toast({ title: "Agent Login Successful", description: `Welcome back, ${agentData.name}!` });
-
-    } catch (error) {
-      console.error("Agent login error:", error);
-      toast({ variant: "destructive", title: "Login Failed", description: "An unexpected error occurred." });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <Card className="bg-white/90 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="font-headline text-primary">Agent Login</CardTitle>
-        <CardDescription>
-          Enter your credentials to access your client's dashboard.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="clientUsername"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Institution/Client Username</FormLabel>
-                  <FormControl><Input placeholder="Your institution's username" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Your Username</FormLabel>
-                  <FormControl><Input placeholder="Your agent username" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Your Password</FormLabel>
-                  <FormControl><PasswordInput field={field} placeholder="••••••••" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign In
-            </Button>
-            <div className="text-center text-sm">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="link">Forgot Password?</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Password Recovery</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      To reset your password, please contact your Institution admin, Motor Valuers & Assessors directly for assistance.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogAction>OK</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
-  );
-};
-
 
 export default function LoginTabs() {
   const [loadingStates, setLoadingStates] = useState<Record<Role, boolean>>({
     Admin: false,
     Client: false,
     Valuer: false,
-    Agent: false,
   });
 
-  const roles: Role[] = ["Admin", "Client", "Valuer", "Agent"];
+  const roles: Role[] = ["Admin", "Client", "Valuer"];
   
   const getFormComponent = (role: Role) => {
     const setIsLoading = (loading: boolean) => setLoadingStates(prev => ({ ...prev, [role]: loading }));
@@ -661,8 +552,6 @@ export default function LoginTabs() {
         return <ClientLoginForm setIsLoading={setIsLoading} />;
       case 'Valuer':
         return <ValuerLoginForm setIsLoading={setIsLoading} />;
-      case 'Agent':
-        return <AgentLoginForm setIsLoading={setIsLoading} />;
       default:
         return null;
     }
@@ -670,7 +559,7 @@ export default function LoginTabs() {
 
   return (
     <Tabs defaultValue="Admin" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto sm:h-10 bg-black/20 text-white">
+      <TabsList className="grid w-full grid-cols-3 h-auto sm:h-10 bg-black/20 text-white">
         {roles.map((role) => (
           <TabsTrigger key={role} value={role} className="data-[state=active]:bg-primary/80 data-[state=active]:text-black">{role}</TabsTrigger>
         ))}
@@ -683,3 +572,6 @@ export default function LoginTabs() {
     </Tabs>
   );
 }
+
+
+    
