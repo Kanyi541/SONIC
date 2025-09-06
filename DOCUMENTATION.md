@@ -1,116 +1,114 @@
-
-# CASA Motor Valuers & Assessors Dashboard Documentation
-
-This document provides a comprehensive overview of the functionalities and workflows for the Admin, Client, and Valuer dashboards.
-
----
-
-## 1. Admin Dashboard (`/admin/dashboard`)
-
-The Admin Dashboard is the central control panel for managing the entire application, from user accounts to the full valuation lifecycle. It features a two-tiered admin system: **Super Admin** and **Admin**.
-
-### 1.1. Roles and Permissions
-
--   **Super Admin**: The primary administrator account. This role has unrestricted access to all features, including:
-    -   Adding, managing, and deleting all user types (Institutions, Staff, Valuers).
-    -   Promoting staff members to the "Admin" role.
-    -   Activating or deactivating any user account.
-    -   Managing company branches.
-    -   Full access to all booking and valuation workflows.
-
--   **Admin**: A promoted staff member with limited administrative privileges. An Admin **cannot**:
-    -   Register new staff members.
-    -   Promote other staff to Admins.
-    -   Change the active/inactive status of any staff member.
-    They **can** manage the core booking and valuation workflows.
-
-### 1.2. Key Features & Workflow
-
-#### **Dashboard Home**
-
--   **At-a-Glance Statistics**: Displays key metrics like "Pending Approval," "Pending Valuation," "Valuated," "Approved," "Rejected," and "Total Valuers." These cards act as quick links to the respective tables.
--   **All Completed Cars Table**: A searchable and sortable list of all bookings with a "Completed" status. It is sorted by the newest first.
-    -   **Search**: Filter cars by plate number, booking ID, or customer name.
-    -   **Actions**: Each row has a button to view the associated **Booking Report** and **Valuation Report** in a new tab.
--   **Notifications**: A bell icon in the header shows a count of new bookings awaiting approval and provides quick links to them.
-
-#### **User Management (Sidebar)**
-
--   **Institutions**: Manage client companies (e.g., insurance firms, banks).
--   **Staff**: Manage internal staff members.
-    -   **Status Switch**: A Super Admin can toggle a staff member's account between "Active" and "Inactive."
-    -   **Promote to Admin (Super Admin only)**: A Super Admin can click "Promote" on a staff member. This opens a dialog to set an initial password, which creates an account in Firebase Authentication and grants them "Admin" privileges.
--   **Branches**: Add or delete company branches.
-
-#### **Booking & Valuation Workflow**
-
-This workflow is accessed via the statistic cards on the dashboard home.
-
-1.  **New Bookings (`Pending Approval`)**
-    -   Admin reviews new booking requests.
-    -   Action: Clicks **"Assign & Approve"**.
-    -   In the dialog, the Admin selects an active valuer from a dropdown list and confirms the assignment. The booking status changes to **"Pending Valuation"**.
-    -   Alternatively, the Admin can reject the booking, providing a reason.
-
-2.  **Pending Valuations (`Pending Valuation`)**
-    -   This view shows all bookings currently assigned to valuers. It's a monitoring step for the admin.
-
-3.  **Valuated Bookings (`Valuated`)**
-    -   This table lists submissions received from valuers.
-    -   Action: Clicks **"Complete Valuation"**.
-    -   In the dialog, the Admin reviews the valuer's submitted photos and comments, then enters the final official values (Assessment Value, Forced Sale Value, etc.).
-    -   Upon saving, the booking status changes to **"Completed"**.
-
-4.  **All Valuations / Approved Bookings (`Completed`)**
-    -   Shows a history of all finalized and approved valuations. Reports can be accessed from here.
-
-5.  **Rejected Bookings (`Rejected`)**
-    -   Shows a history of all bookings that were rejected by the admin.
-
----
-
-## 2. Client Dashboard (`/client/dashboard`)
-
-This dashboard is for institutions (e.g., insurance companies) and their agents/staff to manage their valuation requests.
-
-### 2.1. Roles and Permissions
-
--   **Client (Main Account)**: The primary account for the institution. Can manage their own staff and agents.
--   **Agent/Staff**: Sub-accounts created by the Client. They can create new bookings on behalf of the institution but cannot manage other users.
-
-### 2.2. Key Features
-
--   **Dashboard Home**: Provides statistics on the institution's bookings (Pending, Approved, Rejected, etc.). The main table shows a summary of all cars booked by the institution.
--   **New Booking**: A primary action to open a detailed form and create a new valuation request.
--   **User Management (Main Client Account only)**:
-    -   **Customers**: Manage a list of their customers (the vehicle owners).
-    -   **Agents**: Create and manage agent sub-accounts.
-    -   **Staff**: Create and manage internal staff sub-accounts.
--   **Booking Views**: Tables to view bookings based on their status (Pending, Completed, Rejected).
--   **View Report**: Clients can view and print the official **Booking Report** (Assessment Authorization Letter) for any of their bookings.
-
----
-
-## 3. Valuer Dashboard (`/valuer/dashboard`)
-
-This dashboard is a streamlined interface for valuers to manage and submit their assigned valuation reports.
-
-### 3.1. Core Functionality
-
--   **Personalized View**: A valuer can **only** see bookings that have been explicitly assigned to them by an admin.
--   **Sorted Task List**: The main table, "All Cars," is sorted by status to prioritize work:
-    1.  `Pending Valuation` (New assignments)
-    2.  `Valuated` (Submitted, awaiting admin approval)
-    3.  `Completed` (Approved by admin)
-    4.  `Rejected` (Rejected by admin)
-
-### 3.2. Workflow
-
-1.  **Log In**: The valuer logs in with their unique username and password.
-2.  **View Assignments**: The dashboard displays all assigned bookings, with new assignments at the top.
-3.  **Perform Valuation**: The valuer clicks the **"Valuate"** button for a "Pending Valuation" booking.
-4.  **Fill Valuation Form**: A dialog appears showing all relevant booking details (customer, vehicle, policy, etc.). The valuer must:
-    -   Select the **Date of Assessment** (cannot be a past date).
-    -   Upload one or more photos of the vehicle.
-    -   Add any relevant comments.
-5.  **Submit**: Upon submission, the report is sent to the admin for approval, and the booking status changes to **"Valuated"**. The booking moves down the priority list on the valuer's dashboard.
+________________________________________
+CASA Motor Valuers & Assessors Dashboard Documentation
+This document provides a detailed overview of the Admin, Client, and Valuer dashboards. It explains roles, permissions, workflows, and core functionalities for effective use of the CASA Motor Valuers & Assessors platform.
+________________________________________
+1. Admin Dashboard (/admin/dashboard)
+The Admin Dashboard is the control center for managing the entire valuation system. It supports a two-tiered administrative structure: Super Admin and Admin.
+1.1 Roles & Permissions
+•	Super Admin (Full Access):
+o	Create, edit, and delete all user types (Institutions, Staff, Valuers).
+o	Promote staff members to Admin role.
+o	Activate/deactivate any account.
+o	Manage company branches.
+o	Full access to bookings, reports, and valuation lifecycle.
+•	Admin (Limited Access):
+o	Manage the booking and valuation workflows.
+o	Cannot register new staff, promote staff, or change staff account status.
+1.2 Key Features & Workflow
+Dashboard Home
+•	Statistics Cards: Quick overview of system activity:
+o	Pending Approval
+o	Pending Valuation
+o	Valuated
+o	Completed (Approved)
+o	Rejected
+o	Total Valuers
+•	Completed Cars Table: Searchable, sortable, newest-first list of finalized bookings.
+o	Search by plate number, booking ID, or customer name.
+o	Quick actions: Open Booking Report and Valuation Report in new tabs.
+•	Notifications Center: Bell icon in header displays new pending approvals with direct navigation.
+User Management (Sidebar)
+•	Institutions: Manage client companies (e.g., insurers, banks).
+•	Staff: Manage internal team members.
+o	Super Admin-only actions:
+	Status Toggle (Active/Inactive).
+	Promote to Admin (set initial password → create Firebase account → assign Admin privileges).
+•	Branches: Add or delete company branches.
+Booking & Valuation Lifecycle
+1.	New Bookings (Pending Approval)
+o	Review and approve or reject new requests.
+o	Approve → Assign valuer via dropdown.
+o	Reject → Provide rejection reason.
+2.	Pending Valuations
+o	Track bookings currently with valuers.
+o	No direct actions, serves as monitoring.
+3.	Valuated Bookings
+o	Review valuer-submitted reports and media.
+o	Complete valuation by entering final official figures:
+	Assessment Value
+	Forced Sale Value
+	Other financial metrics
+o	Status updates to Completed.
+4.	Completed Valuations
+o	Historical archive of finalized bookings.
+o	Reports accessible and downloadable.
+5.	Rejected Bookings
+o	Historical record of rejected requests with reasons.
+________________________________________
+2. Client Dashboard (/client/dashboard)
+The Client Dashboard enables institutions (e.g., insurance companies) to request, track, and manage vehicle valuations.
+2.1 Roles & Permissions
+•	Client (Main Account)
+o	Institution’s primary account.
+o	Can manage agents, staff, and customer lists.
+o	Full visibility of institution’s bookings and reports.
+•	Agent / Staff (Sub-accounts)
+o	Created by the Client.
+o	Limited to creating and managing bookings only.
+o	Cannot manage users.
+2.2 Key Features
+•	Dashboard Home
+o	Booking statistics (Pending, Completed, Rejected, etc.).
+o	Table summarizing all booked vehicles.
+•	New Booking
+o	Comprehensive booking form for vehicle valuation requests.
+o	Captures: customer details, vehicle details, insurance/policy information.
+•	User Management (Main Client only)
+o	Customers: Manage database of vehicle owners.
+o	Agents: Create/manage agent sub-accounts.
+o	Staff: Manage internal staff accounts.
+•	Booking Views
+o	Filtered tables: Pending, Completed, Rejected.
+•	Reports
+o	Clients can view, download, and print Booking Reports (Assessment Authorization Letters).
+________________________________________
+3. Valuer Dashboard (/valuer/dashboard)
+The Valuer Dashboard provides valuers with a focused workspace for assigned valuation tasks.
+3.1 Key Features
+•	Personalized Task List: Valuers only see bookings explicitly assigned to them.
+•	Sorted Workflow Table ("All Cars")
+1.	Pending Valuation (New tasks)
+2.	Valuated (Submitted, awaiting admin approval)
+3.	Completed (Approved valuations)
+4.	Rejected (Rejected tasks with feedback)
+3.2 Workflow
+1.	Login: Secure login with unique credentials.
+2.	View Assignments: Bookings sorted by priority (newest at top).
+3.	Perform Valuation:
+o	Click Valuate on a Pending booking.
+o	System opens detailed booking view.
+o	Required inputs:
+	Date of Assessment (future/present only).
+	Vehicle photos (multiple uploads supported).
+	Comments / Observations.
+4.	Submit Report:
+o	Submission changes booking status to Valuated.
+o	Booking moves to "awaiting admin approval."
+________________________________________
+4. System-Wide Features
+•	Authentication: Firebase Authentication for secure logins across all dashboards.
+•	Role-Based Access: Permissions enforced at the role level (Super Admin, Admin, Client, Agent/Staff, Valuer).
+•	Search & Filters: Available in all tables for quick navigation.
+•	Reports: Booking and Valuation reports are standardized, printable, and downloadable in PDF format.
+•	Audit Trail (optional extension): Logs actions by user role for accountability.
+________________________________________
