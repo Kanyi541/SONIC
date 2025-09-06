@@ -162,16 +162,18 @@ export default function ValuerDashboardPage() {
                 const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Booking }));
                 setBookings(bookingsData);
                 generateChartData(bookingsData);
+                setLoading(false);
+            }, (error) => {
+                console.error("Error fetching bookings:", error);
+                setLoading(false);
             });
 
             const valuationsQuery = query(collection(db, "valuations"));
              const valuationsUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
                 const valuationsData: Valuation[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Valuation));
                 setValuations(valuationsData);
-                setLoading(false);
             }, (error) => {
                  console.error("Error fetching valuations:", error);
-                 setLoading(false);
             });
 
             return () => {
@@ -498,7 +500,7 @@ export default function ValuerDashboardPage() {
                                         colorClass="bg-green-500"
                                     />
                                 </div>
-                                {renderBookingsTable(completedBookings, "All Cars", "A summary of all completed valuations.", completedCurrentPage, setCompletedCurrentPage)}
+                                {renderBookingsTable(filteredBookings, "All Cars", "A summary of all assigned bookings.", allCarsCurrentPage, setAllCarsCurrentPage)}
                             </div>
                         </TabsContent>
                         <TabsContent value="all-bookings">
