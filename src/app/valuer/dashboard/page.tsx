@@ -42,9 +42,12 @@ interface Booking {
   id: string;
   bookingNumber: string;
   customerName: string;
+  customerEmail: string;
+  customerPhone: string;
   plateNumber: string;
   carMake: string;
   carModel: string;
+  policyNumber?: string;
   createdAt: any;
   status: string;
   insurerName: string;
@@ -527,12 +530,15 @@ export default function ValuerDashboardPage() {
                             <div className="overflow-y-auto pr-6 -mr-6">
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(handleValuationSubmit)} className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div><Label>Customer Name</Label><Input value={selectedBooking?.customerName} disabled /></div>
-                                        <div><Label>Client</Label><Input value={selectedBooking?.insurerName} disabled /></div>
-                                        <div><Label>Vehicle</Label><Input value={`${selectedBooking?.carMake} ${selectedBooking?.carModel}`} disabled /></div>
-                                        <div><Label>Plate Number</Label><Input value={selectedBooking?.plateNumber} disabled /></div>
-                                        <div><Label>Booking Number</Label><Input value={selectedBooking?.bookingNumber} disabled /></div>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div className="space-y-1"><Label className="text-muted-foreground">Customer Name</Label><Input value={selectedBooking?.customerName} disabled className="font-medium" /></div>
+                                        <div className="space-y-1"><Label className="text-muted-foreground">Customer Phone</Label><Input value={selectedBooking?.customerPhone} disabled className="font-medium" /></div>
+                                        <div className="space-y-1"><Label className="text-muted-foreground">Customer Email</Label><Input value={selectedBooking?.customerEmail} disabled className="font-medium" /></div>
+                                        <div className="space-y-1"><Label className="text-muted-foreground">Client</Label><Input value={selectedBooking?.insurerName} disabled className="font-medium" /></div>
+                                        <div className="space-y-1"><Label className="text-muted-foreground">Vehicle</Label><Input value={`${selectedBooking?.carMake} ${selectedBooking?.carModel}`} disabled className="font-medium" /></div>
+                                        <div className="space-y-1"><Label className="text-muted-foreground">Plate Number</Label><Input value={selectedBooking?.plateNumber} disabled className="font-medium" /></div>
+                                        <div className="space-y-1"><Label className="text-muted-foreground">Policy Number</Label><Input value={selectedBooking?.policyNumber} disabled className="font-medium" /></div>
+                                        <div className="space-y-1"><Label className="text-muted-foreground">Booking Number</Label><Input value={selectedBooking?.bookingNumber} disabled className="font-medium" /></div>
                                     </div>
 
                                      <FormField
