@@ -1441,14 +1441,6 @@ function AdminDashboard() {
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard 
-                        title="Valuers" 
-                        value={stats.totalValuers} 
-                        icon={<UserCog className="h-6 w-6 text-purple-500" />} 
-                        onClick={() => setActiveView('valuers')}
-                        progress={100}
-                        colorClass="bg-purple-500"
-                    />
-                    <StatCard 
                         title="Pending Approval" 
                         value={stats.pendingApproval} 
                         icon={<FileSignature className="h-6 w-6 text-yellow-500" />} 
@@ -1480,13 +1472,23 @@ function AdminDashboard() {
                         progress={stats.totalCars > 0 ? (stats.approved / stats.totalCars) * 100 : 0}
                         colorClass="bg-green-500"
                     />
-                    <StatCard 
+                </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                     <StatCard 
                         title="Rejected" 
                         value={stats.rejected} 
                         icon={<XCircle className="h-6 w-6 text-red-500" />} 
                         onClick={() => setActiveView('rejected-bookings')}
                         progress={stats.totalCars > 0 ? (stats.rejected / stats.totalCars) * 100 : 0}
                         colorClass="bg-red-500"
+                    />
+                    <StatCard 
+                        title="Valuers" 
+                        value={stats.totalValuers} 
+                        icon={<UserCog className="h-6 w-6 text-purple-500" />} 
+                        onClick={() => setActiveView('valuers')}
+                        progress={100}
+                        colorClass="bg-purple-500"
                     />
                 </div>
 
