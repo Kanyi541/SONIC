@@ -117,14 +117,6 @@ export default function ValuerDashboardPage() {
         }
     });
 
-    useEffect(() => {
-        const storedUserString = sessionStorage.getItem('loggedInUser');
-        if (storedUserString) {
-            const user = JSON.parse(storedUserString);
-            setLoggedInUser(user);
-        }
-    }, []);
-
     const generateChartData = (bookings: Booking[]) => {
       const today = new Date();
       const firstDayOfMonth = startOfMonth(today);
@@ -156,11 +148,16 @@ export default function ValuerDashboardPage() {
     };
 
     useEffect(() => {
-        if (loggedInUser) {
+        const storedUserString = sessionStorage.getItem('loggedInUser');
+        if (storedUserString) {
+            const user: LoggedInUser = JSON.parse(storedUserString);
+            setLoggedInUser(user);
+
+            // Now that we have the user, we can fetch their data.
             setLoading(true);
             const bookingsQuery = query(
                 collection(db, "bookings"),
-                where("assignedValuerId", "==", loggedInUser.username)
+                where("assignedValuerId", "==", user.username)
             );
 
             const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
@@ -172,9 +169,9 @@ export default function ValuerDashboardPage() {
                 console.error("Error fetching bookings:", error);
                 setLoading(false);
             });
-
+            
             const valuationsQuery = query(collection(db, "valuations"));
-             const valuationsUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
+            const valuationsUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
                 const valuationsData: Valuation[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
                 setValuations(valuationsData);
             }, (error) => {
@@ -186,9 +183,10 @@ export default function ValuerDashboardPage() {
                 valuationsUnsubscribe();
             };
         } else {
+            // No user found in session storage
             setLoading(false);
         }
-    }, [loggedInUser]);
+    }, []);
     
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
