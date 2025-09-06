@@ -123,7 +123,6 @@ export default function ValuerDashboardPage() {
             const user: LoggedInUser = JSON.parse(storedUserString);
             setLoggedInUser(user);
         } else {
-            // If no user, stop loading, maybe redirect
             setLoading(false);
         }
     }, []);
@@ -159,38 +158,40 @@ export default function ValuerDashboardPage() {
     };
 
     useEffect(() => {
-        // This effect runs only when loggedInUser is set
-        if (loggedInUser) {
-            setLoading(true);
-            const bookingsQuery = query(
-                collection(db, "bookings"),
-                where("assignedValuerId", "==", loggedInUser.username)
-            );
-
-            const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
-                const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Booking }));
-                setBookings(bookingsData);
-                generateChartData(bookingsData);
-                setLoading(false);
-            }, (error) => {
-                console.error("Error fetching bookings:", error);
-                setLoading(false);
-            });
-            
-            const valuationsQuery = query(collection(db, "valuations"));
-            const valuationsUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
-                const valuationsData: Valuation[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
-                setValuations(valuationsData);
-            }, (error) => {
-                 console.error("Error fetching valuations:", error);
-            });
-
-            return () => {
-                bookingsUnsubscribe();
-                valuationsUnsubscribe();
-            };
+        if (!loggedInUser) {
+            return;
         }
-    }, [loggedInUser]); // Dependency on loggedInUser
+
+        setLoading(true);
+        const bookingsQuery = query(
+            collection(db, "bookings"),
+            where("assignedValuerId", "==", loggedInUser.username)
+        );
+
+        const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
+            const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Booking }));
+            setBookings(bookingsData);
+            generateChartData(bookingsData);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching bookings:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not fetch assigned bookings." });
+            setLoading(false);
+        });
+        
+        const valuationsQuery = query(collection(db, "valuations"));
+        const valuationsUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
+            const valuationsData: Valuation[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
+            setValuations(valuationsData);
+        }, (error) => {
+             console.error("Error fetching valuations:", error);
+        });
+
+        return () => {
+            bookingsUnsubscribe();
+            valuationsUnsubscribe();
+        };
+    }, [loggedInUser, toast]);
     
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
