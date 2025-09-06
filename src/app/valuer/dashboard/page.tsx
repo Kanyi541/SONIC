@@ -116,6 +116,17 @@ export default function ValuerDashboardPage() {
             comments: "",
         }
     });
+    
+    useEffect(() => {
+        const storedUserString = sessionStorage.getItem('loggedInUser');
+        if (storedUserString) {
+            const user: LoggedInUser = JSON.parse(storedUserString);
+            setLoggedInUser(user);
+        } else {
+            // If no user, stop loading, maybe redirect
+            setLoading(false);
+        }
+    }, []);
 
     const generateChartData = (bookings: Booking[]) => {
       const today = new Date();
@@ -148,16 +159,12 @@ export default function ValuerDashboardPage() {
     };
 
     useEffect(() => {
-        const storedUserString = sessionStorage.getItem('loggedInUser');
-        if (storedUserString) {
-            const user: LoggedInUser = JSON.parse(storedUserString);
-            setLoggedInUser(user);
-
-            // Now that we have the user, we can fetch their data.
+        // This effect runs only when loggedInUser is set
+        if (loggedInUser) {
             setLoading(true);
             const bookingsQuery = query(
                 collection(db, "bookings"),
-                where("assignedValuerId", "==", user.username)
+                where("assignedValuerId", "==", loggedInUser.username)
             );
 
             const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
@@ -182,11 +189,8 @@ export default function ValuerDashboardPage() {
                 bookingsUnsubscribe();
                 valuationsUnsubscribe();
             };
-        } else {
-            // No user found in session storage
-            setLoading(false);
         }
-    }, []);
+    }, [loggedInUser]); // Dependency on loggedInUser
     
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
