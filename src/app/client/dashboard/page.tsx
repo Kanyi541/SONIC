@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -232,6 +231,7 @@ export default function ClientDashboardPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [loadingAgents, setLoadingAgents] = useState(true);
   const [loadingStaff, setLoadingStaff] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
@@ -353,12 +353,28 @@ export default function ClientDashboardPage() {
             setBookings(sortedBookings);
             generateChartData(sortedBookings);
             setLoading(false);
+        }, (error) => {
+            console.error("Error fetching bookings:", error);
+            setLoading(false);
         });
 
         const valuationsQuery = query(collection(db, "valuations"));
         const valuationsUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
             const valuationsData: Valuation[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Valuation));
             setValuations(valuationsData);
+        }, (error) => {
+            console.error("Error fetching valuations:", error);
+        });
+
+        setLoadingCustomers(true);
+        const customersQuery = query(collection(db, "customers"), where("insurerId", "==", loggedInUser.username));
+        const customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
+            const customersData: Customer[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
+            setCustomers(customersData);
+            setLoadingCustomers(false);
+        }, (error) => {
+            console.error("Error fetching customers:", error);
+            setLoadingCustomers(false);
         });
         
         setLoadingAgents(true);
@@ -371,6 +387,9 @@ export default function ClientDashboardPage() {
             const agentsData: Agent[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Agent));
             setAgents(agentsData);
             setLoadingAgents(false);
+        }, (error) => {
+            console.error("Error fetching agents:", error);
+            setLoadingAgents(false);
         });
 
         setLoadingStaff(true);
@@ -379,12 +398,16 @@ export default function ClientDashboardPage() {
             const staffData: Staff[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
             setStaff(staffData);
             setLoadingStaff(false);
+        }, (error) => {
+            console.error("Error fetching staff:", error);
+            setLoadingStaff(false);
         });
         
 
         return () => {
             bookingsUnsubscribe();
             valuationsUnsubscribe();
+            customersUnsubscribe();
             agentsUnsubscribe();
             staffUnsubscribe();
         };
@@ -787,7 +810,8 @@ export default function ClientDashboardPage() {
     
     const allMenuItems = [
         { name: "Dashboard", view: "dashboard" },
-        { name: "Customers", view: "customers", action: () => setBookingDialogOpen(true) },
+        { name: "New Booking", view: "new-booking", action: () => setBookingDialogOpen(true) },
+        { name: "Customers", view: "customers" },
         { name: "Agents", view: "agents" },
         { name: "Staff", view: "staff" },
       ];
@@ -1099,6 +1123,156 @@ export default function ClientDashboardPage() {
                </div>
             </TabsContent>
             
+            <TabsContent value="customers">
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle className="font-headline text-3xl text-primary">Manage Customers</CardTitle>
+                                <CardDescription>Register new customers and view existing ones.</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="relative w-full max-w-sm">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        type="search"
+                                        placeholder="Search customers..."
+                                        className="w-full rounded-lg bg-background pl-8"
+                                        value={customerSearchTerm}
+                                        onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <Dialog open={isCustomerDialogOpen} onOpenChange={setCustomerDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button><UserPlus className="mr-2" /> Add Customer</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                    <DialogHeader>
+                                        <DialogTitle>Register New Customer</DialogTitle>
+                                        <DialogDescription>
+                                            Fill in the details to add a new customer.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                        <Form {...customerForm}>
+                                            <form onSubmit={customerForm.handleSubmit(handleAddCustomer)} className="space-y-6 pt-4">
+                                                <FormField
+                                                    control={customerForm.control}
+                                                    name="name"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                        <FormLabel>Full Name</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="e.g. John Doe" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={customerForm.control}
+                                                    name="email"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                        <FormLabel>Email Address</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} type="email" placeholder="e.g. john@example.com" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={customerForm.control}
+                                                    name="phone"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                        <FormLabel>Phone Number</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="e.g. 0712345678" type="tel" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <DialogFooter>
+                                                    <Button type="button" variant="outline" onClick={() => setCustomerDialogOpen(false)}>Cancel</Button>
+                                                    <Button type="submit" disabled={customerForm.formState.isSubmitting}>
+                                                         {customerForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                                        Save Customer
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </Form>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/50">
+                                    <TableHead className="w-[50px]">No.</TableHead>
+                                    <TableHead className="font-semibold text-left">Name</TableHead>
+                                    <TableHead className="font-semibold text-left">Email</TableHead>
+                                    <TableHead className="font-semibold text-left">Phone</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loadingCustomers ? (
+                                    Array.from({ length: 5 }).map((_, index) => (
+                                      <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                      </TableRow>
+                                    ))
+                                ) : filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).length > 0 ? (
+                                    filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((customer, index) => (
+                                        <TableRow key={customer.id}>
+                                            <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                                            <TableCell className="font-medium flex items-center gap-3">
+                                                <div className="p-2 bg-muted rounded-full hidden sm:flex">
+                                                    <User className="h-5 w-5 text-primary" />
+                                                </div>
+                                                {customer.name}
+                                            </TableCell>
+                                            <TableCell>{customer.email}</TableCell>
+                                            <TableCell>{customer.phone}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center h-24">
+                                            No customers found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                         <div className="flex items-center justify-end space-x-2 py-4">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredCustomers.length / itemsPerPage)))}
+                                disabled={currentPage === Math.ceil(filteredCustomers.length / itemsPerPage)}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            
             <TabsContent value="agents">
                 <Card>
                     <CardHeader>
@@ -1397,7 +1571,7 @@ export default function ClientDashboardPage() {
                 {renderBookingsTable(getFilteredBookingsByStatus("Pending Approval"), "New Requests", "Bookings that have been created and are awaiting approval.", currentPage, setCurrentPage)}
             </TabsContent>
             <TabsContent value="pending-valuation-bookings">
-                {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Bookings assigned to a valuer and awaiting their report.", currentPage, setCurrentPage)}
+                {renderBookingsTable(getFilteredBookingsByStatus("Pending Valuation"), "Pending Valuation", "Bookings assigned to a valuer and awaiting their report.", currentPage, setCurrentPage)}
             </TabsContent>
             <TabsContent value="completed-bookings">
                 {renderBookingsTable(getFilteredBookingsByStatus("Completed"), "Approved Bookings", "All bookings that have been fully completed and approved.", currentPage, setCurrentPage)}
