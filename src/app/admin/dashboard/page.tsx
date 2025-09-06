@@ -1880,7 +1880,7 @@ function AdminDashboard() {
                                         <h4 className="font-medium text-lg">Valuation Photos</h4>
                                         <Carousel className="w-full">
                                             <CarouselContent>
-                                                {selectedValuationForAction.imageUrls.map((url, index) => (
+                                                {Array.isArray(selectedValuationForAction.imageUrls) && selectedValuationForAction.imageUrls.map((url, index) => (
                                                     <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
                                                         <div className="p-1">
                                                             <Card>
@@ -1984,4 +1984,5 @@ export default function AdminDashboardPage() {
 }
 
     
+
 
