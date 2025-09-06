@@ -7,8 +7,8 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2 } from 'lucide-react';
-import { signOut } from 'firebase/auth';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck } from 'lucide-react';
+import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
@@ -98,6 +98,8 @@ interface Staff {
   phone: string;
   active: boolean;
   createdAt?: any;
+  isAdmin?: boolean;
+  uid?: string;
 }
 
 interface Branch {
@@ -156,7 +158,12 @@ const adminValuationSchema = z.object({
   rsValue: z.string().min(1, "RS value is required."),
 });
 
+const promoteAdminSchema = z.object({
+    password: z.string().min(8, "Password must be at least 8 characters long.")
+});
+
 type AdminValuationFormValues = z.infer<typeof adminValuationSchema>;
+type PromoteAdminFormValues = z.infer<typeof promoteAdminSchema>;
 
 
 function AdminDashboard() {
@@ -185,8 +192,10 @@ function AdminDashboard() {
   const [isAssignDialogOpen, setAssignDialogOpen] = useState(false);
   const [isRejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [isCompleteValuationOpen, setCompleteValuationOpen] = useState(false);
+  const [isPromoteAdminOpen, setPromoteAdminOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
+  const [selectedStaffForPromotion, setSelectedStaffForPromotion] = useState<Staff | null>(null);
   const [selectedValuationForAction, setSelectedValuationForAction] = useState<Valuation | null>(null);
   const [loadingValuationDetails, setLoadingValuationDetails] = useState(false);
   const [selectedValuerId, setSelectedValuerId] = useState<string>("");
@@ -209,6 +218,11 @@ function AdminDashboard() {
     defaultValues: { assessmentValue: "", forcedValue: "", wsValue: "", rsValue: "" },
   });
   
+  const promoteAdminForm = useForm<PromoteAdminFormValues>({
+    resolver: zodResolver(promoteAdminSchema),
+    defaultValues: { password: "" },
+  });
+
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
   };
@@ -362,7 +376,7 @@ function AdminDashboard() {
           return;
       }
 
-      await addDoc(collection(db, collectionName), {
+      const docData: any = {
         name,
         username,
         email,
@@ -370,7 +384,13 @@ function AdminDashboard() {
         password,
         active: isControlActive,
         createdAt: serverTimestamp(),
-      });
+      };
+      
+      if (userType === 'staff') {
+        docData.isAdmin = false;
+      }
+
+      await addDoc(collection(db, collectionName), docData);
 
       if (userType === 'institution') setAddInstitutionOpen(false);
       else if (userType === 'valuer') setAddValuerOpen(false);
@@ -460,6 +480,43 @@ function AdminDashboard() {
     } catch (error) {
         console.error("Error deleting user: ", error);
         toast({ variant: "destructive", title: "Deletion Failed", description: "Could not delete user." });
+    }
+  };
+
+  const handlePromoteToAdmin = async (data: PromoteAdminFormValues) => {
+    if (!selectedStaffForPromotion) return;
+
+    try {
+        // Step 1: Create user in Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, selectedStaffForPromotion.email, data.password);
+        const newAdminUser = userCredential.user;
+
+        // Step 2: Update staff document in Firestore
+        const staffDocRef = doc(db, "staff", selectedStaffForPromotion.id);
+        await updateDoc(staffDocRef, {
+            isAdmin: true,
+            uid: newAdminUser.uid, // Store the auth UID
+            active: true // Ensure they are active
+        });
+
+        toast({
+            title: "Promotion Successful",
+            description: `${selectedStaffForPromotion.name} has been promoted to Admin.`,
+        });
+        setPromoteAdminOpen(false);
+        setSelectedStaffForPromotion(null);
+        promoteAdminForm.reset();
+
+    } catch (error: any) {
+        console.error("Error promoting staff to admin:", error);
+        const errorMessage = error.code === 'auth/email-already-in-use' 
+            ? "This email is already registered as an admin."
+            : "An error occurred during promotion.";
+        toast({
+            variant: "destructive",
+            title: "Promotion Failed",
+            description: errorMessage,
+        });
     }
   };
   
@@ -599,7 +656,13 @@ function AdminDashboard() {
     } finally {
         setLoadingValuationDetails(false);
     }
-};
+  };
+
+  const openPromoteAdminDialog = (staff: Staff) => {
+    setSelectedStaffForPromotion(staff);
+    setPromoteAdminOpen(true);
+  }
+
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
@@ -681,6 +744,7 @@ function AdminDashboard() {
                 <TableHead className="hidden sm:table-cell font-semibold text-left">Username</TableHead>
                 <TableHead className="hidden sm:table-cell font-semibold text-left">Email</TableHead>
                 <TableHead className="hidden md:table-cell font-semibold text-left">Phone</TableHead>
+                 {userType === 'staff' && <TableHead className="font-semibold text-center">Role</TableHead>}
                 <TableHead className="font-semibold text-center">Status</TableHead>
                 <TableHead className="text-right font-semibold">Actions</TableHead>
                 </TableRow>
@@ -698,6 +762,15 @@ function AdminDashboard() {
                     <TableCell className="hidden sm:table-cell">{item.username}</TableCell>
                     <TableCell className="hidden sm:table-cell">{item.email}</TableCell>
                     <TableCell className="hidden md:table-cell">{item.phone}</TableCell>
+                    {userType === 'staff' && (
+                        <TableCell className="text-center">
+                            {(item as Staff).isAdmin ? (
+                                <Badge variant="default"><ShieldCheck className="mr-1 h-3 w-3" />Admin</Badge>
+                            ) : (
+                                <Badge variant="secondary">Staff</Badge>
+                            )}
+                        </TableCell>
+                    )}
                     <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-2">
                         <span className={`text-sm font-medium ${item.active ? 'text-green-500' : 'text-red-500'}`}>
@@ -716,7 +789,13 @@ function AdminDashboard() {
                         />
                         </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-2">
+                        {userType === 'staff' && !(item as Staff).isAdmin && (
+                            <Button variant="outline" size="sm" onClick={() => openPromoteAdminDialog(item as Staff)}>
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                Promote
+                            </Button>
+                        )}
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                             <Button variant="outline" size="icon" className="bg-black text-primary hover:bg-black/90 hover:text-primary/90">
@@ -2022,6 +2101,41 @@ function AdminDashboard() {
             </DialogContent>
         </Dialog>
 
+        <Dialog open={isPromoteAdminOpen} onOpenChange={setPromoteAdminOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Promote to Admin</DialogTitle>
+                    <DialogDescription>
+                        Create admin credentials for {selectedStaffForPromotion?.name}. Their email will be used for login.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...promoteAdminForm}>
+                    <form onSubmit={promoteAdminForm.handleSubmit(handlePromoteToAdmin)} className="space-y-4">
+                        <FormField
+                            control={promoteAdminForm.control}
+                            name="password"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Set Initial Password</FormLabel>
+                                    <FormControl>
+                                        <Input type="password" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <DialogFooter>
+                           <Button type="button" variant="outline" onClick={() => setPromoteAdminOpen(false)}>Cancel</Button>
+                           <Button type="submit" disabled={promoteAdminForm.formState.isSubmitting}>
+                               {promoteAdminForm.formState.isSubmitting ? "Promoting..." : "Confirm & Promote"}
+                           </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+
+
     </SidebarProvider>
   );
 }
@@ -2035,6 +2149,7 @@ export default function AdminDashboardPage() {
 }
 
     
+
 
 
 

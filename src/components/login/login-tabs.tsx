@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from "react";
@@ -93,20 +94,53 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
   const onLoginSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
-      router.push('/admin/dashboard');
-      toast({ title: "Admin Login Successful", description: "Welcome back!" });
+        // Step 1: Sign in with Firebase Auth
+        const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+        const user = userCredential.user;
+
+        // Step 2: Check Firestore 'staff' collection for admin role and active status
+        const staffRef = collection(db, "staff");
+        const q = query(staffRef, where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            // This could be the root admin, not in the staff list. Or an error.
+            // For now, let's assume a root admin can always log in if Auth passes.
+            // A more robust system might check a specific 'admins' collection.
+             router.push('/admin/dashboard');
+             toast({ title: "Admin Login Successful", description: "Welcome back!" });
+        } else {
+            const staffDoc = querySnapshot.docs[0].data();
+            if (staffDoc.isAdmin && staffDoc.active) {
+                router.push('/admin/dashboard');
+                toast({ title: "Admin Login Successful", description: "Welcome back!" });
+            } else if (!staffDoc.active) {
+                 await signOut(auth);
+                 toast({
+                    variant: "destructive",
+                    title: "Account Inactive",
+                    description: "Your account is currently inactive. Please contact another administrator for assistance.",
+                });
+            } else {
+                 await signOut(auth);
+                 toast({
+                    variant: "destructive",
+                    title: "Login Failed",
+                    description: "You do not have administrative privileges.",
+                });
+            }
+        }
     } catch (error: any) {
-      const errorMessage = error.code === 'auth/invalid-credential'
-        ? 'Invalid email or password.'
-        : error.message;
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: errorMessage,
-      });
+        const errorMessage = error.code === 'auth/invalid-credential' 
+            ? 'Invalid email or password.'
+            : 'An unexpected error occurred.';
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: errorMessage,
+        });
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
   
