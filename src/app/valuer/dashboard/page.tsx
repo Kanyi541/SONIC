@@ -29,6 +29,7 @@ import { Progress } from "@/components/ui/progress";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 
 interface LoggedInUser {
@@ -81,6 +82,9 @@ type ChartDataPoint = {
 };
 
 const valuationSchema = z.object({
+  assessmentDate: z.date({
+    required_error: "An assessment date is required.",
+  }),
   images: z.array(z.string().url()).min(1, "At least one image is required."),
   comments: z.string().optional(),
 });
@@ -103,7 +107,6 @@ export default function ValuerDashboardPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
     const [itemsPerPage] = useState(5);
-    const [currentPage, setCurrentPage] = useState(1);
     const [allCarsCurrentPage, setAllCarsCurrentPage] = useState(1);
     const [pendingCurrentPage, setPendingCurrentPage] = useState(1);
     const [completedCurrentPage, setCompletedCurrentPage] = useState(1);
@@ -238,6 +241,7 @@ export default function ValuerDashboardPage() {
         try {
             await addDoc(collection(db, "valuations"), {
                 bookingId: selectedBooking.id,
+                assessmentDate: data.assessmentDate,
                 imageUrls: imageDataUrls,
                 comments: data.comments,
                 valuedBy: loggedInUser.name,
@@ -581,6 +585,46 @@ export default function ValuerDashboardPage() {
                                             </div>
                                         </CardContent>
                                     </Card>
+
+                                    <FormField
+                                        control={form.control}
+                                        name="assessmentDate"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-col">
+                                            <FormLabel>Date of Assessment</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-[240px] pl-3 text-left font-normal",
+                                                        !field.value && "text-muted-foreground"
+                                                    )}
+                                                    >
+                                                    {field.value ? (
+                                                        format(field.value, "PPP")
+                                                    ) : (
+                                                        <span>Pick a date</span>
+                                                    )}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
+                                                    initialFocus
+                                                />
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
 
                                      <FormField
                                         control={form.control}
