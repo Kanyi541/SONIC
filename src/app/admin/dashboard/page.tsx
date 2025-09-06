@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
@@ -185,6 +185,8 @@ function AdminDashboard() {
   const [isCompleteValuationOpen, setCompleteValuationOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
+  const [selectedValuationForAction, setSelectedValuationForAction] = useState<Valuation | null>(null);
+  const [loadingValuationDetails, setLoadingValuationDetails] = useState(false);
   const [selectedValuerId, setSelectedValuerId] = useState<string>("");
 
   const [itemsPerPage] = useState(5);
@@ -298,7 +300,7 @@ function AdminDashboard() {
     if (requiredBookingViews.includes(activeView) || activeView === 'dashboard') {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Booking[];
-            setBookings(data);
+            setBookings(data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
             if(activeView === 'dashboard') {
               generateChartData(data);
             }
@@ -556,6 +558,7 @@ function AdminDashboard() {
             toast({ title: "Valuation Completed", description: "The valuation has been finalized." });
             setCompleteValuationOpen(false);
             setSelectedBookingForAction(null);
+            setSelectedValuationForAction(null);
             adminValuationForm.reset();
 
         } catch (error) {
@@ -574,10 +577,27 @@ function AdminDashboard() {
     setRejectDialogOpen(true);
   }
   
-  const openCompleteValuationDialog = (booking: Booking) => {
+  const openCompleteValuationDialog = async (booking: Booking) => {
     setSelectedBookingForAction(booking);
     setCompleteValuationOpen(true);
-  };
+    setLoadingValuationDetails(true);
+    try {
+        const q = query(collection(db, "valuations"), where("bookingId", "==", booking.id), limit(1));
+        const valuationSnapshot = await getDocs(q);
+        if (!valuationSnapshot.empty) {
+            const valuationDoc = valuationSnapshot.docs[0];
+            setSelectedValuationForAction({ id: valuationDoc.id, ...valuationDoc.data() } as Valuation);
+        } else {
+            toast({ variant: "destructive", title: "Error", description: "Could not find the valuation report for this booking." });
+            setSelectedValuationForAction(null);
+        }
+    } catch (error) {
+        console.error("Error fetching valuation details:", error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to fetch valuation details." });
+    } finally {
+        setLoadingValuationDetails(false);
+    }
+};
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
@@ -1815,74 +1835,139 @@ function AdminDashboard() {
             </DialogContent>
         </Dialog>
 
-        <Dialog open={isCompleteValuationOpen} onOpenChange={setCompleteValuationOpen}>
-            <DialogContent>
+        <Dialog open={isCompleteValuationOpen} onOpenChange={(open) => {
+            if (!open) {
+                setSelectedBookingForAction(null);
+                setSelectedValuationForAction(null);
+            }
+            setCompleteValuationOpen(open);
+        }}>
+            <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Complete Valuation for #{selectedBookingForAction?.bookingNumber}</DialogTitle>
-                    <DialogDescription>Enter the final valuation details below.</DialogDescription>
+                    <DialogDescription>Review the details and enter the final valuation values.</DialogDescription>
                 </DialogHeader>
-                <Form {...adminValuationForm}>
-                    <form onSubmit={adminValuationForm.handleSubmit(handleCompleteValuation)} className="space-y-4">
-                        <FormField
-                            control={adminValuationForm.control}
-                            name="assessmentValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Assessment Value (KES)</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} placeholder="e.g., 1,500,000" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={adminValuationForm.control}
-                            name="forcedValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Forced Sale Value (KES)</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} placeholder="e.g., 1,200,000" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={adminValuationForm.control}
-                            name="wsValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Noted Value: WS (KES)</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} placeholder="e.g., 20,000" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={adminValuationForm.control}
-                            name="rsValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Noted Value: RS (KES)</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} placeholder="e.g., 25,000" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setCompleteValuationOpen(false)}>Cancel</Button>
-                            <Button type="submit" disabled={adminValuationForm.formState.isSubmitting}>
-                                {adminValuationForm.formState.isSubmitting ? "Saving..." : "Save & Complete"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
+                <div className="flex-grow overflow-y-auto pr-6 -mr-6 space-y-6">
+                    {loadingValuationDetails ? (
+                         <div className="flex items-center justify-center h-64">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                         </div>
+                    ) : selectedValuationForAction && selectedBookingForAction ? (
+                        <>
+                            <Card>
+                                <CardHeader><CardTitle>Client & Vehicle Details</CardTitle></CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Client Name:</span><span>{selectedBookingForAction.customerName}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Vehicle Make:</span><span>{selectedBookingForAction.carMake}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Client Phone:</span><span>{selectedBookingForAction.customerPhone}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Vehicle Model:</span><span>{selectedBookingForAction.carModel}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Client Email:</span><span>{selectedBookingForAction.customerEmail}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Registration No:</span><span>{selectedBookingForAction.plateNumber}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Insurance Co:</span><span>{selectedBookingForAction.insurerName}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Policy Number:</span><span>{selectedBookingForAction.policyNumber}</span></div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader><CardTitle>Valuer's Submission</CardTitle></CardHeader>
+                                <CardContent>
+                                     <div className="space-y-4">
+                                        <p><span className="font-medium text-muted-foreground">Valued By:</span> {selectedValuationForAction.valuedBy}</p>
+                                        {selectedValuationForAction.comments && <p><span className="font-medium text-muted-foreground">Comments:</span> {selectedValuationForAction.comments}</p>}
+                                        
+                                        <h4 className="font-medium text-lg">Valuation Photos</h4>
+                                        <Carousel className="w-full">
+                                            <CarouselContent>
+                                                {selectedValuationForAction.imageUrls.map((url, index) => (
+                                                    <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                                                        <div className="p-1">
+                                                            <Card>
+                                                                <CardContent className="flex aspect-square items-center justify-center p-0 overflow-hidden rounded-lg">
+                                                                     <Image src={url} alt={`Valuation image ${index + 1}`} width={400} height={300} className="object-cover w-full h-full" />
+                                                                </CardContent>
+                                                            </Card>
+                                                        </div>
+                                                    </CarouselItem>
+                                                ))}
+                                            </CarouselContent>
+                                            <CarouselPrevious />
+                                            <CarouselNext />
+                                        </Carousel>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Form {...adminValuationForm}>
+                                <form id="admin-valuation-form" onSubmit={adminValuationForm.handleSubmit(handleCompleteValuation)} className="space-y-4">
+                                    <FormField
+                                        control={adminValuationForm.control}
+                                        name="assessmentValue"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Assessment Value (KES)</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} placeholder="e.g., 1,500,000" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={adminValuationForm.control}
+                                        name="forcedValue"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Forced Sale Value (KES)</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} placeholder="e.g., 1,200,000" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={adminValuationForm.control}
+                                        name="wsValue"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Noted Value: WS (KES)</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} placeholder="e.g., 20,000" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={adminValuationForm.control}
+                                        name="rsValue"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Noted Value: RS (KES)</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} placeholder="e.g., 25,000" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </form>
+                            </Form>
+                        </>
+                    ) : (
+                        <div className="text-center text-muted-foreground py-10">
+                            <p>No valuation data found for this booking.</p>
+                        </div>
+                    )}
+                </div>
+                <DialogFooter className="pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setCompleteValuationOpen(false)}>Cancel</Button>
+                    <Button type="submit" form="admin-valuation-form" disabled={adminValuationForm.formState.isSubmitting || loadingValuationDetails}>
+                        {adminValuationForm.formState.isSubmitting ? "Saving..." : "Save & Complete"}
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
 
@@ -1899,3 +1984,4 @@ export default function AdminDashboardPage() {
 }
 
     
+
