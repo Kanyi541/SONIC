@@ -292,16 +292,15 @@ function AdminDashboard() {
         subscriptions.push(valUnsubscribe);
     }
     
-    const bookingsQuery = query(collection(db, "bookings"));
+    const bookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
     const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings', 'pending-valuation', 'valuated-bookings'];
 
     if (requiredBookingViews.includes(activeView) || activeView === 'dashboard') {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
-            let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const bookingsData = data.sort((a,b) => b.createdAt.toMillis() - a.createdAt.toMillis()) as Booking[];
-            setBookings(bookingsData);
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Booking[];
+            setBookings(data);
             if(activeView === 'dashboard') {
-              generateChartData(bookingsData);
+              generateChartData(data);
             }
             setLoading(false);
         }, (error) => {
@@ -1508,8 +1507,8 @@ function AdminDashboard() {
                                     <TableHead>Make and Model</TableHead>
                                     <TableHead>Customer</TableHead>
                                     <TableHead>Institution</TableHead>
-                                    <TableHead>Status</TableHead>
                                     <TableHead>Valuer</TableHead>
+                                    <TableHead>Status</TableHead>
                                     <TableHead>Assessment Value (KSH)</TableHead>
                                     <TableHead>Forced Value (KSH)</TableHead>
                                     <TableHead>Noted Value WS (KSH)</TableHead>
@@ -1526,8 +1525,8 @@ function AdminDashboard() {
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
@@ -1545,10 +1544,10 @@ function AdminDashboard() {
                                                 <TableCell>{`${booking.carMake} ${booking.carModel}`}</TableCell>
                                                 <TableCell>{booking.customerName}</TableCell>
                                                 <TableCell>{booking.insurerName}</TableCell>
+                                                <TableCell>{booking.assignedValuerName || 'N/A'}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                                 </TableCell>
-                                                <TableCell>{booking.assignedValuerName || 'N/A'}</TableCell>
                                                 <TableCell>{valuation?.assessmentValue || 'N/A'}</TableCell>
                                                 <TableCell>{valuation?.forcedValue || 'N/A'}</TableCell>
                                                 <TableCell>{valuation?.wsValue || 'N/A'}</TableCell>
@@ -1898,3 +1897,5 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
