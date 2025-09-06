@@ -2,7 +2,7 @@
 
 "use client"
 
-import React, { useState, useEffect, Suspense, useRef } from 'react';
+import React, { useState, useEffect, Suspense, useRef, useMemo } from 'react';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
@@ -179,6 +179,7 @@ function AdminDashboard() {
   const [isControlActive, setControlActive] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [bookingSearchTerm, setBookingSearchTerm] = useState('');
+  const [allCarsSearchTerm, setAllCarsSearchTerm] = useState("");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   
   const [isAssignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -1343,7 +1344,20 @@ function AdminDashboard() {
     </Card>
   )};
 
-  const completedBookings = bookings.filter(b => b.status === 'Completed');
+  const completedBookings = useMemo(() => {
+    return bookings
+      .filter(b => b.status === 'Completed')
+      .filter(b => {
+        const searchTerm = allCarsSearchTerm.toLowerCase();
+        return (
+          b.plateNumber.toLowerCase().includes(searchTerm) ||
+          b.bookingNumber.toLowerCase().includes(searchTerm) ||
+          b.customerName.toLowerCase().includes(searchTerm)
+        )
+      })
+      .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+  }, [bookings, allCarsSearchTerm]);
+
   const allCarsPaginated = completedBookings.slice(
       (allCarsPage - 1) * itemsPerPage,
       allCarsPage * itemsPerPage
@@ -1516,8 +1530,22 @@ function AdminDashboard() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>All Completed Cars</CardTitle>
-                        <CardDescription>A summary of all vehicles that have been completely valued.</CardDescription>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>All Completed Cars</CardTitle>
+                                <CardDescription>A summary of all vehicles that have been completely valued.</CardDescription>
+                            </div>
+                            <div className="relative w-full max-w-sm">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    placeholder="Search by plate, booking ID, customer..."
+                                    className="w-full rounded-lg bg-background pl-8"
+                                    value={allCarsSearchTerm}
+                                    onChange={(e) => setAllCarsSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -2007,6 +2035,7 @@ export default function AdminDashboardPage() {
 }
 
     
+
 
 
 
