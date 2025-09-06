@@ -198,6 +198,7 @@ function AdminDashboard() {
   const [rejectedBookingsPage, setRejectedBookingsPage] = useState(1);
   const [recentValuationsPage, setRecentValuationsPage] = useState(1);
   const [valuatedBookingsPage, setValuatedBookingsPage] = useState(1);
+  const [allCarsPage, setAllCarsPage] = useState(1);
 
   const adminValuationForm = useForm<AdminValuationFormValues>({
     resolver: zodResolver(adminValuationSchema),
@@ -1322,11 +1323,11 @@ function AdminDashboard() {
     </Card>
   )};
 
-  const totalRecentValuationPages = Math.ceil(recentValuations.length / itemsPerPage);
-  const paginatedRecentValuations = recentValuations.slice(
-      (recentValuationsPage - 1) * itemsPerPage,
-      recentValuationsPage * itemsPerPage
+  const allCarsPaginated = bookings.slice(
+      (allCarsPage - 1) * itemsPerPage,
+      allCarsPage * itemsPerPage
   );
+  const totalAllCarsPages = Math.ceil(bookings.length / itemsPerPage);
 
 
   return (
@@ -1507,6 +1508,8 @@ function AdminDashboard() {
                                     <TableHead>Make and Model</TableHead>
                                     <TableHead>Customer</TableHead>
                                     <TableHead>Institution</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Valuer</TableHead>
                                     <TableHead>Assessment Value (KSH)</TableHead>
                                     <TableHead>Forced Value (KSH)</TableHead>
                                     <TableHead>Noted Value WS (KSH)</TableHead>
@@ -1523,43 +1526,52 @@ function AdminDashboard() {
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
                                     </TableRow>
                                     ))
-                                ) : paginatedRecentValuations.length > 0 ? (
-                                    paginatedRecentValuations.map((valuation, index) => (
-                                    <TableRow key={valuation.id}>
-                                        <TableCell>{(recentValuationsPage - 1) * itemsPerPage + index + 1}</TableCell>
-                                        <TableCell>{valuation.booking?.plateNumber}</TableCell>
-                                        <TableCell className="font-mono text-xs">{valuation.booking?.bookingNumber}</TableCell>
-                                        <TableCell>{`${valuation.booking?.carMake || ''} ${valuation.booking?.carModel || ''}`}</TableCell>
-                                        <TableCell>{valuation.booking?.customerName}</TableCell>
-                                        <TableCell>{valuation.booking?.insurerName}</TableCell>
-                                        <TableCell>{valuation.assessmentValue}</TableCell>
-                                        <TableCell>{valuation.forcedValue}</TableCell>
-                                        <TableCell>{valuation.wsValue}</TableCell>
-                                        <TableCell>{valuation.rsValue}</TableCell>
-                                    </TableRow>
-                                    ))
+                                ) : allCarsPaginated.length > 0 ? (
+                                    allCarsPaginated.map((booking, index) => {
+                                        const valuation = valuations.find(v => v.bookingId === booking.id);
+                                        return (
+                                            <TableRow key={booking.id}>
+                                                <TableCell>{(allCarsPage - 1) * itemsPerPage + index + 1}</TableCell>
+                                                <TableCell>{booking.plateNumber}</TableCell>
+                                                <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
+                                                <TableCell>{`${booking.carMake} ${booking.carModel}`}</TableCell>
+                                                <TableCell>{booking.customerName}</TableCell>
+                                                <TableCell>{booking.insurerName}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                                                </TableCell>
+                                                <TableCell>{booking.assignedValuerName || 'N/A'}</TableCell>
+                                                <TableCell>{valuation?.assessmentValue || 'N/A'}</TableCell>
+                                                <TableCell>{valuation?.forcedValue || 'N/A'}</TableCell>
+                                                <TableCell>{valuation?.wsValue || 'N/A'}</TableCell>
+                                                <TableCell>{valuation?.rsValue || 'N/A'}</TableCell>
+                                            </TableRow>
+                                        )
+                                    })
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={10} className="h-24 text-center">
-                                            No recent valuations found.
+                                        <TableCell colSpan={12} className="h-24 text-center">
+                                            No bookings found.
                                         </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
                         </Table>
                          <div className="flex justify-end items-center gap-2 mt-4">
-                            <Button variant="outline" size="sm" onClick={() => setRecentValuationsPage(recentValuationsPage - 1)} disabled={recentValuationsPage === 1}>
+                            <Button variant="outline" size="sm" onClick={() => setAllCarsPage(allCarsPage - 1)} disabled={allCarsPage === 1}>
                                 <ChevronLeft className="h-4 w-4" />
                                 Previous
                             </Button>
-                            <span className="text-sm">Page {recentValuationsPage} of {totalRecentValuationPages}</span>
-                            <Button variant="outline" size="sm" onClick={() => setRecentValuationsPage(recentValuationsPage + 1)} disabled={recentValuationsPage === totalRecentValuationPages}>
+                            <span className="text-sm">Page {allCarsPage} of {totalAllCarsPages}</span>
+                            <Button variant="outline" size="sm" onClick={() => setAllCarsPage(allCarsPage + 1)} disabled={allCarsPage === totalAllCarsPages}>
                                 Next
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
@@ -1886,7 +1898,3 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
-
-    
-
-    
