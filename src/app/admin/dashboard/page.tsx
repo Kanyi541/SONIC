@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
@@ -1342,11 +1343,12 @@ function AdminDashboard() {
     </Card>
   )};
 
-  const allCarsPaginated = bookings.slice(
+  const completedBookings = bookings.filter(b => b.status === 'Completed');
+  const allCarsPaginated = completedBookings.slice(
       (allCarsPage - 1) * itemsPerPage,
       allCarsPage * itemsPerPage
   );
-  const totalAllCarsPages = Math.ceil(bookings.length / itemsPerPage);
+  const totalAllCarsPages = Math.ceil(completedBookings.length / itemsPerPage);
 
 
   return (
@@ -1514,8 +1516,8 @@ function AdminDashboard() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>All Cars</CardTitle>
-                        <CardDescription>A summary of all vehicles valued or pending valuation.</CardDescription>
+                        <CardTitle>All Completed Cars</CardTitle>
+                        <CardDescription>A summary of all vehicles that have been completely valued.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -1529,10 +1531,8 @@ function AdminDashboard() {
                                     <TableHead>Institution</TableHead>
                                     <TableHead>Valuer</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead>Assessment Value (KSH)</TableHead>
-                                    <TableHead>Forced Value (KSH)</TableHead>
-                                    <TableHead>Noted Value WS (KSH)</TableHead>
-                                    <TableHead>Noted Value RS (KSH)</TableHead>
+                                    <TableHead>Assessment Value</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -1548,9 +1548,7 @@ function AdminDashboard() {
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                                        <TableCell className="text-right"><Skeleton className="h-9 w-24" /></TableCell>
                                     </TableRow>
                                     ))
                                 ) : allCarsPaginated.length > 0 ? (
@@ -1569,16 +1567,41 @@ function AdminDashboard() {
                                                     <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                                 </TableCell>
                                                 <TableCell>{valuation?.assessmentValue || 'N/A'}</TableCell>
-                                                <TableCell>{valuation?.forcedValue || 'N/A'}</TableCell>
-                                                <TableCell>{valuation?.wsValue || 'N/A'}</TableCell>
-                                                <TableCell>{valuation?.rsValue || 'N/A'}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button variant="outline" size="sm">
+                                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                                Reports
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-56 p-2">
+                                                            <div className="grid gap-2">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    className="justify-start"
+                                                                    onClick={() => handleOpenReportInNewTab('booking', booking.id)}
+                                                                >
+                                                                    Booking Report
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    className="justify-start"
+                                                                    onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
+                                                                >
+                                                                    Valuation Report
+                                                                </Button>
+                                                            </div>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </TableCell>
                                             </TableRow>
                                         )
                                     })
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={12} className="h-24 text-center">
-                                            No bookings found.
+                                        <TableCell colSpan={10} className="h-24 text-center">
+                                            No completed bookings found.
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -1984,5 +2007,6 @@ export default function AdminDashboardPage() {
 }
 
     
+
 
 
