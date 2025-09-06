@@ -120,12 +120,17 @@ export default function ValuerDashboardPage() {
     useEffect(() => {
         const storedUserString = sessionStorage.getItem('loggedInUser');
         if (storedUserString) {
-            const user: LoggedInUser = JSON.parse(storedUserString);
-            setLoggedInUser(user);
+            try {
+                const user: LoggedInUser = JSON.parse(storedUserString);
+                setLoggedInUser(user);
+            } catch (e) {
+                console.error("Failed to parse user from session storage", e);
+                router.push('/');
+            }
         } else {
-            setLoading(false);
+             router.push('/');
         }
-    }, []);
+    }, [router]);
 
     const generateChartData = (bookings: Booking[]) => {
       const today = new Date();
@@ -158,7 +163,8 @@ export default function ValuerDashboardPage() {
     };
 
     useEffect(() => {
-        if (!loggedInUser) {
+        if (!loggedInUser?.username) {
+            setLoading(false);
             return;
         }
 
@@ -285,19 +291,39 @@ export default function ValuerDashboardPage() {
         }
     };
 
-    const filteredBookings = bookings.filter(booking => {
-        const searchTermLower = searchTerm.toLowerCase();
-        return (
-            booking.bookingNumber.toLowerCase().includes(searchTermLower) ||
-            booking.customerName.toLowerCase().includes(searchTermLower) ||
-            booking.plateNumber.toLowerCase().includes(searchTermLower) ||
-            booking.insurerName.toLowerCase().includes(searchTermLower)
-        );
-    });
+    const sortedBookings = useMemo(() => {
+        const statusOrder: { [key: string]: number } = {
+            "Pending Valuation": 1,
+            "Valuated": 2,
+            "Completed": 3,
+            "Rejected": 4,
+        };
+
+        const filtered = bookings.filter(booking => {
+            const searchTermLower = searchTerm.toLowerCase();
+            return (
+                booking.bookingNumber.toLowerCase().includes(searchTermLower) ||
+                booking.customerName.toLowerCase().includes(searchTermLower) ||
+                booking.plateNumber.toLowerCase().includes(searchTermLower) ||
+                booking.insurerName.toLowerCase().includes(searchTermLower)
+            );
+        });
+
+        return filtered.sort((a, b) => {
+            const orderA = statusOrder[a.status] || 99;
+            const orderB = statusOrder[b.status] || 99;
+            if (orderA !== orderB) {
+                return orderA - orderB;
+            }
+            // If statuses are the same, sort by creation date (newest first)
+            return b.createdAt.toMillis() - a.createdAt.toMillis();
+        });
+    }, [bookings, searchTerm]);
+
 
     const getFilteredBookingsByStatus = (status: string | string[]) => {
         const statuses = Array.isArray(status) ? status : [status];
-        return filteredBookings.filter(b => statuses.includes(b.status));
+        return sortedBookings.filter(b => statuses.includes(b.status));
     };
     
     const pendingValuationBookings = getFilteredBookingsByStatus('Pending Valuation');
@@ -508,11 +534,11 @@ export default function ValuerDashboardPage() {
                                         colorClass="bg-green-500"
                                     />
                                 </div>
-                                {renderBookingsTable(filteredBookings, "All Cars", "A summary of all assigned bookings.", allCarsCurrentPage, setAllCarsCurrentPage)}
+                                {renderBookingsTable(sortedBookings, "All Cars", "A summary of all assigned bookings.", allCarsCurrentPage, setAllCarsCurrentPage)}
                             </div>
                         </TabsContent>
                         <TabsContent value="all-bookings">
-                           {renderBookingsTable(filteredBookings, "All Bookings", "A list of all assigned bookings.", allCarsCurrentPage, setAllCarsCurrentPage)}
+                           {renderBookingsTable(sortedBookings, "All Bookings", "A list of all assigned bookings.", allCarsCurrentPage, setAllCarsCurrentPage)}
                         </TabsContent>
                          <TabsContent value="pending-valuation-bookings">
                            {renderBookingsTable(pendingValuationBookings, "Pending Valuations", "A list of all new vehicle valuations.", pendingCurrentPage, setPendingCurrentPage)}
