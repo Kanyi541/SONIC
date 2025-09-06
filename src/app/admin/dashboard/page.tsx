@@ -1439,7 +1439,7 @@ function AdminDashboard() {
                     <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, Admin!</h1>
                     <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Valuers & Assessors.</p>
                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <StatCard 
                         title="Pending Approval" 
                         value={stats.pendingApproval} 
@@ -1464,6 +1464,8 @@ function AdminDashboard() {
                         progress={stats.totalCars > 0 ? (stats.valuated / stats.totalCars) * 100 : 0}
                         colorClass="bg-blue-500"
                     />
+                </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <StatCard 
                         title="Approved" 
                         value={stats.approved} 
@@ -1472,8 +1474,6 @@ function AdminDashboard() {
                         progress={stats.totalCars > 0 ? (stats.approved / stats.totalCars) * 100 : 0}
                         colorClass="bg-green-500"
                     />
-                </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                      <StatCard 
                         title="Rejected" 
                         value={stats.rejected} 
@@ -1886,5 +1886,7 @@ export default function AdminDashboardPage() {
     </AuthGuard>
   );
 }
+
+    
 
     
