@@ -100,6 +100,7 @@ interface Staff {
   createdAt?: any;
   isAdmin?: boolean;
   uid?: string;
+  role?: 'Super Admin' | 'Admin';
 }
 
 interface Branch {
@@ -199,6 +200,7 @@ function AdminDashboard() {
   const [selectedValuationForAction, setSelectedValuationForAction] = useState<Valuation | null>(null);
   const [loadingValuationDetails, setLoadingValuationDetails] = useState(false);
   const [selectedValuerId, setSelectedValuerId] = useState<string>("");
+  const [currentUserRole, setCurrentUserRole] = useState<'Super Admin' | 'Admin' | null>(null);
 
   const [itemsPerPage] = useState(5);
   const [institutionsPage, setInstitutionsPage] = useState(1);
@@ -254,6 +256,25 @@ function AdminDashboard() {
         
         setChartData(monthlyData);
     };
+
+    useEffect(() => {
+        const fetchUserRole = async () => {
+            if (user) {
+                const staffRef = collection(db, "staff");
+                const q = query(staffRef, where("uid", "==", user.uid));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const staffData = querySnapshot.docs[0].data() as Staff;
+                    setCurrentUserRole(staffData.role || null);
+                } else {
+                    // This could be the root user not in the staff list
+                    setCurrentUserRole('Super Admin');
+                }
+            }
+        };
+        fetchUserRole();
+    }, [user]);
 
   useEffect(() => {
     setLoading(true);
@@ -388,6 +409,7 @@ function AdminDashboard() {
       
       if (userType === 'staff') {
         docData.isAdmin = false;
+        docData.role = 'Super Admin';
       }
 
       await addDoc(collection(db, collectionName), docData);
@@ -496,7 +518,8 @@ function AdminDashboard() {
         await updateDoc(staffDocRef, {
             isAdmin: true,
             uid: newAdminUser.uid, // Store the auth UID
-            active: true // Ensure they are active
+            active: true, // Ensure they are active
+            role: 'Admin', // Assign the limited 'Admin' role
         });
 
         toast({
@@ -730,10 +753,12 @@ function AdminDashboard() {
             <CardTitle className="font-headline text-3xl text-primary">{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
             </div>
-            <Button onClick={onAdd}>
-            <PlusCircle className="mr-2" />
-            Register New {userType === 'institution' ? 'Institution' : (userType.charAt(0).toUpperCase() + userType.slice(1))}
-            </Button>
+            {(userType !== 'staff' || currentUserRole === 'Super Admin') && (
+              <Button onClick={onAdd}>
+                  <PlusCircle className="mr-2" />
+                  Register New {userType === 'institution' ? 'Institution' : (userType.charAt(0).toUpperCase() + userType.slice(1))}
+              </Button>
+            )}
         </CardHeader>
         <CardContent>
             <Table>
@@ -765,7 +790,7 @@ function AdminDashboard() {
                     {userType === 'staff' && (
                         <TableCell className="text-center">
                             {(item as Staff).isAdmin ? (
-                                <Badge variant="default"><ShieldCheck className="mr-1 h-3 w-3" />Admin</Badge>
+                                <Badge variant="default"><ShieldCheck className="mr-1 h-3 w-3" />{(item as Staff).role || 'Admin'}</Badge>
                             ) : (
                                 <Badge variant="secondary">Staff</Badge>
                             )}
@@ -790,7 +815,7 @@ function AdminDashboard() {
                         </div>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
-                        {userType === 'staff' && !(item as Staff).isAdmin && (
+                        {userType === 'staff' && !(item as Staff).isAdmin && currentUserRole === 'Super Admin' && (
                             <Button variant="outline" size="sm" onClick={() => openPromoteAdminDialog(item as Staff)}>
                                 <ShieldCheck className="mr-2 h-4 w-4" />
                                 Promote
@@ -1531,7 +1556,7 @@ function AdminDashboard() {
                       <DropdownMenuContent className="w-56" align="end" forceMount>
                         <DropdownMenuLabel className="font-normal">
                           <div className="flex flex-col space-y-1">
-                            <p className="text-sm font-medium leading-none">Admin</p>
+                            <p className="text-sm font-medium leading-none">{currentUserRole || 'Admin'}</p>
                             <p className="text-xs leading-none text-muted-foreground">
                               {user?.email}
                             </p>
@@ -2149,6 +2174,7 @@ export default function AdminDashboardPage() {
 }
 
     
+
 
 
 
