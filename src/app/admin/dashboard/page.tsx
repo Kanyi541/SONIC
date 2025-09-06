@@ -810,6 +810,7 @@ function AdminDashboard() {
                                 else if (userType === 'staff') collectionName = 'staff';
                                 toggleStatus(item.id, item.active, collectionName, item.name);
                             }}
+                            disabled={userType === 'staff' && currentUserRole !== 'Super Admin'}
                             aria-label={`Toggle status for ${item.name}`}
                         />
                         </div>
@@ -821,33 +822,35 @@ function AdminDashboard() {
                                 Promote
                             </Button>
                         )}
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="icon" className="bg-black text-primary hover:bg-black/90 hover:text-primary/90">
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete the user {item.name}.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => {
-                                        let collectionName = '';
-                                        if (userType === 'institution') collectionName = 'insurers';
-                                        else if (userType === 'valuer') collectionName = 'valuers';
-                                        else if (userType === 'staff') collectionName = 'staff';
-                                        handleDeleteUser(item.id, item.name, collectionName)
-                                    }}>
-                                        Continue
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                        {currentUserRole === 'Super Admin' && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="icon" className="bg-black text-primary hover:bg-black/90 hover:text-primary/90">
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete the user {item.name}.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => {
+                                            let collectionName = '';
+                                            if (userType === 'institution') collectionName = 'insurers';
+                                            else if (userType === 'valuer') collectionName = 'valuers';
+                                            else if (userType === 'staff') collectionName = 'staff';
+                                            handleDeleteUser(item.id, item.name, collectionName)
+                                        }}>
+                                            Continue
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
                     </TableCell>
                 </TableRow>
                 ))}
@@ -2174,6 +2177,7 @@ export default function AdminDashboardPage() {
 }
 
     
+
 
 
 
