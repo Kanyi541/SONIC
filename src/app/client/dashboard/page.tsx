@@ -518,7 +518,6 @@ export default function ClientDashboardPage() {
           return;
       }
   
-      bookingForm.formState.isSubmitting = true;
       try {
           const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
           const storage = getStorage();
@@ -569,8 +568,6 @@ export default function ClientDashboardPage() {
               title: "Booking Failed",
               description: "An error occurred while creating the booking.",
           });
-      } finally {
-          bookingForm.formState.isSubmitting = false;
       }
   };
 
@@ -1697,5 +1694,7 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
 
     
