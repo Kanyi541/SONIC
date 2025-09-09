@@ -1508,29 +1508,6 @@ function AdminDashboard() {
                   Valuers
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            <Collapsible>
-              <CollapsibleTrigger asChild>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton className="w-full justify-between">
-                      <div className="flex items-center gap-2">
-                        <Building2 />
-                        <span>Company</span>
-                      </div>
-                      <ChevronDown className="h-4 w-4" />
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarMenu className="ml-4">
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => setActiveView('branches')} isActive={activeView === 'branches'} tooltip="Our Branches">
-                      <Building2 />
-                      Our Branches
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </CollapsibleContent>
-            </Collapsible>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -2318,6 +2295,7 @@ export default function AdminDashboardPage() {
 }
 
     
+
 
 
 
