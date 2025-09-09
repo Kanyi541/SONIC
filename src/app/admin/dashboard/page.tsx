@@ -322,7 +322,7 @@ function AdminDashboard() {
     subscribeToCollection("staff", setStaff, ["staff", "dashboard"]);
     subscribeToCollection("branches", setBranches, ["branches", "dashboard"]);
     
-    if (['dashboard', 'valuations', 'pending-valuation', 'valuated-bookings'].includes(activeView)) {
+    if (['dashboard', 'valuations', 'pending-valuation', 'valuated-bookings', 'all-cars'].includes(activeView)) {
         const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"));
         const valUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
@@ -332,7 +332,7 @@ function AdminDashboard() {
     }
     
     const bookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
-    const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings', 'pending-valuation', 'valuated-bookings'];
+    const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings', 'pending-valuation', 'valuated-bookings', 'all-cars'];
 
     if (requiredBookingViews.includes(activeView) || activeView === 'dashboard') {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
@@ -1451,9 +1451,8 @@ function AdminDashboard() {
     </Card>
   )};
 
-  const completedBookings = useMemo(() => {
+  const allBookings = useMemo(() => {
     return bookings
-      .filter(b => b.status === 'Completed')
       .filter(b => {
         const searchTerm = allCarsSearchTerm.toLowerCase();
         return (
@@ -1465,11 +1464,11 @@ function AdminDashboard() {
       .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
   }, [bookings, allCarsSearchTerm]);
 
-  const allCarsPaginated = completedBookings.slice(
+  const allBookingsPaginated = allBookings.slice(
       (allCarsPage - 1) * itemsPerPage,
       allCarsPage * itemsPerPage
   );
-  const totalAllCarsPages = Math.ceil(completedBookings.length / itemsPerPage);
+  const totalAllBookingsPages = Math.ceil(allBookings.length / itemsPerPage);
 
 
   return (
@@ -1652,7 +1651,7 @@ function AdminDashboard() {
                         title="All Cars" 
                         value={stats.totalCars} 
                         icon={<Car className="h-6 w-6 text-purple-500" />} 
-                        onClick={() => setActiveView('dashboard')}
+                        onClick={() => setActiveView('all-cars')}
                         progress={100}
                         colorClass="bg-purple-500"
                     />
@@ -1709,8 +1708,8 @@ function AdminDashboard() {
                                         <TableCell className="text-right"><Skeleton className="h-9 w-24" /></TableCell>
                                     </TableRow>
                                     ))
-                                ) : allCarsPaginated.length > 0 ? (
-                                    allCarsPaginated.map((booking, index) => {
+                                ) : allBookingsPaginated.length > 0 ? (
+                                    allBookingsPaginated.map((booking, index) => {
                                         const valuation = valuations.find(v => v.bookingId === booking.id);
                                         return (
                                             <TableRow key={booking.id}>
@@ -1770,8 +1769,8 @@ function AdminDashboard() {
                                 <ChevronLeft className="h-4 w-4" />
                                 Previous
                             </Button>
-                            <span className="text-sm">Page {allCarsPage} of {totalAllCarsPages}</span>
-                            <Button variant="outline" size="sm" onClick={() => setAllCarsPage(allCarsPage + 1)} disabled={allCarsPage === totalAllCarsPages}>
+                            <span className="text-sm">Page {allCarsPage} of {totalAllBookingsPages}</span>
+                            <Button variant="outline" size="sm" onClick={() => setAllCarsPage(allCarsPage + 1)} disabled={allCarsPage === totalAllBookingsPages}>
                                 Next
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
@@ -1876,7 +1875,126 @@ function AdminDashboard() {
                 </DialogContent>
             </Dialog>
 
-            {activeView === 'valuations' && renderValuationsTable(valuations, "All Valuations", "View and manage all submitted valuation reports.", valuationsPage, setValuationsPage)}
+            {activeView === 'valuations' && renderValuationsTable(valuations.filter(v => v.status === 'Approved'), "Approved Valuations", "View and manage all approved valuation reports.", valuationsPage, setValuationsPage)}
+            
+            {activeView === 'all-cars' && (
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>All Bookings</CardTitle>
+                                <CardDescription>A complete list of every booking in the system.</CardDescription>
+                            </div>
+                            <div className="relative w-full max-w-sm">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    placeholder="Search by plate, booking ID, customer..."
+                                    className="w-full rounded-lg bg-background pl-8"
+                                    value={allCarsSearchTerm}
+                                    onChange={(e) => setAllCarsSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>No.</TableHead>
+                                    <TableHead>Plate Number</TableHead>
+                                    <TableHead>Booking ID</TableHead>
+                                    <TableHead>Make and Model</TableHead>
+                                    <TableHead>Customer</TableHead>
+                                    <TableHead>Institution</TableHead>
+                                    <TableHead>Valuer</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    Array.from({ length: itemsPerPage }).map((_, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                                        <TableCell className="text-right"><Skeleton className="h-9 w-24" /></TableCell>
+                                    </TableRow>
+                                    ))
+                                ) : allBookingsPaginated.length > 0 ? (
+                                    allBookingsPaginated.map((booking, index) => (
+                                        <TableRow key={booking.id}>
+                                            <TableCell>{(allCarsPage - 1) * itemsPerPage + index + 1}</TableCell>
+                                            <TableCell>{booking.plateNumber}</TableCell>
+                                            <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
+                                            <TableCell>{`${booking.carMake} ${booking.carModel}`}</TableCell>
+                                            <TableCell>{booking.customerName}</TableCell>
+                                            <TableCell>{booking.insurerName}</TableCell>
+                                            <TableCell>{booking.assignedValuerName || 'N/A'}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="outline" size="sm">
+                                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                            Reports
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-56 p-2">
+                                                        <div className="grid gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                className="justify-start"
+                                                                onClick={() => handleOpenReportInNewTab('booking', booking.id)}
+                                                            >
+                                                                Booking Report
+                                                            </Button>
+                                                            {booking.status === 'Completed' && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    className="justify-start"
+                                                                    onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
+                                                                >
+                                                                    Valuation Report
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={9} className="h-24 text-center">
+                                            No bookings found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                         <div className="flex justify-end items-center gap-2 mt-4">
+                            <Button variant="outline" size="sm" onClick={() => setAllCarsPage(allCarsPage - 1)} disabled={allCarsPage === 1}>
+                                <ChevronLeft className="h-4 w-4" />
+                                Previous
+                            </Button>
+                            <span className="text-sm">Page {allCarsPage} of {totalAllBookingsPages}</span>
+                            <Button variant="outline" size="sm" onClick={() => setAllCarsPage(allCarsPage + 1)} disabled={allCarsPage === totalAllBookingsPages}>
+                                Next
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
             
             {activeView === 'new-bookings' && renderNewBookingsTable(bookings.filter(b => b.status === 'Pending Approval'), "New Bookings", "Review and approve or reject new bookings.", newBookingsPage, setNewBookingsPage)}
 
@@ -2200,6 +2318,7 @@ export default function AdminDashboardPage() {
 }
 
     
+
 
 
 
