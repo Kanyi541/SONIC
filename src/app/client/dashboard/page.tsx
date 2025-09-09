@@ -46,7 +46,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc, serverTimestamp } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight, KeyRound, Upload, File as FileIcon, X } from "lucide-react";
@@ -198,8 +197,8 @@ const bookingSchema = z.object({
   maxValuationDays: z.string().min(1, "Maximum valuation days are required"),
   authorisedBy: z.string().min(1, "Authorising agent is required"),
   comments: z.string().optional(),
-  insuranceLetter: z.any().optional(),
-  logbookImage: z.any().optional(),
+  insuranceLetter: z.string().optional(),
+  logbookImage: z.string().optional(),
 });
 
 type BookingFormValues = z.infer<typeof bookingSchema>;
@@ -253,8 +252,8 @@ export default function ClientDashboardPage() {
   const [staffSearchTerm, setStaffSearchTerm] = useState("");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
 
-  const insuranceLetterRef = useRef<HTMLInputElement>(null);
-  const logbookImageRef = useRef<HTMLInputElement>(null);
+  const [insuranceLetterUrl, setInsuranceLetterUrl] = useState<string | null>(null);
+  const [logbookImageUrl, setLogbookImageUrl] = useState<string | null>(null);
 
   const [itemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -288,6 +287,8 @@ export default function ClientDashboardPage() {
         maxValuationDays: "",
         authorisedBy: "",
         comments: "",
+        insuranceLetter: "",
+        logbookImage: ""
     }
   });
 
@@ -309,10 +310,6 @@ export default function ClientDashboardPage() {
   const carModels = useMemo(() => {
     return selectedCarMake ? carData.find(make => make.brand === selectedCarMake)?.models || [] : [];
   }, [selectedCarMake]);
-
-  const insuranceLetterFile = watchBooking("insuranceLetter");
-  const logbookImageFile = watchBooking("logbookImage");
-
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem('loggedInUser');
@@ -512,64 +509,57 @@ export default function ClientDashboardPage() {
     }
   };
 
-  const handleSaveBooking = async (data: BookingFormValues) => {
-      if (!loggedInUser) {
-          toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to create a booking." });
-          return;
-      }
-  
-      try {
-          const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-          const storage = getStorage();
-  
-          let insuranceLetterUrl = "";
-          if (data.insuranceLetter && data.insuranceLetter.length > 0) {
-              const file = data.insuranceLetter[0];
-              const storageRef = ref(storage, `insurance-letters/${bookingNumber}-${file.name}`);
-              await uploadBytes(storageRef, file);
-              insuranceLetterUrl = await getDownloadURL(storageRef);
-          }
-  
-          let logbookImageUrl = "";
-          if (data.logbookImage && data.logbookImage.length > 0) {
-              const file = data.logbookImage[0];
-              const storageRef = ref(storage, `logbooks/${bookingNumber}-${file.name}`);
-              await uploadBytes(storageRef, file);
-              logbookImageUrl = await getDownloadURL(storageRef);
-          }
-  
-          // Data to save in Firestore
-          const { insuranceLetter, logbookImage, ...firestoreData } = data;
-  
-          await addDoc(collection(db, "bookings"), {
-              ...firestoreData,
-              bookingNumber,
-              createdAt: new Date(),
-              status: "Pending Approval",
-              insurerId: loggedInUser.username,
-              insurerName: loggedInUser.name,
-              insuranceLetterUrl,
-              logbookImageUrl,
-          });
-  
-          toast({
-              title: "Booking Created",
-              description: `Booking #${bookingNumber} for ${data.customerName} has been saved.`,
-          });
-          setBookingDialogOpen(false);
-          resetBookingForm();
-          if (insuranceLetterRef.current) insuranceLetterRef.current.value = "";
-          if (logbookImageRef.current) logbookImageRef.current.value = "";
-  
-      } catch (error) {
-          console.error("Error creating booking: ", error);
-          toast({
-              variant: "destructive",
-              title: "Booking Failed",
-              description: "An error occurred while creating the booking.",
-          });
-      }
-  };
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setUrl: (url: string | null) => void) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (loadEvent) => {
+                setUrl(loadEvent.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setUrl(null);
+        }
+    };
+
+    const handleSaveBooking = async (data: BookingFormValues) => {
+        if (!loggedInUser) {
+            toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to create a booking." });
+            return;
+        }
+
+        try {
+            const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+            await addDoc(collection(db, "bookings"), {
+                ...data,
+                bookingNumber,
+                createdAt: new Date(),
+                status: "Pending Approval",
+                insurerId: loggedInUser.username,
+                insurerName: loggedInUser.name,
+                insuranceLetter: insuranceLetterUrl,
+                logbookImage: logbookImageUrl,
+            });
+
+            toast({
+                title: "Booking Created",
+                description: `Booking #${bookingNumber} for ${data.customerName} has been saved.`,
+            });
+            setBookingDialogOpen(false);
+            resetBookingForm();
+            setInsuranceLetterUrl(null);
+            setLogbookImageUrl(null);
+
+        } catch (error) {
+            console.error("Error creating booking: ", error);
+            toast({
+                variant: "destructive",
+                title: "Booking Failed",
+                description: "An error occurred while creating the booking.",
+            });
+        }
+    };
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
@@ -1065,48 +1055,30 @@ export default function ClientDashboardPage() {
                           />
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                                control={bookingControl}
-                                name="insuranceLetter"
-                                render={({ field: { onChange, value, ...rest } }) => (
-                                    <FormItem>
-                                        <FormLabel>Insurance Letter (Optional)</FormLabel>
-                                        <FormControl>
-                                            <div className="relative">
-                                                <Input 
-                                                    type="file" 
-                                                    accept=".pdf,.doc,.docx"
-                                                    onChange={(e) => onChange(e.target.files)}
-                                                    {...rest}
-                                                    ref={insuranceLetterRef}
-                                                    className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                                                />
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={bookingControl}
-                                name="logbookImage"
-                                render={({ field: { onChange, value, ...rest } }) => (
-                                    <FormItem>
-                                        <FormLabel>Logbook Image (Optional)</FormLabel>
-                                        <FormControl>
-                                            <Input 
-                                                type="file" 
-                                                accept="image/*"
-                                                onChange={(e) => onChange(e.target.files)}
-                                                {...rest}
-                                                ref={logbookImageRef}
-                                                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <FormItem>
+                                <FormLabel>Insurance Letter (Optional)</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="file"
+                                        accept=".pdf,.doc,.docx,image/*"
+                                        onChange={(e) => handleFileChange(e, setInsuranceLetterUrl)}
+                                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            <FormItem>
+                                <FormLabel>Logbook Image (Optional)</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => handleFileChange(e, setLogbookImageUrl)}
+                                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
                         </div>
 
 
