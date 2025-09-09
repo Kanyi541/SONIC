@@ -509,9 +509,43 @@ export default function ClientDashboardPage() {
     }
   };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setUrl: (url: string | null) => void) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setUrl: (url: string | null) => void, fileType: 'pdf' | 'image') => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
+            const MAX_FILE_SIZE = 3.2 * 1024 * 1024; // 3.2 MB
+
+            // Validate file size
+            if (file.size > MAX_FILE_SIZE) {
+                toast({
+                    variant: "destructive",
+                    title: "File Too Large",
+                    description: `The selected file must be smaller than 3.2 MB.`,
+                });
+                e.target.value = ''; // Clear the input
+                return;
+            }
+
+            // Validate file type
+            if (fileType === 'pdf' && !file.type.includes('pdf')) {
+                toast({
+                    variant: "destructive",
+                    title: "Invalid File Type",
+                    description: "Please select a PDF file for the insurance letter.",
+                });
+                e.target.value = '';
+                return;
+            }
+
+            if (fileType === 'image' && !file.type.startsWith('image/')) {
+                 toast({
+                    variant: "destructive",
+                    title: "Invalid File Type",
+                    description: "Please select an image file for the logbook.",
+                });
+                e.target.value = '';
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = (loadEvent) => {
                 setUrl(loadEvent.target?.result as string);
@@ -1056,12 +1090,12 @@ export default function ClientDashboardPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormItem>
-                                <FormLabel>Insurance Letter (Optional)</FormLabel>
+                                <FormLabel>Insurance Letter (PDF only)</FormLabel>
                                 <FormControl>
                                     <Input
                                         type="file"
-                                        accept=".pdf,.doc,.docx,image/*"
-                                        onChange={(e) => handleFileChange(e, setInsuranceLetterUrl)}
+                                        accept=".pdf"
+                                        onChange={(e) => handleFileChange(e, setInsuranceLetterUrl, 'pdf')}
                                         className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                                     />
                                 </FormControl>
@@ -1073,7 +1107,7 @@ export default function ClientDashboardPage() {
                                     <Input
                                         type="file"
                                         accept="image/*"
-                                        onChange={(e) => handleFileChange(e, setLogbookImageUrl)}
+                                        onChange={(e) => handleFileChange(e, setLogbookImageUrl, 'image')}
                                         className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                                     />
                                 </FormControl>
@@ -1666,6 +1700,8 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
 
     
 
