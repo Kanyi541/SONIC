@@ -810,7 +810,7 @@ function AdminDashboard() {
                                 else if (userType === 'staff') collectionName = 'staff';
                                 toggleStatus(item.id, item.active, collectionName, item.name);
                             }}
-                            disabled={userType === 'staff' && currentUserRole !== 'Super Admin'}
+                            disabled={currentUserRole !== 'Super Admin'}
                             aria-label={`Toggle status for ${item.name}`}
                         />
                         </div>
@@ -1503,12 +1503,35 @@ function AdminDashboard() {
                     Our Staff
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('branches')} isActive={activeView === 'branches'} tooltip="Our Branches">
-                    <Building2 />
-                    Our Branches
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton className="w-full justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 />
+                        <span>Company</span>
+                      </div>
+                      <ChevronDown className="h-4 w-4" />
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenu className="ml-4">
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Valuers">
+                      <UserCog />
+                      Valuers
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => setActiveView('branches')} isActive={activeView === 'branches'} tooltip="Our Branches">
+                      <Building2 />
+                      Our Branches
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </CollapsibleContent>
+            </Collapsible>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -1626,10 +1649,9 @@ function AdminDashboard() {
                         colorClass="bg-red-500"
                     />
                     <StatCard 
-                        title="Valuers" 
-                        value={stats.totalValuers} 
-                        icon={<UserCog className="h-6 w-6 text-purple-500" />} 
-                        onClick={() => setActiveView('valuers')}
+                        title="All Cars" 
+                        value={stats.totalCars} 
+                        icon={<Car className="h-6 w-6 text-purple-500" />} 
                         progress={100}
                         colorClass="bg-purple-500"
                     />
@@ -2177,6 +2199,7 @@ export default function AdminDashboardPage() {
 }
 
     
+
 
 
 
