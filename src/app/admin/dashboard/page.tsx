@@ -1502,6 +1502,12 @@ function AdminDashboard() {
                     Our Staff
                 </SidebarMenuButton>
             </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Valuers">
+                  <UserCog />
+                  Valuers
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             <Collapsible>
               <CollapsibleTrigger asChild>
                   <SidebarMenuItem>
@@ -1516,12 +1522,6 @@ function AdminDashboard() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <SidebarMenu className="ml-4">
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Valuers">
-                      <UserCog />
-                      Valuers
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => setActiveView('branches')} isActive={activeView === 'branches'} tooltip="Our Branches">
                       <Building2 />
@@ -2318,6 +2318,7 @@ export default function AdminDashboardPage() {
 }
 
     
+
 
 
 
