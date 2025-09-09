@@ -1652,6 +1652,7 @@ function AdminDashboard() {
                         title="All Cars" 
                         value={stats.totalCars} 
                         icon={<Car className="h-6 w-6 text-purple-500" />} 
+                        onClick={() => setActiveView('dashboard')}
                         progress={100}
                         colorClass="bg-purple-500"
                     />
@@ -2199,6 +2200,7 @@ export default function AdminDashboardPage() {
 }
 
     
+
 
 
 
