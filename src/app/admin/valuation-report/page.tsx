@@ -1,14 +1,14 @@
 
 "use client";
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { doc, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, XCircle, Phone, Mail, MapPin } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import QRCode from 'qrcode';
 
 
 interface Valuation {
@@ -48,6 +48,15 @@ interface Valuation {
     tyresCondition?: string;
     extras?: string;
     comments?: string;
+    resaleAbility?: string;
+    specialPointOut?: string;
+    disclaimer?: string;
+    windscreenValue?: string;
+    radioSystemValue?: string;
+    examiner?: string;
+    locationOfInspection?: string;
+    destination?: string;
+    brokerAgent?: string;
 }
 
 interface Booking {
@@ -59,207 +68,167 @@ interface Booking {
   plateNumber: string;
   carMake: string;
   carModel: string;
+  carType?: string;
   policyNumber?: string;
   authorisedBy?: string;
   createdAt: any;
   branch?: string; 
   insurerName?: string;
   logbookImage?: string;
+  status: string;
 }
 
 interface ReportState {
   valuation: Valuation | null;
   booking: Booking | null;
   loading: boolean;
+  qrCodeUrl: string | null;
 }
 
-const ConditionChecklist = ({ title, data, notes }: { title: string, data?: Record<string, 'Yes' | 'No'>, notes?: string }) => {
-    if (!data) return null;
-    const entries = Object.entries(data);
-    if (entries.length === 0) return null;
-
-    // Split into two columns
-    const midPoint = Math.ceil(entries.length / 2);
-    const column1 = entries.slice(0, midPoint);
-    const column2 = entries.slice(midPoint);
-
-    const toSentenceCase = (str: string) => {
-        const result = str.replace(/([A-Z])/g, " $1");
-        return result.charAt(0).toUpperCase() + result.slice(1);
-    };
-
-    return (
-        <section className="mb-8 break-inside-avoid">
-            <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">{title}</h3>
-            <div className="grid grid-cols-2 gap-x-12">
-                <div className="space-y-2">
-                    {column1.map(([key, value]) => (
-                        <div key={key} className="flex justify-between items-center text-sm">
-                            <span className="text-gray-600">{toSentenceCase(key)}:</span>
-                            <span className={`font-medium ${value === 'Yes' ? 'text-red-600' : 'text-green-600'}`}>{value}</span>
-                        </div>
-                    ))}
-                </div>
-                <div className="space-y-2">
-                     {column2.map(([key, value]) => (
-                        <div key={key} className="flex justify-between items-center text-sm">
-                            <span className="text-gray-600">{toSentenceCase(key)}:</span>
-                            <span className={`font-medium ${value === 'Yes' ? 'text-red-600' : 'text-green-600'}`}>{value}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            {notes && (
-                <div className="mt-4">
-                    <h4 className="font-semibold text-gray-700">Notes:</h4>
-                    <p className="text-sm text-gray-700 p-3 bg-gray-50 rounded-md border mt-1">{notes}</p>
-                </div>
-            )}
-        </section>
-    );
-};
+const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div>
+        <span className="font-bold text-xs uppercase text-gray-600">{label}:</span>
+        <span className="ml-2 font-mono text-xs font-bold text-blue-800">{value || 'N/A'}</span>
+    </div>
+);
 
 
-class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null}> {
+class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null, qrCodeUrl: string | null}> {
   render() {
-    const { valuation, booking } = this.props;
+    const { valuation, booking, qrCodeUrl } = this.props;
 
     if (!valuation || !booking) {
         return <div className="p-4 text-center text-muted-foreground">No valuation report found for this booking.</div>;
     }
-
-    const renderDetailRow = (label: string, value: any) => (
-        <div className="flex justify-between py-1.5 border-b border-gray-100">
-            <span className="font-semibold text-gray-600">{label}:</span>
-            <span className="text-gray-800 text-right">{value || 'N/A'}</span>
-        </div>
-    );
     
+    const accessories = [
+        valuation.numberOfAirbags ? `${valuation.numberOfAirbags} SRS airbags` : null,
+        valuation.extras,
+    ].filter(Boolean).join(', ');
+
     return (
-      <div className="bg-white shadow-lg rounded-lg flex flex-col min-h-[calc(100vh-4rem)]">
-        <header className="bg-[#1a1a1a] p-6 relative print:hidden">
-            <div className="w-48">
-              <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
-            </div>
-            <div className="absolute right-0 top-0 h-full w-4 bg-primary" />
-        </header>
-
-        <main className="flex-grow p-10 print:p-8 watermarked">
-          <div className="report-content">
-             <div className="text-center mb-8 hidden print:block">
-                 <Image src="/logo.png" alt="Company Logo" width={200} height={80} className="mx-auto" />
-             </div>
-            <h2 className="text-2xl font-bold text-center text-black uppercase tracking-widest mb-2">
-                Motor Vehicle Valuation Report
-            </h2>
-             <p className="text-center text-sm text-gray-500 mb-8">Ref: {booking.bookingNumber}</p>
-
-            {valuation.status === 'Rejected' && (
-                <Alert variant="destructive" className="mb-8">
-                    <XCircle className="h-4 w-4" />
-                    <AlertTitle>Report Rejected by Admin</AlertTitle>
-                    <AlertDescription>
-                       <strong>Reason:</strong> {valuation.rejectionReason || "This valuation report was rejected."}
-                    </AlertDescription>
-                </Alert>
-            )}
-
-            <section className="mb-8 break-after-page">
-                <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Section A: Vehicle Particulars</h3>
-                <div className="grid grid-cols-2 gap-x-12 gap-y-1 text-sm">
-                    {renderDetailRow("Client Name", booking.customerName)}
-                    {renderDetailRow("Client Phone", booking.customerPhone)}
-                    {renderDetailRow("Client Email", booking.customerEmail)}
-                    {renderDetailRow("Insurance Co.", booking.insurerName)}
-                    {renderDetailRow("Policy Number", booking.policyNumber)}
-                    {renderDetailRow("Policy Expiry", valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A')}
-                    {renderDetailRow("Vehicle Make", booking.carMake)}
-                    {renderDetailRow("Vehicle Model", booking.carModel)}
-                    {renderDetailRow("Registration No", booking.plateNumber)}
-                    {renderDetailRow("Date of Registration", valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A')}
-                    {renderDetailRow("Year of Manufacture", valuation.yearOfManufacture)}
-                    {renderDetailRow("Colour", valuation.colour)}
-                    {renderDetailRow("Chassis No.", valuation.chassisNo)}
-                    {renderDetailRow("Engine No.", valuation.engineNo)}
-                    {renderDetailRow("Engine Rating", valuation.engineRating)}
-                    {renderDetailRow("Fuel Type", valuation.fuelType)}
-                    {renderDetailRow("Odometer Reading", valuation.odometerReadings)}
-                    {renderDetailRow("Transmission", valuation.transmissionType)}
-                    {renderDetailRow("No. of Airbags", valuation.numberOfAirbags)}
-                    {renderDetailRow("Lights Type", valuation.lightsType)}
-                    {renderDetailRow("Country of Origin", valuation.countryOfOrigin)}
-                    {renderDetailRow("Anti-Theft System", valuation.antiTheft)}
-                    {renderDetailRow("Tyres Type", valuation.tyresType)}
-                    {renderDetailRow("Tyres Condition", valuation.tyresCondition)}
-                    {renderDetailRow("Extras", valuation.extras)}
-                </div>
-            </section>
-            
-            <ConditionChecklist title="Section B: Coach Work Assessment" data={valuation.coachWork} notes={valuation.coachWorkNotes} />
-            
-            <ConditionChecklist title="Section C: Mechanical Condition" data={valuation.mechanicalCondition} notes={valuation.mechanicalNotes} />
-
-            <ConditionChecklist title="Section D: Electrical Condition" data={valuation.electricalCondition} notes={valuation.electricalNotes} />
-
-            <section className="mb-8 break-before-page">
-                <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Section E: Valuation Summary</h3>
-                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-base">
-                    <div className="flex justify-between"><span className="font-semibold text-gray-700">Valued By:</span><span>{valuation.valuedBy}</span></div>
-                    <div className="flex justify-between"><span className="font-semibold text-gray-700">Assessment Date:</span><span>{new Date(valuation.assessmentDate?.toDate()).toLocaleDateString()}</span></div>
-                    <div className="flex justify-between"><span className="font-semibold text-gray-700">Report Date:</span><span>{new Date(valuation.valuedAt?.toDate()).toLocaleString()}</span></div>
-                    <div></div>
-                    <div className="flex justify-between text-lg"><span className="font-bold text-green-700">Assessment Value:</span><span className="font-mono font-bold text-green-700">KES {valuation.assessmentValue}</span></div>
-                    <div className="flex justify-between text-lg"><span className="font-bold text-orange-700">Forced Sale Value:</span><span className="font-mono font-bold text-orange-700">KES {valuation.forcedValue}</span></div>
-                    <div className="flex justify-between"><span className="font-semibold text-gray-700">Noted Value (WS):</span><span className="font-mono">KES {valuation.wsValue}</span></div>
-                    <div className="flex justify-between"><span className="font-semibold text-gray-700">Noted Value (RS):</span><span className="font-mono">KES {valuation.rsValue}</span></div>
-                </div>
-                 {valuation.comments && (
-                    <div className="mt-6">
-                        <h4 className="font-semibold text-gray-700 text-lg">General Valuer's Comments</h4>
-                        <p className="text-base text-gray-700 p-4 bg-gray-50 rounded-md border mt-2">{valuation.comments}</p>
-                    </div>
-                )}
-            </section>
-            
-            <section className="break-before-page">
-                <h3 className="text-xl font-semibold text-black mb-4 pb-2 border-b border-gray-300">Section F: Vehicle & Document Images</h3>
-                <div className="grid grid-cols-2 gap-6">
-                     {booking.logbookImage && (
-                        <div className="border rounded-lg overflow-hidden shadow-sm">
-                            <h4 className="p-2 text-sm font-semibold bg-gray-100 border-b">Logbook</h4>
-                            <Image src={booking.logbookImage} alt="Logbook Image" width={800} height={600} className="object-cover w-full aspect-[4/3]" />
-                        </div>
-                    )}
-                    {valuation.imageUrls.map((url, index) => (
-                        <div key={index} className="border rounded-lg overflow-hidden shadow-sm">
-                            <h4 className="p-2 text-sm font-semibold bg-gray-100 border-b">Vehicle Image {index + 1}</h4>
-                            <Image src={url} alt={`Valuation Image ${index + 1}`} width={800} height={600} className="object-cover w-full aspect-[4/3]" />
-                        </div>
-                    ))}
-                </div>
-            </section>
+      <div className="bg-white shadow-lg rounded-lg p-6 font-sans text-[10px] leading-tight">
+        {/* Header */}
+        <div className="flex justify-between items-start mb-2">
+          <div className="w-1/4">
+            <Image src="/logo.png" alt="Company Logo" width={150} height={60} />
+            <p className="text-left mt-1 text-[8px] font-bold">PIN / VAT NO. P051392333V</p>
           </div>
-        </main>
+          <div className="w-3/4 text-center -ml-12">
+            <h1 className="font-bold text-lg text-blue-900">UKUMBI MOTOR VALUERS AND ASSESSORS LTD</h1>
+            <p className="text-[9px]">Valuation and Assessment for Bank Loan Facilities, Motor Vehicles Buying & Selling, Court Bonds, Inventories, Insurance purposes and Acciddent Assessment etc</p>
+            <p className="text-[9px]">Plessy Hse, next to Nissan Kenya & Carrefour Mega, along Uhuru Highway.</p>
+            <p className="text-[9px]">P.O. Box 24976-00100, Nairobi. Mob: 0712 971188 / 0721 917828 / 0722 292253</p>
+          </div>
+        </div>
 
-        <footer className="bg-[#1a1a1a] p-4 text-white text-xs mt-auto print:hidden">
-            <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 text-center">
-                <div className="flex items-center justify-center gap-2">
-                    <Phone size={14} className="text-primary"/>
-                    <span>0722924854 / 0737924854</span>
+        <div className="text-center bg-gray-200 py-1 my-2">
+            <h2 className="font-bold text-base tracking-wider">MOTOR VEHICLE VALUATION REPORT</h2>
+        </div>
+
+        {/* Top Meta */}
+        <div className="border-y border-gray-400 py-1">
+            <div className="flex justify-between">
+                <DetailItem label="Serial No" value={booking.bookingNumber} />
+                <DetailItem label="Purpose" value="FOR INSURANCE USE ONLY" />
+                <DetailItem label="Date" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} />
+            </div>
+            <div className="flex justify-between mt-1">
+                <div className="w-1/2">
+                    <DetailItem label="Client's Name" value={booking.customerName} />
+                    <DetailItem label="Insurer" value={booking.insurerName} />
+                    <DetailItem label="Exp" value={valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'} />
+                    <DetailItem label="Box No." value="TBA" />
                 </div>
-                <div className="flex items-center justify-center gap-2">
-                    <MapPin size={14} className="text-primary"/>
-                    <span>Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</span>
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                    <Mail size={14} className="text-primary"/>
-                    <span>casamotorvaluers@gmail.com</span>
+                <div className="w-1/2">
+                    <DetailItem label="Contacts" value={booking.customerPhone} />
+                    <DetailItem label="Ins Cert. No" value={booking.policyNumber} />
+                    <DetailItem label="Policy No" value={booking.policyNumber} />
+                    <DetailItem label="Client's Email" value={booking.customerEmail} />
                 </div>
             </div>
-        </footer>
-         <footer className="text-center text-sm text-gray-500 mt-8 pt-4 border-t hidden print:block">
-            © {new Date().getFullYear()} CASA Motor Valuers & Assessors Ltd. This is a computer-generated document.
-        </footer>
+             <p className="text-[9px] mt-1">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
+        </div>
+        
+        {/* Particulars */}
+        <div className="text-center font-bold text-xs my-1 underline">MOTOR VEHICLE PARTICULARS</div>
+        <div className="grid grid-cols-2 gap-x-6 border-y border-gray-400 py-1">
+            <div>
+                <DetailItem label="Registration" value={booking.plateNumber} />
+                <DetailItem label="Type" value={booking.carType} />
+                <DetailItem label="Passenger's No." value="5" />
+                <DetailItem label="Propellant" value={valuation.fuelType} />
+                <DetailItem label="Engine Rating" value={valuation.engineRating} />
+                <DetailItem label="Date of Reg." value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} />
+                <DetailItem label="Chassis No." value={valuation.chassisNo} />
+                <DetailItem label="Country of Origin" value={valuation.countryOfOrigin} />
+                <DetailItem label="Anti Theft" value={valuation.antiTheft} />
+                <DetailItem label="Logbook Ownership Details" value={booking.customerName} />
+            </div>
+            <div>
+                <DetailItem label="Make" value={booking.carMake} />
+                <DetailItem label="Model" value={booking.carModel} />
+                <DetailItem label="Colour" value={valuation.colour} />
+                <DetailItem label="Transmission" value={valuation.transmissionType} />
+                <DetailItem label="Year of Man" value={valuation.yearOfManufacture} />
+                <DetailItem label="Mileage" value={valuation.odometerReadings} />
+                <DetailItem label="Engine No." value={valuation.engineNo} />
+                <DetailItem label="Duty" value="PAID" />
+            </div>
+        </div>
+
+        {/* Accessories */}
+        <div className="text-center font-bold text-xs my-1 underline">VEHICLE ACCESSORIES</div>
+        <p className="border-y border-gray-400 py-1 text-blue-800 font-bold">{accessories}</p>
+
+        {/* Values & Details */}
+        <div className="border-b border-gray-400 py-1">
+            <DetailItem label="General Condition" value={valuation.tyresCondition} />
+            <DetailItem label="Assessed Value" value={`Kshs. ${valuation.assessmentValue}/=`} />
+            <DetailItem label="Forced Value" value={`(Ksh. ${valuation.forcedValue}/=)`} />
+            <DetailItem label="Resale Ability" value={valuation.resaleAbility} />
+            <DetailItem label="Special Point Out" value={valuation.specialPointOut} />
+            <DetailItem label="Disclaimer" value={valuation.disclaimer} />
+            <div className="flex justify-between">
+                <DetailItem label="Value" value={`Windscreen Kshs. ${valuation.windscreenValue}/= Estimate`} />
+                <DetailItem label="Radio System" value={`Kshs.${valuation.radioSystemValue}/= Estimate`} />
+            </div>
+            <div className="flex justify-between">
+                 <DetailItem label="Examiner" value={valuation.examiner} />
+                 <DetailItem label="Prepared By" value={valuation.valuedBy} />
+            </div>
+            <DetailItem label="Location of Inspection" value={valuation.locationOfInspection} />
+            <DetailItem label="Destination" value={valuation.destination} />
+             <div className="flex justify-between">
+                <DetailItem label="Valuation Authorised By" value={booking.authorisedBy} />
+                <DetailItem label="Broker/Agent" value={valuation.brokerAgent} />
+             </div>
+        </div>
+        
+        {/* Footer */}
+        <div className="flex justify-between items-end mt-2">
+            <div>
+                <p className="font-bold">AUTHORISED SIGNATURE: ........................</p>
+            </div>
+            <div className="relative w-24 h-24">
+                <Image src="/stamp.png" alt="Stamp" layout="fill" objectFit="contain" />
+            </div>
+            <div className="w-24 h-24">
+                {qrCodeUrl && <Image src={qrCodeUrl} alt="QR Code" width={96} height={96} />}
+            </div>
+        </div>
+        
+        <div className="text-center mt-2 text-[8px] space-y-0.5">
+            <p className="text-red-600 font-bold">We do not authenticate logbook & Chassis chemical analysis.</p>
+            <p className="font-bold">FOR AND ON BEHALF OF UKUMBI MOTOR VALUERS AND ASSESSORS LTD-C2025</p>
+            <p>The report reflects the estimated Market value of the subjected vehicle in its present condition, at the time of valuation. Any future assessment will take into account any changes in the meantime, due to usage etc. This report is based on information on the logbook/Importation documents.</p>
+            <div className="flex justify-between items-center">
+                <p>Email: ukumbivaluers@gmail.com</p>
+                <p className="font-bold italic">A Zone of efficiency and integrity.</p>
+            </div>
+            <p>Website: www.ukumbimotorvaluers.co.ke</p>
+        </div>
+
       </div>
     );
   }
@@ -272,6 +241,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
       valuation: null,
       booking: null,
       loading: true,
+      qrCodeUrl: null,
     };
   }
 
@@ -279,39 +249,39 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
     const bookingId = this.props.searchParams.get('id');
 
     if (bookingId) {
-      const fetchReports = async () => {
-        this.setState({ loading: true });
+      this.fetchReports(bookingId);
+    }
+  }
 
-        try {
-            // Fetch Valuation
-            const q = query(collection(db, "valuations"), where("bookingId", "==", bookingId));
-            const valuationSnapshot = await getDocs(q);
-            let valuationData: Valuation | null = null;
-            if (!valuationSnapshot.empty) {
-                const valuationDoc = valuationSnapshot.docs[0];
-                valuationData = { id: valuationDoc.id, ...valuationDoc.data() } as Valuation;
-            }
-
-            // Fetch Booking
-            const bookingDocRef = doc(db, 'bookings', bookingId as string);
-            const bookingSnap = await getDoc(bookingDocRef);
-            let bookingData: Booking | null = null;
-            if (bookingSnap.exists()) {
-                 bookingData = { id: bookingSnap.id, ...bookingSnap.data() } as Booking;
-            }
-
-             if (bookingData) {
-                document.title = `Valuation Report - ${bookingData.bookingNumber}`;
-                this.setState({ booking: bookingData, valuation: valuationData });
-            }
-
-        } catch (error) {
-            console.error("Error fetching reports:", error);
-        } finally {
-            this.setState({ loading: false });
+  fetchReports = async (bookingId: string) => {
+    this.setState({ loading: true });
+    try {
+        const q = query(collection(db, "valuations"), where("bookingId", "==", bookingId));
+        const valuationSnapshot = await getDocs(q);
+        let valuationData: Valuation | null = null;
+        if (!valuationSnapshot.empty) {
+            const valuationDoc = valuationSnapshot.docs[0];
+            valuationData = { id: valuationDoc.id, ...valuationDoc.data() } as Valuation;
         }
-      };
-      fetchReports();
+
+        const bookingDocRef = doc(db, 'bookings', bookingId as string);
+        const bookingSnap = await getDoc(bookingDocRef);
+        let bookingData: Booking | null = null;
+        if (bookingSnap.exists()) {
+             bookingData = { id: bookingSnap.id, ...bookingSnap.data() } as Booking;
+        }
+
+         if (bookingData) {
+            document.title = `Valuation Report - ${bookingData.bookingNumber}`;
+            const reportUrl = window.location.href;
+            const qrUrl = await QRCode.toDataURL(reportUrl);
+            this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
+        }
+
+    } catch (error) {
+        console.error("Error fetching reports:", error);
+    } finally {
+        this.setState({ loading: false });
     }
   }
   
@@ -329,8 +299,8 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
     }
     
     return (
-      <div className="bg-gray-200 min-h-screen p-4 sm:p-8 font-sans print:bg-white print:p-0">
-        <div className="max-w-5xl mx-auto">
+      <div className="bg-gray-200 min-h-screen p-4 sm:p-8 print:bg-white print:p-0">
+        <div className="max-w-4xl mx-auto">
           <div className="flex justify-end mb-6 gap-4 print:hidden">
             <Button onClick={() => window.print()} variant="default">
               Print / Save PDF
@@ -340,7 +310,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
               Go Back
             </Button>
           </div>
-          <ReportToPrint valuation={this.state.valuation} booking={this.state.booking} />
+          <ReportToPrint valuation={this.state.valuation} booking={this.state.booking} qrCodeUrl={this.state.qrCodeUrl} />
         </div>
       </div>
     );
