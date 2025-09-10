@@ -112,13 +112,12 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
         <div className="flex justify-between items-start mb-2">
           <div className="w-1/4">
             <Image src="/logo.png" alt="Company Logo" width={150} height={60} />
-            <p className="text-left mt-1 text-[8px] font-bold">PIN / VAT NO. P051392333V</p>
           </div>
           <div className="w-3/4 text-center -ml-12">
-            <h1 className="font-bold text-lg text-blue-900">UKUMBI MOTOR VALUERS AND ASSESSORS LTD</h1>
-            <p className="text-[9px]">Valuation and Assessment for Bank Loan Facilities, Motor Vehicles Buying & Selling, Court Bonds, Inventories, Insurance purposes and Acciddent Assessment etc</p>
-            <p className="text-[9px]">Plessy Hse, next to Nissan Kenya & Carrefour Mega, along Uhuru Highway.</p>
-            <p className="text-[9px]">P.O. Box 24976-00100, Nairobi. Mob: 0712 971188 / 0721 917828 / 0722 292253</p>
+            <h1 className="font-bold text-lg text-blue-900">CASA Motor Valuers & Assessors Ltd</h1>
+            <p className="text-[9px]">Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</p>
+            <p className="text-[9px]">Mob: 0722924854 / 0737924854</p>
+            <p className="text-[9px]">Email: casamotorvaluers@gmail.com</p>
           </div>
         </div>
 
@@ -138,7 +137,6 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <DetailItem label="Client's Name" value={booking.customerName} />
                     <DetailItem label="Insurer" value={booking.insurerName} />
                     <DetailItem label="Exp" value={valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'} />
-                    <DetailItem label="Box No." value="TBA" />
                 </div>
                 <div className="w-1/2">
                     <DetailItem label="Contacts" value={booking.customerPhone} />
@@ -147,7 +145,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <DetailItem label="Client's Email" value={booking.customerEmail} />
                 </div>
             </div>
-             <p className="text-[9px] mt-1">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
+             <p className="text-[9px] mt-1">{valuation.comments || 'A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.'}</p>
         </div>
         
         {/* Particulars */}
@@ -156,7 +154,6 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
             <div>
                 <DetailItem label="Registration" value={booking.plateNumber} />
                 <DetailItem label="Type" value={booking.carType} />
-                <DetailItem label="Passenger's No." value="5" />
                 <DetailItem label="Propellant" value={valuation.fuelType} />
                 <DetailItem label="Engine Rating" value={valuation.engineRating} />
                 <DetailItem label="Date of Reg." value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} />
@@ -220,13 +217,13 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
         
         <div className="text-center mt-2 text-[8px] space-y-0.5">
             <p className="text-red-600 font-bold">We do not authenticate logbook & Chassis chemical analysis.</p>
-            <p className="font-bold">FOR AND ON BEHALF OF UKUMBI MOTOR VALUERS AND ASSESSORS LTD-C2025</p>
+            <p className="font-bold">FOR AND ON BEHALF OF CASA Motor Valuers & Assessors Ltd-C2025</p>
             <p>The report reflects the estimated Market value of the subjected vehicle in its present condition, at the time of valuation. Any future assessment will take into account any changes in the meantime, due to usage etc. This report is based on information on the logbook/Importation documents.</p>
             <div className="flex justify-between items-center">
-                <p>Email: ukumbivaluers@gmail.com</p>
+                <p>Email: casamotorvaluers@gmail.com</p>
                 <p className="font-bold italic">A Zone of efficiency and integrity.</p>
             </div>
-            <p>Website: www.ukumbimotorvaluers.co.ke</p>
+            <p>Website: www.casamotorvaluers.co.ke</p>
         </div>
 
       </div>
@@ -334,3 +331,5 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
+
+    
