@@ -88,7 +88,7 @@ const DetailItem = ({ label, value }: { label: string; value: React.ReactNode })
 );
 
 const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' | 'No' }) => (
-    <div className="flex justify-between text-xs">
+    <div className="flex justify-between text-xs py-1 border-b border-gray-100">
         <span>{question}</span>
         <span className="font-bold">{answer || 'N/A'}</span>
     </div>
@@ -101,6 +101,52 @@ const NoteItem = ({ label, value }: { label: string, value?: string }) => (
     </div>
 )
 
+const numberToWords = (num: number | string): string => {
+    const s = String(num).replace(/[\,]/g, '');
+    if (isNaN(Number(s))) return 'Invalid number';
+    if (Number(s) === 0) return 'Zero';
+
+    const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const g = ['', 'Thousand', 'Million', 'Billion', 'Trillion'];
+
+    const toWords = (n: string): string => {
+        let str = '';
+        const x = n.length;
+        const h = n[x - 3];
+        const t = n[x - 2];
+        const o = n[x - 1];
+
+        if (h && h !== '0') {
+            str += a[Number(h)] + ' Hundred ';
+        }
+        if (t === '1') {
+            str += a[Number(t + o)] + ' ';
+        } else if (t && t !== '0') {
+            str += b[Number(t)] + ' ';
+            if (o !== '0') str += a[Number(o)] + ' ';
+        } else if (o !== '0') {
+            str += a[Number(o)] + ' ';
+        }
+        return str;
+    };
+    
+    let str = '';
+    let i = s.length;
+    let j = 0;
+    
+    while(i > 0) {
+        const chunk = s.substring(Math.max(0, i - 3), i);
+        if (chunk !== '000') {
+            str = toWords(chunk) + (g[j] ? g[j] + ' ' : '') + str;
+        }
+        i -= 3;
+        j++;
+    }
+
+    return str.trim();
+};
+
 
 class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null, qrCodeUrl: string | null}> {
   render() {
@@ -109,6 +155,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     if (!valuation || !booking) {
         return <div className="p-4 text-center text-muted-foreground">No valuation report found for this booking.</div>;
     }
+    const assessmentValueInWords = valuation.assessmentValue ? `${numberToWords(valuation.assessmentValue)} Shillings Only` : 'N/A';
     
     return (
       <div className="bg-white shadow-lg rounded-lg p-4 font-sans text-[10px] leading-tight border-2 border-black">
@@ -168,7 +215,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
         <div className="grid grid-cols-12 gap-x-4 my-2">
             <div className="col-span-6">
                 <h4 className="font-bold text-sm underline mb-1">Coachwork</h4>
-                <div className="grid grid-cols-2 gap-x-4">
+                <div className="space-y-1">
                     <ConditionItem question="Accident Repairs Noted?" answer={valuation.coachWork?.accidentRepairs} />
                     <ConditionItem question="Accident Damages noted?" answer={valuation.coachWork?.accidentDamagesNoted} />
                     <ConditionItem question="Is Paint work Scratched/ Faded/ Dented?" answer={valuation.coachWork?.paintWorkScratched} />
@@ -177,14 +224,12 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <ConditionItem question="Are roof linings damaged or repaired?" answer={valuation.coachWork?.roofLiningsDamaged} />
                     <ConditionItem question="Is Upholstery Torn/faded/worn out??" answer={valuation.coachWork?.upholsteryTorn} />
                     <ConditionItem question="Are Bumpers/ Outer Wing repaired?" answer={valuation.coachWork?.bumpersOuterWingRepaired} />
-                    <div className="col-span-2">
-                        <ConditionItem question="Is the Chassis kinked or damaged?" answer={valuation.coachWork?.chassisKinked} />
-                    </div>
+                    <ConditionItem question="Is the Chassis kinked or damaged?" answer={valuation.coachWork?.chassisKinked} />
                 </div>
             </div>
              <div className="col-span-6">
                 <h4 className="font-bold text-sm underline mb-1">Mechanical Condition</h4>
-                <div className="grid grid-cols-2 gap-x-4">
+                <div className="space-y-1">
                     <ConditionItem question="Is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
                     <ConditionItem question="Is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
                     <ConditionItem question="Is the automatic/manual gearbox okay?" answer={valuation.mechanicalCondition?.gearboxOk} />
@@ -193,9 +238,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <ConditionItem question="Are There signs of fluid or oil leakage?" answer={valuation.mechanicalCondition?.fluidLeakage} />
                     <ConditionItem question="Are the drive shafts/cv joints worn out?" answer={valuation.mechanicalCondition?.driveShaftWorn} />
                     <ConditionItem question="Is the suspension system okay?" answer={valuation.mechanicalCondition?.suspensionSystemOk} />
-                     <div className="col-span-2">
-                        <ConditionItem question="Are engine mountings worn out?" answer={valuation.mechanicalCondition?.engineMountingsWorn} />
-                    </div>
+                    <ConditionItem question="Are engine mountings worn out?" answer={valuation.mechanicalCondition?.engineMountingsWorn} />
                 </div>
             </div>
         </div>
@@ -223,7 +266,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
         {/* Assessed Value */}
         <div className="border-y-2 border-black py-1 my-2">
-            <NoteItem label="Assessed Value" value={`Four Hundred and Fifty Thousand Shillings Only (Kshs. ${valuation.assessmentValue})`} />
+            <NoteItem label="Assessed Value" value={`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`} />
         </div>
 
         {/* Note Value */}
