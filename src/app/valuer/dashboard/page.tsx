@@ -301,9 +301,23 @@ export default function ValuerDashboardPage() {
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             const files = Array.from(event.target.files);
-            const newImageUrls: string[] = [];
+            const MAX_FILE_SIZE = 3.2 * 1024 * 1024; // 3.2MB limit
 
-            const fileReaders = files.map(file => {
+            const validFiles = files.filter(file => {
+                if (file.size > MAX_FILE_SIZE) {
+                    toast({
+                        variant: "destructive",
+                        title: "File Too Large",
+                        description: `The file "${file.name}" is too large. Please select files smaller than 3.2MB.`,
+                    });
+                    return false;
+                }
+                return true;
+            });
+
+            if (validFiles.length === 0) return;
+
+            const fileReaders = validFiles.map(file => {
                 return new Promise<string>((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = (e) => {
