@@ -196,7 +196,6 @@ const bookingSchema = z.object({
   customerPhone: z.string().min(1, "Customer phone is required."),
   plateNumber: z.string().min(1, "Plate number is required"),
   policyNumber: z.string().optional(),
-  policyExpiryDate: z.date().optional(),
   carMake: z.string().min(1, "Car make is required"),
   carModel: z.string().min(1, "Car model is required"),
   carType: z.string().optional(),
@@ -1035,44 +1034,6 @@ export default function ClientDashboardPage() {
                                       </FormItem>
                                   )}
                               />
-                               <FormField
-                                control={bookingControl}
-                                name="policyExpiryDate"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                    <FormLabel>Policy Expiry Date</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                            variant={"outline"}
-                                            className={cn(
-                                                "w-full pl-3 text-left font-normal",
-                                                !field.value && "text-muted-foreground"
-                                            )}
-                                            >
-                                            {field.value ? (
-                                                format(field.value, "PPP")
-                                            ) : (
-                                                <span>Pick a date</span>
-                                            )}
-                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                        <ShadcnCalendar
-                                            mode="single"
-                                            selected={field.value}
-                                            onSelect={field.onChange}
-                                            initialFocus
-                                        />
-                                        </PopoverContent>
-                                    </Popover>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1822,4 +1783,5 @@ export default function ClientDashboardPage() {
     
 
     
+
 
