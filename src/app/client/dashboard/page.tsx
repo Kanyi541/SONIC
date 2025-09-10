@@ -199,6 +199,7 @@ const bookingSchema = z.object({
   policyExpiryDate: z.date().optional(),
   carMake: z.string().min(1, "Car make is required"),
   carModel: z.string().min(1, "Car model is required"),
+  carType: z.string().optional(),
   branch: z.string().min(1, "Branch is required"),
   maxValuationDays: z.string().min(1, "Maximum valuation days are required"),
   authorisedBy: z.string().min(1, "Authorising agent is required"),
@@ -289,6 +290,7 @@ export default function ClientDashboardPage() {
         policyNumber: "",
         carMake: "",
         carModel: "",
+        carType: "",
         branch: "",
         maxValuationDays: "",
         authorisedBy: "",
@@ -313,9 +315,20 @@ export default function ClientDashboardPage() {
   } = bookingForm;
 
   const selectedCarMake = watchBooking("carMake");
+  const selectedCarModel = watchBooking("carModel");
+
   const carModels = useMemo(() => {
     return selectedCarMake ? carData.find(make => make.brand === selectedCarMake)?.models || [] : [];
   }, [selectedCarMake]);
+
+  const carTypes = useMemo(() => {
+    if (selectedCarMake && selectedCarModel) {
+        const make = carData.find(m => m.brand === selectedCarMake);
+        const model = make?.models.find(m => m.name === selectedCarModel);
+        return model?.types || [];
+    }
+    return [];
+  }, [selectedCarMake, selectedCarModel]);
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem('loggedInUser');
@@ -1062,14 +1075,18 @@ export default function ClientDashboardPage() {
                                 />
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <FormField
                                   control={bookingControl}
                                   name="carMake"
                                   render={({ field }) => (
                                       <FormItem>
                                       <FormLabel>Car Make</FormLabel>
-                                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                          <Select onValueChange={(value) => {
+                                                field.onChange(value);
+                                                setBookingValue("carModel", "");
+                                                setBookingValue("carType", "");
+                                            }} defaultValue={field.value}>
                                               <FormControl>
                                                   <SelectTrigger>
                                                       <SelectValue placeholder="Select a car make" />
@@ -1093,7 +1110,10 @@ export default function ClientDashboardPage() {
                                   render={({ field }) => (
                                       <FormItem>
                                       <FormLabel>Car Model</FormLabel>
-                                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedCarMake}>
+                                          <Select onValueChange={(value) => {
+                                                field.onChange(value);
+                                                setBookingValue("carType", "");
+                                            }} value={field.value} disabled={!selectedCarMake}>
                                               <FormControl>
                                                   <SelectTrigger>
                                                       <SelectValue placeholder="Select a car model" />
@@ -1101,8 +1121,32 @@ export default function ClientDashboardPage() {
                                               </FormControl>
                                               <SelectContent>
                                                   {carModels.map((model) => (
-                                                      <SelectItem key={model} value={model}>
-                                                          {model}
+                                                      <SelectItem key={model.name} value={model.name}>
+                                                          {model.name}
+                                                      </SelectItem>
+                                                  ))}
+                                              </SelectContent>
+                                          </Select>
+                                      <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                              <FormField
+                                  control={bookingControl}
+                                  name="carType"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Car Type</FormLabel>
+                                          <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCarModel}>
+                                              <FormControl>
+                                                  <SelectTrigger>
+                                                      <SelectValue placeholder="Select a car type" />
+                                                  </SelectTrigger>
+                                              </FormControl>
+                                              <SelectContent>
+                                                  {carTypes.map((type) => (
+                                                      <SelectItem key={type} value={type}>
+                                                          {type}
                                                       </SelectItem>
                                                   ))}
                                               </SelectContent>
@@ -1778,3 +1822,4 @@ export default function ClientDashboardPage() {
     
 
     
+
