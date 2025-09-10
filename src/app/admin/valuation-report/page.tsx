@@ -295,14 +295,16 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                         </div>
                     </div>
                     
-                    {booking.logbookImage && (
-                        <div className="my-4 break-inside-avoid">
-                            <h3 className="font-bold text-lg underline mb-2">Logbook</h3>
+                    <div className="my-4 break-inside-avoid">
+                        <h3 className="font-bold text-lg underline mb-2">Logbook</h3>
+                        {booking.logbookImage ? (
                             <div className="border p-1 rounded-md max-w-md bg-gray-100">
                                 <Image src={booking.logbookImage} alt="Logbook" width={500} height={400} className="object-contain w-full h-auto" />
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <p className="text-gray-500 italic">No logbook provided.</p>
+                        )}
+                    </div>
                 </div>
             </div>
             </main>
