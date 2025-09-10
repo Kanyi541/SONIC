@@ -270,8 +270,8 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
         <div className="flex justify-between my-2">
             <h4 className="font-bold text-sm uppercase">Note Value</h4>
             <div className="flex gap-8">
-                <DetailItem label="Radio Estimate" value={valuation.wsValue} />
-                <DetailItem label="Windscreen Estimate" value={valuation.rsValue} />
+                <DetailItem label="Noted Value: WS (KES)" value={valuation.wsValue} />
+                <DetailItem label="Noted Value: RS (KES)" value={valuation.rsValue} />
             </div>
             <div></div>
         </div>
