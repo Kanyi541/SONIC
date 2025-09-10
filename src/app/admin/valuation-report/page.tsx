@@ -297,7 +297,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <DetailItem label="DATE OF INSPECTION" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} isBlue />
                     <div />
                     <DetailItem label="EXAMINER" value={valuation.valuedBy} isBlue />
-                    <DetailItem label="DESTINATION" value={valuation.insurer} isBlue />
+                    <DetailItem label="DESTINATION" value={`${valuation.insurer} prompt insurance agency`} isBlue />
                     <DetailItem label="LOCATION OF INSPECTION" value={booking.branch} isBlue />
                 </section>
                 
