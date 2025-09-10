@@ -188,6 +188,24 @@ export default function ValuerDashboardPage() {
         defaultValues: {
             images: [],
             comments: "",
+            chassisNo: "",
+            colour: "",
+            fuelType: "",
+            engineNo: "",
+            engineRating: "",
+            yearOfManufacture: "",
+            odometerReadings: "",
+            countryOfOrigin: "",
+            numberOfAirbags: "",
+            lightsType: "",
+            transmissionType: "",
+            coachWorkNotes: "",
+            mechanicalNotes: "",
+            electricalNotes: "",
+            antiTheft: "",
+            tyresType: "",
+            tyresCondition: "",
+            extras: "",
         }
     });
     
