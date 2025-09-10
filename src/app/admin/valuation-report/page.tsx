@@ -48,15 +48,10 @@ interface Valuation {
     tyresCondition?: string;
     extras?: string;
     comments?: string;
-    resaleAbility?: string;
-    specialPointOut?: string;
+    remedy?: string;
     disclaimer?: string;
-    windscreenValue?: string;
-    radioSystemValue?: string;
     examiner?: string;
     locationOfInspection?: string;
-    destination?: string;
-    brokerAgent?: string;
 }
 
 interface Booking {
@@ -86,11 +81,25 @@ interface ReportState {
 }
 
 const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
-    <div>
+    <div className="flex justify-between">
         <span className="font-bold text-xs uppercase text-gray-600">{label}:</span>
-        <span className="ml-2 font-mono text-xs font-bold text-blue-800">{value || 'N/A'}</span>
+        <span className="font-mono text-xs font-bold text-blue-800 text-right">{value || 'N/A'}</span>
     </div>
 );
+
+const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' | 'No' }) => (
+    <div className="flex justify-between text-xs">
+        <span>{question}</span>
+        <span className="font-bold">{answer || 'N/A'}</span>
+    </div>
+)
+
+const NoteItem = ({ label, value }: { label: string, value?: string }) => (
+    <div className="flex text-xs">
+        <span className="font-bold uppercase text-gray-600 w-32">{label}:</span>
+        <span className="font-bold text-blue-800">{value || 'N/A'}</span>
+    </div>
+)
 
 
 class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null, qrCodeUrl: string | null}> {
@@ -101,152 +110,174 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
         return <div className="p-4 text-center text-muted-foreground">No valuation report found for this booking.</div>;
     }
     
-    const accessories = [
-        valuation.extras,
-    ].filter(Boolean).join(', ');
-
-    const valuerComments = [
-        { label: "Coach Work Notes", text: valuation.coachWorkNotes },
-        { label: "Mechanical Notes", text: valuation.mechanicalNotes },
-        { label: "Electrical Notes", text: valuation.electricalNotes },
-        { label: "General Comments", text: valuation.comments },
-    ].filter(comment => comment.text);
-
     return (
-      <div className="bg-white shadow-lg rounded-lg p-6 font-sans text-[10px] leading-tight">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-2">
-          <div className="w-1/4">
-            <Image src="/logo.png" alt="Company Logo" width={150} height={60} />
-          </div>
-          <div className="w-3/4 text-center -ml-12">
+      <div className="bg-white shadow-lg rounded-lg p-4 font-sans text-[10px] leading-tight border-2 border-black">
+        <div className="text-center mb-2">
             <h1 className="font-bold text-lg text-blue-900">CASA Motor Valuers & Assessors Ltd</h1>
             <p className="text-[9px]">Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</p>
-            <p className="text-[9px]">Mob: 0722924854 / 0737924854</p>
-            <p className="text-[9px]">Email: casamotorvaluers@gmail.com</p>
-          </div>
+            <p className="text-[9px]">Mob: 0722924854 / 0737924854 | Email: casamotorvaluers@gmail.com</p>
+            <h2 className="font-bold text-base tracking-wider mt-1 bg-gray-200 py-1">MOTOR VEHICLE VALUATION REPORT</h2>
         </div>
-
-        <div className="text-center bg-gray-200 py-1 my-2">
-            <h2 className="font-bold text-base tracking-wider">MOTOR VEHICLE VALUATION REPORT</h2>
-        </div>
-
-        {/* Top Meta */}
-        <div className="border-y border-gray-400 py-1">
-            <div className="flex justify-between">
+        
+        {/* Top Header Block */}
+        <div className="grid grid-cols-12 gap-x-4 border-y-2 border-black py-1">
+            <div className="col-span-4 space-y-1">
                 <DetailItem label="Serial No" value={booking.bookingNumber} />
-                <DetailItem label="Purpose" value="FOR INSURANCE USE ONLY" />
-                <DetailItem label="Date" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} />
+                <DetailItem label="Client Name" value={booking.customerName} />
+                <DetailItem label="Insurer" value={booking.insurerName} />
             </div>
-            <div className="flex justify-between mt-1">
-                <div className="w-1/2">
-                    <DetailItem label="Client's Name" value={booking.customerName} />
-                    <DetailItem label="Insurer" value={booking.insurerName} />
-                    <DetailItem label="Exp" value={valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'} />
-                </div>
-                <div className="w-1/2">
-                    <DetailItem label="Contacts" value={booking.customerPhone} />
-                    <DetailItem label="Ins Cert. No" value={booking.policyNumber} />
-                    <DetailItem label="Policy No" value={booking.policyNumber} />
-                    <DetailItem label="Client's Email" value={booking.customerEmail} />
-                </div>
+            <div className="col-span-4 space-y-1">
+                <DetailItem label="Issued By" value="Casa Motor Valuers And Assessors" />
+                <DetailItem label="Contacts" value={booking.customerPhone} />
+                <DetailItem label="Policy No." value={booking.policyNumber} />
             </div>
-             <p className="text-[9px] mt-1">{valuation.comments || 'A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.'}</p>
+            <div className="col-span-4 space-y-1">
+                 <div className="flex justify-between"><div></div><div></div></div>
+                 <div className="flex justify-between"><div></div><div></div></div>
+                <DetailItem label="Expiry Date" value={valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'} />
+            </div>
         </div>
+
+        <p className="text-[9px] text-center my-1 italic">{valuation.comments || 'A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.'}</p>
         
-        {/* Particulars */}
-        <div className="text-center font-bold text-xs my-1 underline">MOTOR VEHICLE PARTICULARS</div>
-        <div className="grid grid-cols-2 gap-x-6 border-y border-gray-400 py-1">
-            <div>
-                <DetailItem label="Registration" value={booking.plateNumber} />
-                <DetailItem label="Type" value={booking.carType} />
-                <DetailItem label="Propellant" value={valuation.fuelType} />
-                <DetailItem label="Engine Rating" value={valuation.engineRating} />
-                <DetailItem label="Date of Reg." value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} />
-                <DetailItem label="Chassis No." value={valuation.chassisNo} />
-                <DetailItem label="Country of Origin" value={valuation.countryOfOrigin} />
-                <DetailItem label="Anti Theft" value={valuation.antiTheft} />
-                <DetailItem label="Logbook Ownership Details" value={booking.customerName} />
+        {/* Vehicle Particulars */}
+        <div className="grid grid-cols-12 gap-x-4 border-y-2 border-black py-1">
+             <div className="col-span-4 space-y-1">
+                <DetailItem label="Registration No" value={booking.plateNumber} />
+                <DetailItem label="Chassis No" value={valuation.chassisNo} />
+                <DetailItem label="Engine No" value={valuation.engineNo} />
+                <DetailItem label="Year of Man." value={valuation.yearOfManufacture} />
+                <DetailItem label="No of Airbags" value={valuation.numberOfAirbags} />
             </div>
-            <div>
+            <div className="col-span-4 space-y-1">
                 <DetailItem label="Make" value={booking.carMake} />
-                <DetailItem label="Model" value={booking.carModel} />
                 <DetailItem label="Colour" value={valuation.colour} />
-                <DetailItem label="Transmission" value={valuation.transmissionType} />
-                <DetailItem label="Year of Man" value={valuation.yearOfManufacture} />
-                <DetailItem label="Mileage" value={valuation.odometerReadings} />
-                <DetailItem label="Engine No." value={valuation.engineNo} />
-                <DetailItem label="Air Bags" value={valuation.numberOfAirbags} />
+                <DetailItem label="Engine Rating" value={valuation.engineRating} />
+                <DetailItem label="Odometer Reading" value={valuation.odometerReadings} />
+                <DetailItem label="Lights" value={valuation.lightsType} />
+            </div>
+            <div className="col-span-4 space-y-1">
+                <DetailItem label="Type" value={booking.carType} />
+                <DetailItem label="Fuel Type" value={valuation.fuelType} />
+                <DetailItem label="Date of Reg." value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} />
+                <DetailItem label="Country of Origin" value={valuation.countryOfOrigin} />
             </div>
         </div>
-
-        {/* Accessories */}
-        <div className="text-center font-bold text-xs my-1 underline">VEHICLE ACCESSORIES</div>
-        <p className="border-y border-gray-400 py-1 text-blue-800 font-bold">{accessories || 'N/A'}</p>
         
-        {/* Valuer Notes */}
-        {valuerComments.length > 0 && (
-            <>
-                <div className="text-center font-bold text-xs my-1 underline">VALUER'S NOTES & REMARKS</div>
-                <div className="border-y border-gray-400 py-1 space-y-1">
-                    {valuerComments.map(comment => (
-                        <div key={comment.label}>
-                            <span className="font-bold text-gray-600">{comment.label}:</span>
-                            <span className="ml-2 text-blue-800">{comment.text}</span>
-                        </div>
-                    ))}
+        {/* Condition Checklists */}
+        <div className="grid grid-cols-12 gap-x-4 my-2">
+            <div className="col-span-6">
+                <h4 className="font-bold text-sm underline mb-1">Coachwork</h4>
+                <div className="grid grid-cols-2 gap-x-4">
+                    <ConditionItem question="Accident Repairs Noted?" answer={valuation.coachWork?.accidentRepairs} />
+                    <ConditionItem question="Accident Damages noted?" answer={valuation.coachWork?.accidentDamagesNoted} />
+                    <ConditionItem question="Is Paint work Scratched/ Faded/ Dented?" answer={valuation.coachWork?.paintWorkScratched} />
+                    <ConditionItem question="Are Inner wings repaired or damaged?" answer={valuation.coachWork?.innerWingsRepaired} />
+                    <ConditionItem question="Has the body had a complete respray?" answer={valuation.coachWork?.completeRespray} />
+                    <ConditionItem question="Are roof linings damaged or repaired?" answer={valuation.coachWork?.roofLiningsDamaged} />
+                    <ConditionItem question="Is Upholstery Torn/faded/worn out??" answer={valuation.coachWork?.upholsteryTorn} />
+                    <ConditionItem question="Are Bumpers/ Outer Wing repaired?" answer={valuation.coachWork?.bumpersOuterWingRepaired} />
+                    <div className="col-span-2">
+                        <ConditionItem question="Is the Chassis kinked or damaged?" answer={valuation.coachWork?.chassisKinked} />
+                    </div>
                 </div>
-            </>
-        )}
-
-        {/* Values & Details */}
-        <div className="border-b border-gray-400 py-1">
-            <DetailItem label="General Condition" value={valuation.tyresCondition} />
-            <DetailItem label="Assessed Value" value={`Kshs. ${valuation.assessmentValue}/=`} />
-            <DetailItem label="Forced Value" value={`(Ksh. ${valuation.forcedValue}/=)`} />
-            <DetailItem label="Resale Ability" value={valuation.resaleAbility} />
-            <DetailItem label="Special Point Out" value={valuation.specialPointOut} />
-            <DetailItem label="Disclaimer" value={valuation.disclaimer} />
-            <div className="flex justify-between">
-                <DetailItem label="Value" value={`Windscreen Kshs. ${valuation.windscreenValue}/= Estimate`} />
-                <DetailItem label="Radio System" value={`Kshs.${valuation.radioSystemValue}/= Estimate`} />
             </div>
-            <div className="flex justify-between">
-                 <DetailItem label="Examiner" value={valuation.examiner} />
-                 <DetailItem label="Prepared By" value={valuation.valuedBy} />
+             <div className="col-span-6">
+                <h4 className="font-bold text-sm underline mb-1">Mechanical Condition</h4>
+                <div className="grid grid-cols-2 gap-x-4">
+                    <ConditionItem question="Is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
+                    <ConditionItem question="Is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
+                    <ConditionItem question="Is the automatic/manual gearbox okay?" answer={valuation.mechanicalCondition?.gearboxOk} />
+                    <ConditionItem question="Is the steering system okay?" answer={valuation.mechanicalCondition?.steeringSystemOk} />
+                    <ConditionItem question="Is cooling system operating well?" answer={valuation.mechanicalCondition?.coolingSystemOk} />
+                    <ConditionItem question="Are There signs of fluid or oil leakage?" answer={valuation.mechanicalCondition?.fluidLeakage} />
+                    <ConditionItem question="Are the drive shafts/cv joints worn out?" answer={valuation.mechanicalCondition?.driveShaftWorn} />
+                    <ConditionItem question="Is the suspension system okay?" answer={valuation.mechanicalCondition?.suspensionSystemOk} />
+                     <div className="col-span-2">
+                        <ConditionItem question="Are engine mountings worn out?" answer={valuation.mechanicalCondition?.engineMountingsWorn} />
+                    </div>
+                </div>
             </div>
-            <DetailItem label="Location of Inspection" value={valuation.locationOfInspection} />
-            <DetailItem label="Destination" value={valuation.destination} />
-             <div className="flex justify-between">
-                <DetailItem label="Valuation Authorised By" value={booking.authorisedBy} />
-                <DetailItem label="Broker/Agent" value={valuation.brokerAgent} />
+        </div>
+        <div className="my-2">
+             <h4 className="font-bold text-sm underline mb-1">Electrical Condition</h4>
+             <div className="grid grid-cols-3 gap-x-4">
+                <ConditionItem question="Do the indicator lights operate well?" answer={valuation.electricalCondition?.indicatorLightsOk} />
+                <ConditionItem question="Are the wipers operating well?" answer={valuation.electricalCondition?.wipersOk} />
+                <ConditionItem question="Do the Instrument panel lights work well?" answer={valuation.electricalCondition?.instrumentPanelLightsOk} />
+                <ConditionItem question="Do the brake lights operate well?" answer={valuation.electricalCondition?.brakeLightsOk} />
+                <ConditionItem question="Are the headlights operating well?" answer={valuation.electricalCondition?.headlightsOk} />
              </div>
         </div>
-        
-        {/* Footer */}
-        <div className="flex justify-between items-end mt-2">
-            <div>
-                <p className="font-bold">AUTHORISED SIGNATURE: ........................</p>
-            </div>
-            <div className="relative w-24 h-24">
-                <Image src="/stamp.png" alt="Stamp" layout="fill" objectFit="contain" />
-            </div>
-            <div className="w-24 h-24">
-                {qrCodeUrl && <Image src={qrCodeUrl} alt="QR Code" width={96} height={96} />}
-            </div>
-        </div>
-        
-        <div className="text-center mt-2 text-[8px] space-y-0.5">
-            <p className="text-red-600 font-bold">We do not authenticate logbook & Chassis chemical analysis.</p>
-            <p className="font-bold">FOR AND ON BEHALF OF CASA Motor Valuers & Assessors Ltd-C2025</p>
-            <p>The report reflects the estimated Market value of the subjected vehicle in its present condition, at the time of valuation. Any future assessment will take into account any changes in the meantime, due to usage etc. This report is based on information on the logbook/Importation documents.</p>
-            <div className="flex justify-between items-center">
-                <p>Email: casamotorvaluers@gmail.com</p>
-                <p className="font-bold italic">A Zone of efficiency and integrity.</p>
-            </div>
-            <p>Website: www.casamotorvaluers.co.ke</p>
+
+        {/* Notes */}
+        <div className="space-y-1 my-2">
+            <NoteItem label="Coachwork Notes" value={valuation.coachWorkNotes} />
+            <NoteItem label="Electrical Notes" value={valuation.electricalNotes} />
+            <NoteItem label="Mechanical Notes" value={valuation.mechanicalNotes} />
+            <NoteItem label="Anti Theft" value={valuation.antiTheft} />
+            <NoteItem label="Tyres" value={`${valuation.tyresType} - ${valuation.tyresCondition}`} />
+            <NoteItem label="General Condition" value="Good" />
+            <NoteItem label="Extras" value={valuation.extras} />
         </div>
 
+        {/* Assessed Value */}
+        <div className="border-y-2 border-black py-1 my-2">
+            <NoteItem label="Assessed Value" value={`Four Hundred and Fifty Thousand Shillings Only (Kshs. ${valuation.assessmentValue})`} />
+        </div>
+
+        {/* Note Value */}
+        <div className="flex justify-between my-2">
+            <h4 className="font-bold text-sm uppercase">Note Value</h4>
+            <div className="flex gap-8">
+                <DetailItem label="Radio Estimate" value={valuation.wsValue} />
+                <DetailItem label="Windscreen Estimate" value={valuation.rsValue} />
+            </div>
+            <div></div>
+        </div>
+
+        {/* Final Details */}
+        <div className="space-y-1 my-2">
+             <NoteItem label="Remarks" value="None" />
+             <NoteItem label="Remedy" value={valuation.remedy} />
+             <NoteItem label="Disclaimer" value={valuation.disclaimer} />
+        </div>
+
+        <div className="grid grid-cols-12 gap-x-4 border-y-2 border-black py-1 my-2">
+             <div className="col-span-4 space-y-1">
+                <DetailItem label="Country of Origin" value={valuation.countryOfOrigin} />
+                <DetailItem label="Destination" value={booking.insurerName} />
+             </div>
+             <div className="col-span-4 space-y-1">
+                <DetailItem label="Date of Inspection" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} />
+                <div className="flex justify-between">
+                    <span className="font-bold text-xs uppercase text-gray-600">Signed:</span>
+                    <div></div>
+                </div>
+             </div>
+             <div className="col-span-4 space-y-1">
+                <DetailItem label="Examiner" value={valuation.examiner} />
+                <DetailItem label="Location of Inspection" value={valuation.locationOfInspection} />
+             </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-between items-end mt-2">
+            <div className="w-1/3">
+                <p className="font-bold text-[8px]">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
+                <div className="relative w-24 h-24 mt-1">
+                    <Image src="/stamp.png" alt="Stamp" layout="fill" objectFit="contain" />
+                </div>
+            </div>
+            <div className="w-1/3 text-center">
+                <p className="text-red-600 font-bold text-[8px] italic">A zone of efficiency and integrity</p>
+            </div>
+            <div className="w-1/3 flex justify-end">
+                <div className="w-24 h-24">
+                    {qrCodeUrl && <Image src={qrCodeUrl} alt="QR Code" width={96} height={96} />}
+                </div>
+            </div>
+        </div>
       </div>
     );
   }
@@ -292,7 +323,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
          if (bookingData) {
             document.title = `Valuation Report - ${bookingData.bookingNumber}`;
             const reportUrl = window.location.href;
-            const qrUrl = await QRCode.toDataURL(reportUrl);
+            const qrUrl = await QRCode.toDataURL(reportUrl, { width: 96, margin: 1 });
             this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
         }
 
