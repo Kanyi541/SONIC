@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, Phone, MapPin, Mail, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import QRCode from 'qrcode';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 interface Valuation {
@@ -75,12 +76,13 @@ interface ReportState {
   booking: Booking | null;
   loading: boolean;
   qrCodeUrl: string | null;
+  isVerification: boolean;
 }
 
-const DetailItem = ({ label, value, isBlue = false }: { label: string; value: React.ReactNode, isBlue?: boolean }) => (
-    <div className="flex justify-between items-baseline">
-        <span className="font-bold text-gray-700 uppercase text-xs">{label}</span>
-        <span className={`text-black font-medium text-xs text-right ${isBlue ? 'text-blue-600' : ''}`}>{value || 'N/A'}</span>
+const DetailItem = ({ label, value, className }: { label: string; value: React.ReactNode, className?: string }) => (
+    <div className={className}>
+        <span className="font-bold text-gray-700 uppercase text-xs mr-2">{label}</span>
+        <span className={`text-black font-medium text-xs text-right`}>{value || 'N/A'}</span>
     </div>
 );
 
@@ -91,14 +93,15 @@ const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' 
     </div>
 )
 
-const NoteItem = ({ label, value, isBlue = false }: { label: string, value?: string, isBlue?: boolean }) => (
+const NoteItem = ({ label, value }: { label: string, value?: string }) => (
      <div className="flex items-start text-xs">
         <span className="font-bold uppercase text-gray-600 mr-2">{label}</span>
-        <p className={`font-medium ${isBlue ? 'text-blue-600' : 'text-black'}`}>{value || 'N/A'}</p>
+        <p className={`font-medium text-black`}>{value || 'N/A'}</p>
     </div>
 )
 
 const numberToWords = (num: number | string): string => {
+    if (num === null || num === undefined) return 'N/A';
     const s = String(num).replace(/[\,]/g, '');
     if (isNaN(Number(s))) return 'Invalid number';
     if (Number(s) === 0) return 'Zero';
@@ -145,9 +148,9 @@ const numberToWords = (num: number | string): string => {
 };
 
 
-class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null, qrCodeUrl: string | null}> {
+class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null, qrCodeUrl: string | null, isVerification: boolean}> {
   render() {
-    const { valuation, booking, qrCodeUrl } = this.props;
+    const { valuation, booking, qrCodeUrl, isVerification } = this.props;
 
     if (!valuation || !booking) {
         return <div className="p-4 text-center text-muted-foreground">No valuation report found for this booking.</div>;
@@ -156,69 +159,79 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)]">
-            <header className="bg-[#1a1a1a] p-6 relative text-white">
-                <div className="flex justify-between items-center">
-                    <div className="w-48 flex-shrink-0">
+            <header className="bg-[#1a1a1a] p-4 relative text-white">
+                <div className="flex justify-between items-start">
+                    <div className="w-48 flex-shrink-0 mt-4">
                         <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
                     </div>
-                    <div className="text-center mx-4">
+                    <div className="text-center mx-4 flex-grow">
                         <h2 className="text-xl font-bold uppercase tracking-wider">CASA MOTOR VALUERS & ASSESSORS LTD</h2>
                         <p className="text-sm font-light tracking-wide">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</p>
                     </div>
-                    {qrCodeUrl && (
-                        <div className="bg-white p-1 rounded-md flex-shrink-0">
-                            <Image src={qrCodeUrl} alt="QR Code" width={80} height={80} />
-                        </div>
-                    )}
+                    <div className="flex flex-col items-center flex-shrink-0">
+                         {qrCodeUrl && (
+                            <div className="bg-white p-1 rounded-md">
+                                <Image src={qrCodeUrl} alt="QR Code" width={120} height={120} />
+                            </div>
+                        )}
+                        <p className="text-xs font-bold mt-1">SCAN TO VERIFY</p>
+                    </div>
                 </div>
-                <div className="absolute right-0 top-0 h-full w-8 bg-primary" />
             </header>
 
-            <main className="flex-grow p-10 font-sans watermarked-valuation">
+            <main className="flex-grow px-10 pt-4 pb-10 font-sans watermarked-valuation">
              <div className="report-content">
+                {isVerification && (
+                    <Alert variant="default" className="mb-4 bg-green-100 border-green-400 text-green-800">
+                        <AlertTitle className="font-bold">Authentic Report</AlertTitle>
+                        <AlertDescription>
+                            This valuation report has been verified as authentic.
+                        </AlertDescription>
+                    </Alert>
+                )}
                 
                 <section className="mb-2">
-                    <div className="grid grid-cols-2 gap-x-16 gap-y-1">
-                        <DetailItem label="SERIAL No" value={booking.bookingNumber} />
-                        <DetailItem label="ISSUED BY" value="Casa Motor Valuers And Assessors" />
-                        <DetailItem label="CLIENT NAME" value={booking.customerName} isBlue />
-                        <DetailItem label="CONTACTS" value="0715239719" />
-                        <DetailItem label="INSURER" value={valuation.insurer} isBlue />
-                        <DetailItem label="POLICY NO." value={booking.policyNumber} />
-                         <div />
-                        <DetailItem label="EXPIRY DATE." value={valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'} />
+                    <div className="grid grid-cols-[1fr_1fr] gap-x-8 gap-y-1 text-xs">
+                       <DetailItem label="SERIAL No" value={booking.bookingNumber} className="col-span-1" />
+                       <DetailItem label="ISSUED BY" value="Casa Motor Valuers And Assessors" className="col-span-1" />
+                       <DetailItem label="CLIENT NAME" value={booking.customerName} className="col-span-1" />
+                       <DetailItem label="CONTACTS" value={booking.customerPhone} className="col-span-1" />
+                       <DetailItem label="INSURER" value={valuation.insurer} className="col-span-1" />
+                       <DetailItem label="POLICY NO." value={booking.policyNumber} className="col-span-1" />
+                       <div/>
+                       <DetailItem label="EXPIRY DATE." value={valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'} className="col-span-1" />
                     </div>
                 </section>
 
                 <p className="text-xs italic my-3 text-center">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
 
                 <section className="mb-2">
-                    <div className="grid grid-cols-3 gap-x-8 gap-y-1">
-                        <DetailItem label="REGISTRATION NO" value={booking.plateNumber} isBlue />
-                        <DetailItem label="MAKE" value={booking.carMake} isBlue />
-                        <DetailItem label="TYPE :" value={booking.carType} isBlue />
-                        <DetailItem label="CHASSIS NO" value={valuation.chassisNo} isBlue />
-                        <DetailItem label="COLOUR" value={valuation.colour} isBlue />
-                        <DetailItem label="FUEL TYPE" value={valuation.fuelType} isBlue />
-                        <DetailItem label="ENGINE NO" value={valuation.engineNo} isBlue />
-                        <DetailItem label="ENGINE RATING" value={valuation.engineRating} isBlue />
-                        <DetailItem label="DATE OF REG." value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} isBlue />
-                        <DetailItem label="YEAR OF MAN." value={valuation.yearOfManufacture} isBlue />
-                        <DetailItem label="ODOMETER READING" value={valuation.odometerReadings} isBlue />
-                        <DetailItem label="COUNTRY OF ORIGIN" value={valuation.countryOfOrigin} isBlue />
-                        <DetailItem label="NO OF AIRBAGS" value={valuation.numberOfAirbags} isBlue />
-                        <DetailItem label="LIGHTS" value={valuation.lightsType} isBlue />
+                    <div className="grid grid-cols-3 gap-x-8 gap-y-1 text-xs">
+                        <DetailItem label="REGISTRATION NO" value={booking.plateNumber} />
+                        <DetailItem label="MAKE" value={booking.carMake} />
+                        <DetailItem label="TYPE :" value={booking.carType} />
+                        <DetailItem label="CHASSIS NO" value={valuation.chassisNo} />
+                        <DetailItem label="COLOUR" value={valuation.colour} />
+                        <DetailItem label="FUEL TYPE" value={valuation.fuelType} />
+                        <DetailItem label="ENGINE NO" value={valuation.engineNo} />
+                        <DetailItem label="ENGINE RATING" value={valuation.engineRating} />
+                        <DetailItem label="DATE OF REG." value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} />
+                        <DetailItem label="YEAR OF MAN." value={valuation.yearOfManufacture} />
+                        <DetailItem label="ODOMETER READING" value={valuation.odometerReadings} />
+                        <DetailItem label="COUNTRY OF ORIGIN" value={valuation.countryOfOrigin} />
+                        <DetailItem label="NO OF AIRBAGS" value={valuation.numberOfAirbags} />
+                        <DetailItem label="LIGHTS" value={valuation.lightsType} />
                     </div>
                 </section>
                 
                 <section className="mb-2 break-inside-avoid">
                      <h4 className="font-bold text-sm underline mb-1">Coachwork</h4>
-                     <div className="grid grid-cols-3 gap-x-8">
+                     <div className="grid grid-cols-3 gap-x-8 text-xs">
                         <ConditionItem question="Accident Repairs Noted?" answer={valuation.coachWork?.accidentRepairs} />
                         <ConditionItem question="Accident Damages noted?" answer={valuation.coachWork?.accidentDamagesNoted} />
                         <ConditionItem question="Are roof linings damaged or repaired?" answer={valuation.coachWork?.roofLiningsDamaged} />
                         <ConditionItem question="Is Paint work Scratched/ Faded/ Dented?" answer={valuation.coachWork?.paintWorkScratched} />
-                        <ConditionItem question="Are Inner wings repaired or damaged?" answer={valuation.coachWork?.innerWingsRepaired} />
+                        <ConditionItem question="Are inner wings repaired or damaged?" answer={valuation.coachWork?.innerWingsRepaired} />
                         <ConditionItem question="Are Bumpers/ Outer Wing repaired?" answer={valuation.coachWork?.bumpersOuterWingRepaired} />
                         <ConditionItem question="Has the body had a complete respray?" answer={valuation.coachWork?.completeRespray} />
                         <ConditionItem question="Is Upholstery Torn/faded/worn out??" answer={valuation.coachWork?.upholsteryTorn} />
@@ -228,13 +241,13 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
                 <section className="mb-2 break-inside-avoid">
                      <h4 className="font-bold text-sm underline mb-1">Mechanical Condition</h4>
-                     <div className="grid grid-cols-3 gap-x-8">
-                        <ConditionItem question="Is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
-                        <ConditionItem question="Is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
+                     <div className="grid grid-cols-3 gap-x-8 text-xs">
+                        <ConditionItem question="is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
+                        <ConditionItem question="is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
                         <ConditionItem question="Are the drive shafts/cv joints worn out?" answer={valuation.mechanicalCondition?.driveShaftWorn} />
-                        <ConditionItem question="Is the automatic/manual gearbox okay?" answer={valuation.mechanicalCondition?.gearboxOk} />
-                        <ConditionItem question="Is the steering system okay?" answer={valuation.mechanicalCondition?.steeringSystemOk} />
-                        <ConditionItem question="Is the suspension system okay?" answer={valuation.mechanicalCondition?.suspensionSystemOk} />
+                        <ConditionItem question="is the automatic/manual gearbox okay?" answer={valuation.mechanicalCondition?.gearboxOk} />
+                        <ConditionItem question="is the steering system okay?" answer={valuation.mechanicalCondition?.steeringSystemOk} />
+                        <ConditionItem question="is the suspension system okay?" answer={valuation.mechanicalCondition?.suspensionSystemOk} />
                         <ConditionItem question="Is cooling system operating well?" answer={valuation.mechanicalCondition?.coolingSystemOk} />
                         <ConditionItem question="Are There signs of fluid or oil leakage?" answer={valuation.mechanicalCondition?.fluidLeakage} />
                         <ConditionItem question="Are engine mountings worn out?" answer={valuation.mechanicalCondition?.engineMountingsWorn} />
@@ -243,43 +256,40 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
                 <section className="mb-2 break-inside-avoid">
                      <h4 className="font-bold text-sm underline mb-1">Electrical Condition</h4>
-                     <div className="grid grid-cols-3 gap-x-8">
+                     <div className="grid grid-cols-3 gap-x-8 text-xs">
                         <ConditionItem question="Do the indicator lights operate well?" answer={valuation.electricalCondition?.indicatorLightsOk} />
                         <ConditionItem question="Are the wipers operating well?" answer={valuation.electricalCondition?.wipersOk} />
-                        <ConditionItem question="Do the Instrument panel lights work well?" answer={valuation.electricalCondition?.instrumentPanelLightsOk} />
                         <ConditionItem question="Do the brake lights operate well?" answer={valuation.electricalCondition?.brakeLightsOk} />
                         <ConditionItem question="Are the headlights operating well?" answer={valuation.electricalCondition?.headlightsOk} />
+                        <ConditionItem question="Do the instrument panel lights work well?" answer={valuation.electricalCondition?.instrumentPanelLightsOk} />
                      </div>
                 </section>
 
                 <section className="my-3 space-y-1">
-                    <NoteItem label="COACHWORK NOTES" value={valuation.coachWorkNotes} isBlue/>
-                    <NoteItem label="ELECTRICAL NOTES" value={valuation.electricalNotes} isBlue/>
-                    <NoteItem label="MECHANICAL NOTES" value={valuation.mechanicalNotes} isBlue/>
-                    <NoteItem label="ANTI THEFT" value={valuation.antiTheft} isBlue/>
-                    <NoteItem label="TYRES" value={`${valuation.tyresType} - ${valuation.tyresCondition}`} isBlue/>
-                    <NoteItem label="GENERAL CONDITION" value="good" isBlue/>
-                    <NoteItem label="EXTRAS:" value={valuation.extras} isBlue/>
+                    <NoteItem label="COACHWORK NOTES" value={valuation.coachWorkNotes} />
+                    <NoteItem label="ELECTRICAL NOTES" value={valuation.electricalNotes} />
+                    <NoteItem label="MECHANICAL NOTES" value={valuation.mechanicalNotes} />
+                    <NoteItem label="ANTI THEFT" value={valuation.antiTheft} />
+                    <NoteItem label="TYRES" value={`${valuation.tyresType} - ${valuation.tyresCondition}`} />
+                    <NoteItem label="GENERAL CONDITION" value="good" />
+                    <NoteItem label="EXTRAS:" value={valuation.extras} />
                 </section>
                 
                 <section className="my-3">
                     <div className="py-1">
                         <span className="font-bold uppercase text-xs text-gray-600">ASSESSED VALUE : </span>
-                        <span className="font-bold text-blue-600 text-xs">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
+                        <span className="font-bold text-black text-xs">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
                     </div>
                 </section>
                 
-                <section className="my-2 grid grid-cols-2 gap-x-12 text-xs">
-                    <div>
-                      <span className="font-bold uppercase text-xs text-gray-600">Noted Value: WS (KES)</span>
-                      <div className="flex justify-between items-baseline mt-1">
+                <section className="my-2 text-xs">
+                    <span className="font-bold uppercase text-xs text-gray-600">NOTE VALUE</span>
+                    <div className="grid grid-cols-2 gap-x-12 mt-1">
+                      <div className="flex justify-between items-baseline">
                           <span className="text-gray-700">Radio Estimate</span>
                           <span className="text-black font-medium">{valuation.wsValue}</span>
                       </div>
-                    </div>
-                     <div>
-                       <span className="font-bold uppercase text-xs text-gray-600">Noted Value: RS (KES)</span>
-                       <div className="flex justify-between items-baseline mt-1">
+                       <div className="flex justify-between items-baseline">
                           <span className="text-gray-700">Windscreen Estimate</span>
                           <span className="text-black font-medium">{valuation.rsValue}</span>
                       </div>
@@ -287,18 +297,18 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </section>
 
                 <section className="my-3 space-y-1">
-                    <NoteItem label="REMARKS:" value={valuation.comments} isBlue/>
+                    <NoteItem label="REMARKS:" value={valuation.comments} />
                     <NoteItem label="REMEDY :" value="" />
-                    <NoteItem label="DISCLAIMER :" value="none" isBlue/>
+                    <NoteItem label="DISCLAIMER :" value="none" />
                 </section>
                 
                 <section className="mt-4 grid grid-cols-2 gap-x-16 text-xs">
-                    <DetailItem label="COUNTRY OF ORIGIN" value={valuation.countryOfOrigin} isBlue />
-                    <DetailItem label="DATE OF INSPECTION" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} isBlue />
-                    <div />
-                    <DetailItem label="EXAMINER" value={valuation.valuedBy} isBlue />
-                    <DetailItem label="DESTINATION" value={`${valuation.insurer} prompt insurance agency`} isBlue />
-                    <DetailItem label="LOCATION OF INSPECTION" value={booking.branch} isBlue />
+                    <DetailItem label="COUNTRY OF ORIGIN" value={valuation.countryOfOrigin} />
+                    <DetailItem label="DATE OF INSPECTION" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} />
+                    <DetailItem label="DESTINATION" value={`${valuation.insurer} prompt insurance agency`} />
+                    <DetailItem label="EXAMINER" value={valuation.valuedBy} />
+                    <div/>
+                    <DetailItem label="LOCATION OF INSPECTION" value={booking.branch} />
                 </section>
                 
                 <section className="mt-4 grid grid-cols-2 gap-x-16 text-xs">
@@ -367,18 +377,22 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
       booking: null,
       loading: true,
       qrCodeUrl: null,
+      isVerification: false,
     };
   }
 
   componentDidMount() {
     const bookingId = this.props.searchParams.get('id');
+    const isVerification = this.props.searchParams.get('verify') === 'true';
+    
+    this.setState({ isVerification });
 
     if (bookingId) {
-      this.fetchReports(bookingId);
+      this.fetchReports(bookingId, isVerification);
     }
   }
 
-  fetchReports = async (bookingId: string) => {
+  fetchReports = async (bookingId: string, isVerification: boolean) => {
     this.setState({ loading: true });
     try {
         const q = query(collection(db, "valuations"), where("bookingId", "==", bookingId));
@@ -398,9 +412,13 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
 
          if (bookingData) {
             document.title = `Valuation Report - ${bookingData.bookingNumber}`;
-            const reportUrl = `https://casamotorvaluers.co.ke/`;
-            const qrUrl = await QRCode.toDataURL(reportUrl, { width: 96, margin: 1 });
+            const reportUrl = `${window.location.origin}/admin/valuation-report?id=${bookingId}&verify=true`;
+            const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1, color: { dark: '#FFFFFF', light: '#00000000' } });
             this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
+        }
+        
+        if (isVerification) {
+            setTimeout(() => window.print(), 1000);
         }
 
     } catch (error) {
@@ -426,16 +444,23 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
     return (
       <div className="bg-gray-200 min-h-screen p-4 sm:p-8 print:bg-white print:p-0">
         <div className="max-w-5xl mx-auto">
-          <div className="flex justify-end mb-6 gap-4 print:hidden">
-            <Button onClick={() => window.print()} variant="default">
-              Print / Save PDF
-            </Button>
-            <Button onClick={this.handleGoBack} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
-              <ArrowLeft className="mr-2 h-5 w-5" />
-              Go Back
-            </Button>
-          </div>
-          <ReportToPrint valuation={this.state.valuation} booking={this.state.booking} qrCodeUrl={this.state.qrCodeUrl} />
+          {!this.state.isVerification && (
+              <div className="flex justify-end mb-6 gap-4 print:hidden">
+                <Button onClick={() => window.print()} variant="default">
+                  Print / Save PDF
+                </Button>
+                <Button onClick={this.handleGoBack} variant="outline" className="text-black border-black hover:bg-black hover:text-white">
+                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  Go Back
+                </Button>
+              </div>
+          )}
+          <ReportToPrint 
+            valuation={this.state.valuation} 
+            booking={this.state.booking} 
+            qrCodeUrl={this.state.qrCodeUrl}
+            isVerification={this.state.isVerification}
+          />
         </div>
       </div>
     );
@@ -459,3 +484,5 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
+
+    
