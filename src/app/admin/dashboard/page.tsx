@@ -7,7 +7,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown } from 'lucide-react';
 import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
@@ -128,6 +128,7 @@ interface Booking {
   assignedValuerId?: string;
   assignedValuerName?: string;
   assignmentDate?: any;
+  logbookImage?: string;
 }
 
 interface Valuation {
@@ -138,13 +139,36 @@ interface Valuation {
     forcedValue: string;
     wsValue: string;
     rsValue: string;
-    comments?: string;
     imageUrls: string[];
     valuedBy: string;
     valuedAt: any;
     status: 'Approved' | 'Rejected' | 'Pending Approval';
     rejectionReason?: string;
     booking?: Booking;
+    policyExpiryDate?: any;
+    chassisNo?: string;
+    colour?: string;
+    fuelType?: string;
+    engineNo?: string;
+    engineRating?: string;
+    dateOfReg?: any;
+    yearOfManufacture?: string;
+    odometerReadings?: string;
+    countryOfOrigin?: string;
+    numberOfAirbags?: string;
+    lightsType?: string;
+    transmissionType?: string;
+    coachWork?: Record<string, 'Yes' | 'No'>;
+    coachWorkNotes?: string;
+    mechanicalCondition?: Record<string, 'Yes' | 'No'>;
+    mechanicalNotes?: string;
+    electricalCondition?: Record<string, 'Yes' | 'No'>;
+    electricalNotes?: string;
+    antiTheft?: string;
+    tyresType?: string;
+    tyresCondition?: string;
+    extras?: string;
+    comments?: string;
 }
 
 type ChartDataPoint = {
@@ -166,6 +190,39 @@ const promoteAdminSchema = z.object({
 
 type AdminValuationFormValues = z.infer<typeof adminValuationSchema>;
 type PromoteAdminFormValues = z.infer<typeof promoteAdminSchema>;
+
+const ConditionChecklist = ({ title, data, notes }: { title: string, data?: Record<string, 'Yes' | 'No'>, notes?: string }) => {
+    if (!data) return null;
+    const entries = Object.entries(data);
+    if (entries.length === 0 && !notes) return null;
+
+    const toSentenceCase = (str: string) => {
+        const result = str.replace(/([A-Z])/g, " $1");
+        return result.charAt(0).toUpperCase() + result.slice(1);
+    };
+
+    return (
+        <Card>
+            <CardHeader><CardTitle>{title}</CardTitle></CardHeader>
+            <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                    {entries.map(([key, value]) => (
+                        <div key={key} className="flex justify-between items-center py-1 border-b">
+                            <span className="text-muted-foreground">{toSentenceCase(key)}:</span>
+                            <span className={`font-medium ${value === 'Yes' ? 'text-red-500' : 'text-green-500'}`}>{value}</span>
+                        </div>
+                    ))}
+                </div>
+                {notes && (
+                    <div className="mt-4">
+                        <h4 className="font-medium text-muted-foreground">Notes:</h4>
+                        <p className="text-sm text-foreground p-3 bg-muted rounded-md border mt-1">{notes}</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
 
 
 function AdminDashboard() {
@@ -2181,6 +2238,34 @@ function AdminDashboard() {
                                     </div>
                                 </CardContent>
                             </Card>
+                            
+                             <Collapsible>
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-between">
+                                        View Uploaded Documents
+                                        <FileDown className="h-4 w-4" />
+                                    </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="py-4">
+                                    {selectedBookingForAction.logbookImage ? (
+                                        <Card>
+                                            <CardHeader><CardTitle>Logbook Image</CardTitle></CardHeader>
+                                            <CardContent>
+                                                <Image src={selectedBookingForAction.logbookImage} alt="Logbook" width={800} height={600} className="rounded-md object-contain" />
+                                            </CardContent>
+                                        </Card>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground text-center py-4">No logbook image was uploaded for this booking.</p>
+                                    )}
+                                </CollapsibleContent>
+                            </Collapsible>
+                            
+                            <div className="space-y-4">
+                                <ConditionChecklist title="Coach Work Assessment" data={selectedValuationForAction.coachWork} notes={selectedValuationForAction.coachWorkNotes} />
+                                <ConditionChecklist title="Mechanical Condition" data={selectedValuationForAction.mechanicalCondition} notes={selectedValuationForAction.mechanicalNotes} />
+                                <ConditionChecklist title="Electrical Condition" data={selectedValuationForAction.electricalCondition} notes={selectedValuationForAction.electricalNotes} />
+                            </div>
+
 
                             <Form {...adminValuationForm}>
                                 <form id="admin-valuation-form" onSubmit={adminValuationForm.handleSubmit(handleCompleteValuation)} className="space-y-4">
@@ -2315,6 +2400,8 @@ export default function AdminDashboardPage() {
 
 
 
+
+    
 
     
 
