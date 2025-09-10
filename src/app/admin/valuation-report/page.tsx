@@ -279,29 +279,6 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
              <NoteItem label="Remarks" value={valuation.comments} />
         </div>
         
-        <div className="break-before-page">
-            <div className="my-4 break-inside-avoid">
-                <h3 className="font-bold text-sm underline mb-2">Valuation Photos</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {valuation.imageUrls.map((url, index) => (
-                        <div key={index} className="border p-1 rounded-md">
-                            <Image src={url} alt={`Valuation Photo ${index + 1}`} width={200} height={150} className="object-cover w-full h-auto" />
-                        </div>
-                    ))}
-                </div>
-            </div>
-            
-            {booking.logbookImage && (
-                <div className="my-4 break-inside-avoid">
-                    <h3 className="font-bold text-sm underline mb-2">Logbook</h3>
-                    <div className="border p-1 rounded-md max-w-sm">
-                        <Image src={booking.logbookImage} alt="Logbook" width={400} height={300} className="object-cover w-full h-auto" />
-                    </div>
-                </div>
-            )}
-        </div>
-
-
         <div className="grid grid-cols-12 gap-x-4 border-y-2 border-black py-1 my-2">
              <div className="col-span-6 space-y-1">
                 <DetailItem label="Country of Origin" value={valuation.countryOfOrigin} />
@@ -333,6 +310,28 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     {qrCodeUrl && <Image src={qrCodeUrl} alt="QR Code" width={96} height={96} />}
                 </div>
             </div>
+        </div>
+        
+        <div className="break-before-page">
+            <div className="my-4 break-inside-avoid">
+                <h3 className="font-bold text-sm underline mb-2">Valuation Photos</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {valuation.imageUrls.map((url, index) => (
+                        <div key={index} className="border p-1 rounded-md">
+                            <Image src={url} alt={`Valuation Photo ${index + 1}`} width={200} height={150} className="object-cover w-full h-auto" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+            
+            {booking.logbookImage && (
+                <div className="my-4 break-inside-avoid">
+                    <h3 className="font-bold text-sm underline mb-2">Logbook</h3>
+                    <div className="border p-1 rounded-md max-w-sm">
+                        <Image src={booking.logbookImage} alt="Logbook" width={400} height={300} className="object-cover w-full h-auto" />
+                    </div>
+                </div>
+            )}
         </div>
       </div>
     );
