@@ -102,9 +102,15 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     }
     
     const accessories = [
-        valuation.numberOfAirbags ? `${valuation.numberOfAirbags} SRS airbags` : null,
         valuation.extras,
     ].filter(Boolean).join(', ');
+
+    const valuerComments = [
+        { label: "Coach Work Notes", text: valuation.coachWorkNotes },
+        { label: "Mechanical Notes", text: valuation.mechanicalNotes },
+        { label: "Electrical Notes", text: valuation.electricalNotes },
+        { label: "General Comments", text: valuation.comments },
+    ].filter(comment => comment.text);
 
     return (
       <div className="bg-white shadow-lg rounded-lg p-6 font-sans text-[10px] leading-tight">
@@ -170,12 +176,28 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 <DetailItem label="Year of Man" value={valuation.yearOfManufacture} />
                 <DetailItem label="Mileage" value={valuation.odometerReadings} />
                 <DetailItem label="Engine No." value={valuation.engineNo} />
+                <DetailItem label="Air Bags" value={valuation.numberOfAirbags} />
             </div>
         </div>
 
         {/* Accessories */}
         <div className="text-center font-bold text-xs my-1 underline">VEHICLE ACCESSORIES</div>
-        <p className="border-y border-gray-400 py-1 text-blue-800 font-bold">{accessories}</p>
+        <p className="border-y border-gray-400 py-1 text-blue-800 font-bold">{accessories || 'N/A'}</p>
+        
+        {/* Valuer Notes */}
+        {valuerComments.length > 0 && (
+            <>
+                <div className="text-center font-bold text-xs my-1 underline">VALUER'S NOTES & REMARKS</div>
+                <div className="border-y border-gray-400 py-1 space-y-1">
+                    {valuerComments.map(comment => (
+                        <div key={comment.label}>
+                            <span className="font-bold text-gray-600">{comment.label}:</span>
+                            <span className="ml-2 text-blue-800">{comment.text}</span>
+                        </div>
+                    ))}
+                </div>
+            </>
+        )}
 
         {/* Values & Details */}
         <div className="border-b border-gray-400 py-1">
@@ -330,5 +352,3 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
-
-    
