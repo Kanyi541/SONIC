@@ -172,8 +172,12 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </h2>
                 
                 <section className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2 pb-2 border-b-2 border-primary">Vehicle Particulars</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2 pb-2 border-b-2 border-primary">Client & Vehicle Details</h3>
                     <div className="grid grid-cols-2 gap-x-12 gap-y-1 text-sm">
+                        <DetailItem label="Client Name" value={booking.customerName} />
+                        <DetailItem label="Client Phone" value={booking.customerPhone} />
+                        <DetailItem label="Client Email" value={booking.customerEmail} />
+                        <div />
                         <DetailItem label="Registration No" value={booking.plateNumber} />
                         <DetailItem label="Make" value={booking.carMake} />
                         <DetailItem label="Chassis No" value={valuation.chassisNo} />
@@ -429,3 +433,5 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
+
+    
