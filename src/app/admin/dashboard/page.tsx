@@ -2197,15 +2197,30 @@ function AdminDashboard() {
                             <Card>
                                 <CardHeader><CardTitle>Client & Vehicle Details</CardTitle></CardHeader>
                                 <CardContent>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
                                         <div className="flex justify-between"><span className="font-medium text-muted-foreground">Client Name:</span><span>{selectedBookingForAction.customerName}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Vehicle Make:</span><span>{selectedBookingForAction.carMake}</span></div>
                                         <div className="flex justify-between"><span className="font-medium text-muted-foreground">Client Phone:</span><span>{selectedBookingForAction.customerPhone}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Vehicle Model:</span><span>{selectedBookingForAction.carModel}</span></div>
                                         <div className="flex justify-between"><span className="font-medium text-muted-foreground">Client Email:</span><span>{selectedBookingForAction.customerEmail}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Registration No:</span><span>{selectedBookingForAction.plateNumber}</span></div>
+                                        
                                         <div className="flex justify-between"><span className="font-medium text-muted-foreground">Insurance Co:</span><span>{selectedBookingForAction.insurerName}</span></div>
                                         <div className="flex justify-between"><span className="font-medium text-muted-foreground">Policy Number:</span><span>{selectedBookingForAction.policyNumber}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Policy Expiry:</span><span>{selectedValuationForAction.policyExpiryDate ? format(selectedValuationForAction.policyExpiryDate.toDate(), 'PPP') : 'N/A'}</span></div>
+
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Vehicle Make:</span><span>{selectedBookingForAction.carMake}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Vehicle Model:</span><span>{selectedBookingForAction.carModel}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Registration No:</span><span>{selectedBookingForAction.plateNumber}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Date of Reg:</span><span>{selectedValuationForAction.dateOfReg ? format(selectedValuationForAction.dateOfReg.toDate(), 'PPP') : 'N/A'}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Year of Manuf:</span><span>{selectedValuationForAction.yearOfManufacture}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Colour:</span><span>{selectedValuationForAction.colour}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Chassis No:</span><span>{selectedValuationForAction.chassisNo}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Engine No:</span><span>{selectedValuationForAction.engineNo}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Engine Rating:</span><span>{selectedValuationForAction.engineRating}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Fuel Type:</span><span>{selectedValuationForAction.fuelType}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Odometer:</span><span>{selectedValuationForAction.odometerReadings}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Transmission:</span><span>{selectedValuationForAction.transmissionType}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Airbags:</span><span>{selectedValuationForAction.numberOfAirbags}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Lights Type:</span><span>{selectedValuationForAction.lightsType}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Origin:</span><span>{selectedValuationForAction.countryOfOrigin}</span></div>
                                     </div>
                                 </CardContent>
                             </Card>
