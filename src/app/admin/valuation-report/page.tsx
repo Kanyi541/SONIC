@@ -182,8 +182,6 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
             </div>
         </div>
 
-        <p className="text-[9px] text-center my-1 italic">{valuation.comments || 'A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.'}</p>
-        
         {/* Vehicle Particulars */}
         <div className="grid grid-cols-12 gap-x-4 border-y-2 border-black py-1">
              <div className="col-span-4 space-y-1">
