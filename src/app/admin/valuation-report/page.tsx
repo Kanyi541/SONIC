@@ -156,11 +156,21 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     
     return (
       <div className="bg-white shadow-lg rounded-lg p-4 font-sans text-[10px] leading-tight border-2 border-black">
-        <div className="text-center mb-2">
-            <h1 className="font-bold text-lg text-blue-900">CASA Motor Valuers & Assessors Ltd</h1>
-            <p className="text-[9px]">Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</p>
-            <p className="text-[9px]">Mob: 0722924854 / 0737924854 | Email: casamotorvaluers@gmail.com</p>
-            <h2 className="font-bold text-base tracking-wider mt-1 bg-gray-200 py-1">MOTOR VEHICLE VALUATION REPORT</h2>
+        <div className="grid grid-cols-12 items-center mb-2">
+            <div className="col-span-3">
+                 <Image src="/logo.png" alt="CASA Logo" width={120} height={40} />
+            </div>
+            <div className="col-span-6 text-center">
+                <h1 className="font-bold text-lg text-blue-900">CASA Motor Valuers & Assessors Ltd</h1>
+                <p className="text-[9px]">Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</p>
+                <p className="text-[9px]">Mob: 0722924854 / 0737924854 | Email: casamotorvaluers@gmail.com</p>
+                <h2 className="font-bold text-base tracking-wider mt-1 bg-gray-200 py-1">MOTOR VEHICLE VALUATION REPORT</h2>
+            </div>
+             <div className="col-span-3 flex justify-end">
+                <div className="w-24 h-24">
+                    {qrCodeUrl && <Image src={qrCodeUrl} alt="QR Code" width={96} height={96} />}
+                </div>
+            </div>
         </div>
         
         {/* Top Header Block */}
@@ -292,7 +302,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
         {/* Footer */}
         <div className="flex justify-between items-end mt-2">
-            <div className="w-1/3">
+            <div className="w-2/3">
                 <p className="font-bold text-[8px]">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
                  <div className="mt-8">
                     <DetailItem label="Date of Inspection" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} />
@@ -303,12 +313,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </div>
             </div>
             <div className="w-1/3 text-center">
-                <p className="text-red-600 font-bold text-[8px] italic">A zone of efficiency and integrity</p>
-            </div>
-            <div className="w-1/3 flex justify-end">
-                <div className="w-24 h-24">
-                    {qrCodeUrl && <Image src={qrCodeUrl} alt="QR Code" width={96} height={96} />}
-                </div>
+                 <p className="font-bold text-[8px] italic">CASA Motor Valuers & Assessors Ltd</p>
             </div>
         </div>
         
@@ -332,6 +337,9 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </div>
             )}
+        </div>
+         <div className="print-footer text-center text-[8px] text-gray-500 py-2">
+            This is a computer generated report and does not require a signature.
         </div>
       </div>
     );

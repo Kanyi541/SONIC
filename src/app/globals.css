@@ -126,4 +126,11 @@
     .break-inside-avoid {
         page-break-inside: avoid;
     }
+    .print-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+    }
 }
