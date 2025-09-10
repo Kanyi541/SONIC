@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -32,6 +33,7 @@ import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Ca
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 interface LoggedInUser {
@@ -59,6 +61,11 @@ interface Booking {
   comments?: string;
 }
 
+interface Insurer {
+    id: string;
+    name: string;
+}
+
 interface Valuation {
     id: string;
     bookingId: string;
@@ -70,6 +77,7 @@ interface Valuation {
     rejectionReason?: string;
     
     // New Fields
+    insurer: string;
     policyExpiryDate?: any;
     chassisNo?: string;
     colour?: string;
@@ -108,6 +116,7 @@ const valuationSchema = z.object({
   assessmentDate: z.date({ required_error: "An assessment date is required." }),
   images: z.array(z.string().url()).min(1, "At least one image is required."),
   comments: z.string().optional(),
+  insurer: z.string().min(1, "Insurer is required."),
   policyExpiryDate: z.date().optional(),
   chassisNo: z.string().optional(),
   colour: z.string().optional(),
@@ -167,6 +176,7 @@ export default function ValuerDashboardPage() {
     const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [valuations, setValuations] = useState<Valuation[]>([]);
+    const [insurers, setInsurers] = useState<Insurer[]>([]);
     const [loading, setLoading] = useState(true);
     const [isValuationDialogOpen, setValuationDialogOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -188,6 +198,7 @@ export default function ValuerDashboardPage() {
         defaultValues: {
             images: [],
             comments: "",
+            insurer: "",
             chassisNo: "",
             colour: "",
             fuelType: "",
@@ -285,9 +296,18 @@ export default function ValuerDashboardPage() {
              console.error("Error fetching valuations:", error);
         });
 
+        const insurersQuery = query(collection(db, "insurers"));
+        const insurersUnsubscribe = onSnapshot(insurersQuery, (snapshot) => {
+            const insurersData: Insurer[] = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
+            setInsurers(insurersData);
+        }, (error) => {
+            console.error("Error fetching insurers:", error);
+        });
+
         return () => {
             bookingsUnsubscribe();
             valuationsUnsubscribe();
+            insurersUnsubscribe();
         };
     }, [loggedInUser, toast]);
     
@@ -713,6 +733,30 @@ export default function ValuerDashboardPage() {
                                     <Card>
                                         <CardHeader><CardTitle>Vehicle & Policy Details</CardTitle></CardHeader>
                                         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="insurer"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Insurer</FormLabel>
+                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Select an insurer" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                {insurers.map((insurer) => (
+                                                                    <SelectItem key={insurer.id} value={insurer.name}>
+                                                                        {insurer.name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
                                             <FormField control={form.control} name="policyExpiryDate" render={({ field }) => (
                                                 <FormItem className="flex flex-col"><FormLabel>Policy Expiry Date</FormLabel><Popover><PopoverTrigger asChild><FormControl>
                                                     <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button>
