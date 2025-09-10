@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -48,7 +49,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight, KeyRound, Upload, File as FileIcon, X } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight, KeyRound, Upload, File as FileIcon, X, File, FileText } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -112,6 +113,9 @@ interface Booking {
   createdAt: any;
   status: string;
   insurerName?: string;
+  assignedValuerName?: string;
+  insuranceLetter?: string;
+  logbookImage?: string;
 }
 
 interface Valuation {
@@ -722,16 +726,15 @@ export default function ClientDashboardPage() {
                                 <TableHead className="font-semibold w-[50px]">No.</TableHead>
                                 {isAllCarsView ? (
                                     <>
-                                        <TableHead>Plate No</TableHead>
-                                        <TableHead>Make & Model</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Booking Number</TableHead>
-                                        <TableHead className="hidden md:table-cell">Assessment Date</TableHead>
-                                        <TableHead>Customer Name</TableHead>
+                                        <TableHead>Plate Number</TableHead>
+                                        <TableHead>Booking ID</TableHead>
+                                        <TableHead>Make and Model</TableHead>
+                                        <TableHead>Customer</TableHead>
+                                        <TableHead>Institution</TableHead>
+                                        <TableHead>Valuer</TableHead>
                                         <TableHead>Status</TableHead>
-                                        <TableHead className="hidden xl:table-cell">Assessment Value (KES)</TableHead>
-                                        <TableHead className="hidden xl:table-cell">Forced Value (KES)</TableHead>
-                                        <TableHead className="hidden xl:table-cell">Noted Value WS (KSH)</TableHead>
-                                        <TableHead className="hidden xl:table-cell">Noted Value RS (KSH)</TableHead>
+                                        <TableHead>Assessment Value</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </>
                                 ) : (
                                     <>
@@ -754,14 +757,13 @@ export default function ClientDashboardPage() {
                                           <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                                           <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                                           <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                          <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                                          <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                          <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                          <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                           <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                           <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                          <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                          <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                          <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                          <TableCell className="hidden xl:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                          <TableCell className="text-right"><Skeleton className="h-9 w-24" /></TableCell>
                                         </>
                                       ) : (
                                         <>
@@ -783,19 +785,27 @@ export default function ClientDashboardPage() {
                                         {isAllCarsView ? (
                                             <>
                                                 <TableCell>{booking.plateNumber}</TableCell>
+                                                <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
                                                 <TableCell>{`${booking.carMake} ${booking.carModel}`}</TableCell>
-                                                <TableCell className="font-mono text-xs hidden sm:table-cell">{booking.bookingNumber}</TableCell>
-                                                <TableCell className="hidden md:table-cell">{booking.valuation?.assessmentDate ? new Date(booking.valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</TableCell>
                                                 <TableCell>{booking.customerName}</TableCell>
+                                                <TableCell>{booking.insurerName}</TableCell>
+                                                <TableCell>{booking.assignedValuerName || 'N/A'}</TableCell>
                                                 <TableCell>
                                                   <Badge variant={getStatusVariant(booking.status || 'Unknown')}>
                                                     {booking.status}
                                                   </Badge>
                                                 </TableCell>
-                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.assessmentValue || 'N/A'}</TableCell>
-                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.forcedValue || 'N/A'}</TableCell>
-                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.wsValue || 'N/A'}</TableCell>
-                                                <TableCell className="font-mono hidden xl:table-cell">{booking.valuation?.rsValue || 'N/A'}</TableCell>
+                                                <TableCell className="font-mono">{booking.valuation?.assessmentValue || 'N/A'}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
+                                                    >
+                                                        <Printer className="mr-2 h-4 w-4" />
+                                                        <span className="hidden sm:inline">View Report</span>
+                                                    </Button>
+                                                </TableCell>
                                             </>
                                         ) : (
                                             <>
@@ -806,7 +816,27 @@ export default function ClientDashboardPage() {
                                                 <TableCell>
                                                     <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                                 </TableCell>
-                                                <TableCell className="text-right">
+                                                <TableCell className="text-right space-x-2">
+                                                    {booking.insuranceLetter && (
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <Button variant="ghost" size="icon"><FileText className="text-red-500" /></Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-96 h-96">
+                                                                <iframe src={booking.insuranceLetter} className="w-full h-full" />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                    )}
+                                                    {booking.logbookImage && (
+                                                         <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <Button variant="ghost" size="icon"><FileIcon className="text-blue-500" /></Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent>
+                                                                <img src={booking.logbookImage} alt="Logbook" className="w-full h-auto" />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                    )}
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
@@ -822,7 +852,7 @@ export default function ClientDashboardPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={isAllCarsView ? 11 : 7} className="text-center h-24">
+                                    <TableCell colSpan={isAllCarsView ? 10 : 7} className="text-center h-24">
                                         No bookings found.
                                     </TableCell>
                                 </TableRow>
