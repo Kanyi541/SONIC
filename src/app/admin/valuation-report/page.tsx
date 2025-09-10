@@ -10,6 +10,7 @@ import { Loader2, ArrowLeft, Phone, MapPin, Mail, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import QRCode from 'qrcode';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 
 interface Valuation {
@@ -149,8 +150,19 @@ const numberToWords = (num: number | string): string => {
 
 
 class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null, qrCodeUrl: string | null, isVerification: boolean}> {
+  
+  state = {
+    isVerificationDialogOpen: this.props.isVerification
+  }
+
+  componentDidUpdate(prevProps: { isVerification: boolean; }) {
+    if (this.props.isVerification && !prevProps.isVerification) {
+      this.setState({ isVerificationDialogOpen: true });
+    }
+  }
+
   render() {
-    const { valuation, booking, qrCodeUrl, isVerification } = this.props;
+    const { valuation, booking, qrCodeUrl } = this.props;
 
     if (!valuation || !booking) {
         return <div className="p-4 text-center text-muted-foreground">No valuation report found for this booking.</div>;
@@ -183,18 +195,23 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
             </header>
             <main className="flex-grow px-10 pt-2 pb-4 watermarked-valuation">
              <div className="report-content">
-
-                {isVerification && (
-                    <Alert variant="default" className="mb-2 bg-green-100 border-green-400 text-green-800">
-                        <AlertTitle className="font-bold">Verified Authentic Report</AlertTitle>
-                        <AlertDescription>
-                            This is a Verified Authentic Report from CASA. 
-                            <button onClick={() => window.print()} className="underline font-semibold ml-1">
-                                Click here to download it
-                            </button>
-                        </AlertDescription>
-                    </Alert>
-                )}
+                
+                <AlertDialog open={this.state.isVerificationDialogOpen} onOpenChange={(open) => this.setState({ isVerificationDialogOpen: open })}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Verified Authentic Report</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This is a Verified Authentic Report from CASA.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Close</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => window.print()}>
+                        Click here to download it
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
                 
                 <section className="mb-1 text-[12px]">
                     <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-0">
@@ -405,11 +422,11 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
     this.setState({ isVerification });
 
     if (bookingId) {
-      this.fetchReports(bookingId, isVerification);
+      this.fetchReports(bookingId);
     }
   }
 
-  fetchReports = async (bookingId: string, isVerification: boolean) => {
+  fetchReports = async (bookingId: string) => {
     this.setState({ loading: true });
     try {
         const q = query(collection(db, "valuations"), where("bookingId", "==", bookingId));
@@ -434,10 +451,6 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
             this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
         }
         
-        if (isVerification) {
-            setTimeout(() => window.print(), 1000);
-        }
-
     } catch (error) {
         console.error("Error fetching reports:", error);
     } finally {
@@ -503,6 +516,8 @@ export default function ValuationReportPage() {
 }
 
       
+
+    
 
     
 
