@@ -156,7 +156,14 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)]">
-            <main className="flex-grow p-10 font-sans">
+            <header className="bg-[#1a1a1a] p-6 relative">
+              <div className="w-48">
+                <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
+              </div>
+              <div className="absolute right-0 top-0 h-full w-4 bg-primary" />
+            </header>
+
+            <main className="flex-grow p-10 font-sans watermarked-valuation">
              <div className="report-content">
                 
                 <section className="mb-2">
@@ -253,14 +260,15 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 
                 <section className="my-2 grid grid-cols-2 gap-x-12 text-xs">
                     <div>
-                      <span className="font-bold uppercase text-xs text-gray-600">NOTE VALUE</span>
+                      <span className="font-bold uppercase text-xs text-gray-600">Noted Value: WS (KES)</span>
                       <div className="flex justify-between items-baseline mt-1">
                           <span className="text-gray-700">Radio Estimate</span>
                           <span className="text-black font-medium">{valuation.wsValue}</span>
                       </div>
                     </div>
                      <div>
-                       <div className="flex justify-between items-baseline mt-5">
+                       <span className="font-bold uppercase text-xs text-gray-600">Noted Value: RS (KES)</span>
+                       <div className="flex justify-between items-baseline mt-1">
                           <span className="text-gray-700">Windscreen Estimate</span>
                           <span className="text-black font-medium">{valuation.rsValue}</span>
                       </div>
@@ -319,6 +327,22 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </div>
             </div>
             </main>
+            <footer className="bg-[#1a1a1a] p-4 text-white text-xs mt-auto print-footer">
+                <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                        <Phone size={14} className="text-primary"/>
+                        <span>0722924854 / 0737924854</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                        <MapPin size={14} className="text-primary"/>
+                        <span>Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                        <Mail size={14} className="text-primary"/>
+                        <span>casamotorvaluers@gmail.com</span>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
   }
