@@ -301,35 +301,60 @@ export default function ValuerDashboardPage() {
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             const files = Array.from(event.target.files);
-            const MAX_FILE_SIZE = 3.2 * 1024 * 1024; // 3.2MB limit
-
-            const validFiles = files.filter(file => {
-                if (file.size > MAX_FILE_SIZE) {
-                    toast({
-                        variant: "destructive",
-                        title: "File Too Large",
-                        description: `The file "${file.name}" is too large. Please select files smaller than 3.2MB.`,
-                    });
-                    return false;
-                }
-                return true;
-            });
-
-            if (validFiles.length === 0) return;
-
-            const fileReaders = validFiles.map(file => {
-                return new Promise<string>((resolve, reject) => {
+            
+            const compressImage = (file: File): Promise<string> => {
+                return new Promise((resolve, reject) => {
                     const reader = new FileReader();
-                    reader.onload = (e) => {
-                        resolve(e.target?.result as string);
+                    reader.readAsDataURL(file);
+                    reader.onload = (loadEvent) => {
+                        const img = document.createElement("img");
+                        img.src = loadEvent.target?.result as string;
+                        img.onload = () => {
+                            const canvas = document.createElement("canvas");
+                            const MAX_WIDTH = 1024;
+                            const MAX_HEIGHT = 1024;
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > height) {
+                                if (width > MAX_WIDTH) {
+                                    height *= MAX_WIDTH / width;
+                                    width = MAX_WIDTH;
+                                }
+                            } else {
+                                if (height > MAX_HEIGHT) {
+                                    width *= MAX_HEIGHT / height;
+                                    height = MAX_HEIGHT;
+                                }
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext("2d");
+                            if (!ctx) {
+                                return reject(new Error("Could not get canvas context"));
+                            }
+                            ctx.drawImage(img, 0, 0, width, height);
+                            // Get the data-URL with JPEG format and a quality level of 0.7
+                            const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+                            resolve(dataUrl);
+                        };
+                        img.onerror = reject;
                     };
                     reader.onerror = reject;
-                    reader.readAsDataURL(file);
                 });
-            });
+            };
 
-            Promise.all(fileReaders).then(urls => {
-                setImageDataUrls(prevUrls => [...prevUrls, ...urls]);
+            const compressionPromises = files.map(compressImage);
+
+            Promise.all(compressionPromises).then(compressedUrls => {
+                setImageDataUrls(prevUrls => [...prevUrls, ...compressedUrls]);
+            }).catch(error => {
+                console.error("Error compressing images:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Image Processing Error",
+                    description: "There was an error while compressing the images. Please try again.",
+                });
             });
         }
     };
@@ -896,7 +921,7 @@ export default function ValuerDashboardPage() {
                                                 </label>
                                                 <p className="pl-1">or drag and drop</p>
                                                 </div>
-                                                <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
+                                                <p className="text-xs leading-5 text-gray-600">Images will be compressed automatically</p>
                                             </div>
                                         </div>
                                          <FormField
