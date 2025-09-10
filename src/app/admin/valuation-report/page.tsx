@@ -287,20 +287,13 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
         </div>
 
         <div className="grid grid-cols-12 gap-x-4 border-y-2 border-black py-1 my-2">
-             <div className="col-span-4 space-y-1">
+             <div className="col-span-6 space-y-1">
                 <DetailItem label="Country of Origin" value={valuation.countryOfOrigin} />
                 <DetailItem label="Destination" value={booking.insurerName} />
              </div>
-             <div className="col-span-4 space-y-1">
-                <DetailItem label="Date of Inspection" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} />
-                <div className="flex justify-between">
-                    <span className="font-bold text-xs uppercase text-gray-600">Signed:</span>
-                    <div></div>
-                </div>
-             </div>
-             <div className="col-span-4 space-y-1">
-                <DetailItem label="Examiner" value={valuation.examiner} />
-                <DetailItem label="Location of Inspection" value={valuation.locationOfInspection} />
+             <div className="col-span-6 space-y-1">
+                <DetailItem label="Examiner" value={valuation.valuedBy} />
+                <DetailItem label="Location of Inspection" value={booking.branch} />
              </div>
         </div>
 
@@ -308,8 +301,12 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
         <div className="flex justify-between items-end mt-2">
             <div className="w-1/3">
                 <p className="font-bold text-[8px]">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
-                <div className="relative w-24 h-24 mt-1">
-                    <Image src="/stamp.png" alt="Stamp" layout="fill" objectFit="contain" />
+                 <div className="mt-8">
+                    <DetailItem label="Date of Inspection" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} />
+                     <div className="flex justify-between mt-2">
+                        <span className="font-bold text-xs uppercase text-gray-600">Signed:</span>
+                        <div className="w-2/3 border-b border-gray-600"></div>
+                    </div>
                 </div>
             </div>
             <div className="w-1/3 text-center">
@@ -426,3 +423,5 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
+
+    
