@@ -191,7 +191,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </section>
                 
-                <section className="mb-6">
+                <section className="mb-6 break-inside-avoid">
                      <div className="grid grid-cols-2 gap-x-12">
                         <div>
                             <h4 className="font-bold text-base underline mb-1">Coachwork</h4>
@@ -223,7 +223,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                         </div>
                     </div>
                 </section>
-                <section className="mb-6">
+                <section className="mb-6 break-inside-avoid">
                      <h4 className="font-bold text-base underline mb-1">Electrical Condition</h4>
                      <div className="grid grid-cols-3 gap-x-12">
                         <ConditionItem question="Do the indicator lights operate well?" answer={valuation.electricalCondition?.indicatorLightsOk} />
@@ -261,7 +261,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </section>
                 
                 <section className="mb-8 grid grid-cols-2 gap-x-12 border-y-2 border-dashed border-gray-300 py-2 text-sm">
-                    <DetailItem label="Country of Origin" value={valuation.countryOfOrigin} />
+                    <DetailItem label="Client Name & Insurer" value={valuation.insurer} />
                      <DetailItem label="Examiner" value={valuation.valuedBy} />
                     <DetailItem label="Destination" value={booking.insurerName} />
                     <DetailItem label="Location of Inspection" value={booking.branch} />
@@ -427,5 +427,3 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
-
-    
