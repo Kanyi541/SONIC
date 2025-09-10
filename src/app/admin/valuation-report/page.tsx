@@ -278,7 +278,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
         {/* Final Details */}
         <div className="space-y-1 my-2">
-             <NoteItem label="Remarks" value="None" />
+             <NoteItem label="Remarks" value={valuation.comments || 'N/A'} />
         </div>
 
         <div className="grid grid-cols-12 gap-x-4 border-y-2 border-black py-1 my-2">
