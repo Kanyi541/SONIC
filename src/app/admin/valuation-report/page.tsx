@@ -48,6 +48,7 @@ interface Valuation {
     tyresCondition?: string;
     extras?: string;
     comments?: string;
+    insurer?: string;
 }
 
 interface Booking {
@@ -167,7 +168,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
             <div className="col-span-4 space-y-1">
                 <DetailItem label="Serial No" value={booking.bookingNumber} />
                 <DetailItem label="Client Name" value={booking.customerName} />
-                <DetailItem label="Insurer" value={booking.insurerName} />
+                <DetailItem label="Insurer" value={valuation.insurer || booking.insurerName} />
             </div>
             <div className="col-span-4 space-y-1">
                 <DetailItem label="Issued By" value="Casa Motor Valuers And Assessors" />
@@ -190,7 +191,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 <DetailItem label="Chassis No" value={valuation.chassisNo} />
                 <DetailItem label="Engine No" value={valuation.engineNo} />
                 <DetailItem label="Year of Man." value={valuation.yearOfManufacture} />
-                <DetailItem label="No of Airbags" value={valuation.numberOfAirbags} />
+                <DetailItem label="Air Bags" value={valuation.numberOfAirbags} />
             </div>
             <div className="col-span-4 space-y-1">
                 <DetailItem label="Make" value={booking.carMake} />
@@ -417,5 +418,3 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
-
-    
