@@ -49,7 +49,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight, KeyRound, Upload, File as FileIcon, X, File, FileText } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight, KeyRound, Upload, File as FileIcon, X, File, FileText, Calendar as CalendarIcon } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +60,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
+import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
 
 
 interface LoggedInUser {
@@ -195,6 +196,7 @@ const bookingSchema = z.object({
   customerPhone: z.string().min(1, "Customer phone is required."),
   plateNumber: z.string().min(1, "Plate number is required"),
   policyNumber: z.string().optional(),
+  policyExpiryDate: z.date().optional(),
   carMake: z.string().min(1, "Car make is required"),
   carModel: z.string().min(1, "Car model is required"),
   branch: z.string().min(1, "Branch is required"),
@@ -978,7 +980,7 @@ export default function ClientDashboardPage() {
                                   )}
                               />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField
                                   control={bookingControl}
                                   name="plateNumber"
@@ -987,19 +989,6 @@ export default function ClientDashboardPage() {
                                       <FormLabel>Plate Number</FormLabel>
                                       <FormControl>
                                           <Input {...field} placeholder="e.g. KDA 123B" />
-                                      </FormControl>
-                                      <FormMessage />
-                                      </FormItem>
-                                  )}
-                              />
-                                <FormField
-                                  control={bookingControl}
-                                  name="policyNumber"
-                                  render={({ field }) => (
-                                      <FormItem>
-                                      <FormLabel>Policy Number (Optional)</FormLabel>
-                                      <FormControl>
-                                          <Input {...field} placeholder="Enter policy number" />
                                       </FormControl>
                                       <FormMessage />
                                       </FormItem>
@@ -1018,6 +1007,59 @@ export default function ClientDashboardPage() {
                                       </FormItem>
                                   )}
                                />
+                          </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                  control={bookingControl}
+                                  name="policyNumber"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                      <FormLabel>Policy Number (Optional)</FormLabel>
+                                      <FormControl>
+                                          <Input {...field} placeholder="Enter policy number" />
+                                      </FormControl>
+                                      <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                               <FormField
+                                control={bookingControl}
+                                name="policyExpiryDate"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                    <FormLabel>Policy Expiry Date</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full pl-3 text-left font-normal",
+                                                !field.value && "text-muted-foreground"
+                                            )}
+                                            >
+                                            {field.value ? (
+                                                format(field.value, "PPP")
+                                            ) : (
+                                                <span>Pick a date</span>
+                                            )}
+                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                        <ShadcnCalendar
+                                            mode="single"
+                                            selected={field.value}
+                                            onSelect={field.onChange}
+                                            initialFocus
+                                        />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
