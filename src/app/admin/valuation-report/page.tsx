@@ -156,11 +156,22 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)]">
-            <header className="bg-[#1a1a1a] p-6 relative">
-              <div className="w-48">
-                <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
-              </div>
-              <div className="absolute right-0 top-0 h-full w-4 bg-primary" />
+            <header className="bg-[#1a1a1a] p-6 relative text-white">
+                <div className="flex justify-between items-center">
+                    <div className="w-48 flex-shrink-0">
+                        <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
+                    </div>
+                    <div className="text-center mx-4">
+                        <h2 className="text-xl font-bold uppercase tracking-wider">CASA MOTOR VALUERS & ASSESSORS LTD</h2>
+                        <p className="text-sm font-light tracking-wide">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</p>
+                    </div>
+                    {qrCodeUrl && (
+                        <div className="bg-white p-1 rounded-md flex-shrink-0">
+                            <Image src={qrCodeUrl} alt="QR Code" width={80} height={80} />
+                        </div>
+                    )}
+                </div>
+                <div className="absolute right-0 top-0 h-full w-8 bg-primary" />
             </header>
 
             <main className="flex-grow p-10 font-sans watermarked-valuation">
@@ -448,5 +459,7 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
+
+    
 
     
