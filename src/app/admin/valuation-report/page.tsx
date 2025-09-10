@@ -159,9 +159,17 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)] font-sans-trebuchet italic">
-            <header className="relative bg-[#1a1a1a] p-4 flex justify-between items-center print-header">
-                <div className="relative z-10 w-48">
-                    <Image src="/logo.png" alt="CASA Motor Valuers And Assessors Ltd" width={180} height={70} />
+             <header className="relative bg-[#1a1a1a] p-4 flex justify-between items-center print-header">
+                <div className="flex items-center gap-4">
+                    <div className="relative z-10 w-48">
+                        <Image src="/logo.png" alt="CASA Motor Valuers And Assessors Ltd" width={180} height={70} />
+                    </div>
+                     {qrCodeUrl && (
+                        <div className="relative z-20 text-center">
+                            <Image src={qrCodeUrl} alt="QR Code" width={120} height={120} />
+                            <p className="text-[7px] font-bold text-white mt-1">SCAN TO VERIFY</p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="relative z-10 text-center text-white">
@@ -169,13 +177,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <h3 className="font-bold text-base underline">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
                 </div>
                 
-                <div className="relative z-10 flex items-center gap-4">
-                     {qrCodeUrl && (
-                        <div className="relative z-20 text-center">
-                            <Image src={qrCodeUrl} alt="QR Code" width={120} height={120} />
-                            <p className="text-[7px] font-bold text-white mt-1">SCAN TO VERIFY</p>
-                        </div>
-                    )}
+                <div className="relative z-10 flex items-center">
                     <div className="h-28 w-8 bg-primary"></div>
                 </div>
             </header>
@@ -184,9 +186,12 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
                 {isVerification && (
                     <Alert variant="default" className="mb-2 bg-green-100 border-green-400 text-green-800">
-                        <AlertTitle className="font-bold">Authentic Report</AlertTitle>
+                        <AlertTitle className="font-bold">Verified Authentic Report</AlertTitle>
                         <AlertDescription>
-                            This valuation report has been verified as authentic.
+                            This is a Verified Authentic Report from CASA. 
+                            <button onClick={() => window.print()} className="underline font-semibold ml-1">
+                                Click here to download it
+                            </button>
                         </AlertDescription>
                     </Alert>
                 )}
@@ -498,5 +503,7 @@ export default function ValuationReportPage() {
 }
 
       
+
+    
 
     
