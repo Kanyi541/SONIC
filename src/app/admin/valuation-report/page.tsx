@@ -170,7 +170,6 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 <DetailItem label="Year of Man" value={valuation.yearOfManufacture} />
                 <DetailItem label="Mileage" value={valuation.odometerReadings} />
                 <DetailItem label="Engine No." value={valuation.engineNo} />
-                <DetailItem label="Duty" value="PAID" />
             </div>
         </div>
 
