@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle, FileSignature, FileWarning, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle, FileSignature, FileWarning, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -26,6 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -61,16 +63,37 @@ interface Valuation {
     id: string;
     bookingId: string;
     assessmentDate: any;
-    assessmentValue: string;
-    forcedValue: string;
-    wsValue: string;
-    rsValue: string;
-    comments?: string;
     imageUrls: string[];
     valuedBy: string;
     valuedAt: any;
     status: 'Approved' | 'Rejected' | 'Pending Approval';
     rejectionReason?: string;
+    
+    // New Fields
+    policyExpiryDate?: any;
+    chassisNo?: string;
+    colour?: string;
+    fuelType?: string;
+    engineNo?: string;
+    engineRating?: string;
+    dateOfReg?: any;
+    yearOfManufacture?: string;
+    odometerReadings?: string;
+    countryOfOrigin?: string;
+    numberOfAirbags?: string;
+    lightsType?: string;
+    transmissionType?: string;
+    coachWork?: Record<string, 'Yes' | 'No'>;
+    coachWorkNotes?: string;
+    mechanicalCondition?: Record<string, 'Yes' | 'No'>;
+    mechanicalNotes?: string;
+    electricalCondition?: Record<string, 'Yes' | 'No'>;
+    electricalNotes?: string;
+    antiTheft?: string;
+    tyresType?: string;
+    tyresCondition?: string;
+    extras?: string;
+    comments?: string;
 }
 
 
@@ -82,12 +105,60 @@ type ChartDataPoint = {
 };
 
 const valuationSchema = z.object({
-  assessmentDate: z.date({
-    required_error: "An assessment date is required.",
-  }),
+  assessmentDate: z.date({ required_error: "An assessment date is required." }),
   images: z.array(z.string().url()).min(1, "At least one image is required."),
   comments: z.string().optional(),
+  policyExpiryDate: z.date().optional(),
+  chassisNo: z.string().optional(),
+  colour: z.string().optional(),
+  fuelType: z.string().optional(),
+  engineNo: z.string().optional(),
+  engineRating: z.string().optional(),
+  dateOfReg: z.date().optional(),
+  yearOfManufacture: z.string().optional(),
+  odometerReadings: z.string().optional(),
+  countryOfOrigin: z.string().optional(),
+  numberOfAirbags: z.string().optional(),
+  lightsType: z.string().optional(),
+  transmissionType: z.string().optional(),
+  coachWork: z.object({
+    accidentRepairs: z.enum(['Yes', 'No']).optional(),
+    paintWorkScratched: z.enum(['Yes', 'No']).optional(),
+    completeRespray: z.enum(['Yes', 'No']).optional(),
+    accidentDamagesNoted: z.enum(['Yes', 'No']).optional(),
+    innerWingsRepaired: z.enum(['Yes', 'No']).optional(),
+    upholsteryTorn: z.enum(['Yes', 'No']).optional(),
+    roofLiningsDamaged: z.enum(['Yes', 'No']).optional(),
+    bumpersOuterWingRepaired: z.enum(['Yes', 'No']).optional(),
+    chassisKinked: z.enum(['Yes', 'No']).optional(),
+  }).optional(),
+  coachWorkNotes: z.string().optional(),
+  mechanicalCondition: z.object({
+    parkingBrakeEffective: z.enum(['Yes', 'No']).optional(),
+    gearboxOk: z.enum(['Yes', 'No']).optional(),
+    coolingSystemOk: z.enum(['Yes', 'No']).optional(),
+    brakingSystemOk: z.enum(['Yes', 'No']).optional(),
+    steeringSystemOk: z.enum(['Yes', 'No']).optional(),
+    fluidLeakage: z.enum(['Yes', 'No']).optional(),
+    driveShaftWorn: z.enum(['Yes', 'No']).optional(),
+    suspensionSystemOk: z.enum(['Yes', 'No']).optional(),
+    engineMountingsWorn: z.enum(['Yes', 'No']).optional(),
+  }).optional(),
+  mechanicalNotes: z.string().optional(),
+  electricalCondition: z.object({
+    indicatorLightsOk: z.enum(['Yes', 'No']).optional(),
+    brakeLightsOk: z.enum(['Yes', 'No']).optional(),
+    wipersOk: z.enum(['Yes', 'No']).optional(),
+    headlightsOk: z.enum(['Yes', 'No']).optional(),
+    instrumentPanelLightsOk: z.enum(['Yes', 'No']).optional(),
+  }).optional(),
+  electricalNotes: z.string().optional(),
+  antiTheft: z.string().optional(),
+  tyresType: z.string().optional(),
+  tyresCondition: z.string().optional(),
+  extras: z.string().optional(),
 });
+
 
 type ValuationFormValues = z.infer<typeof valuationSchema>;
 
@@ -239,15 +310,18 @@ export default function ValuerDashboardPage() {
         setIsSubmitting(true);
     
         try {
-            await addDoc(collection(db, "valuations"), {
+             const valuationData: Partial<Valuation> = {
                 bookingId: selectedBooking.id,
                 assessmentDate: data.assessmentDate,
                 imageUrls: imageDataUrls,
                 comments: data.comments,
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
-                status: "Pending Approval", 
-            });
+                status: "Pending Approval",
+                ...data,
+             };
+
+            await addDoc(collection(db, "valuations"), valuationData);
     
             const bookingDocRef = doc(db, "bookings", selectedBooking.id);
             await updateDoc(bookingDocRef, {
@@ -479,7 +553,39 @@ export default function ValuerDashboardPage() {
             </CardContent>
         </Card>
     )};
-    
+
+    const renderRadioGroup = (name: any, label: string) => (
+        <FormField
+            control={form.control}
+            name={name}
+            render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                    <FormLabel className="text-sm">{label}</FormLabel>
+                    <FormControl>
+                        <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex items-center space-x-4"
+                        >
+                            <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                    <RadioGroupItem value="Yes" />
+                                </FormControl>
+                                <FormLabel className="font-normal">Yes</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                    <RadioGroupItem value="No" />
+                                </FormControl>
+                                <FormLabel className="font-normal">No</FormLabel>
+                            </FormItem>
+                        </RadioGroup>
+                    </FormControl>
+                </FormItem>
+            )}
+        />
+    );
+
     return (
         <UnifiedDashboardLayout
             title="CASA Motor Valuers & Assessors Ltd"
@@ -555,7 +661,7 @@ export default function ValuerDashboardPage() {
                         </TabsContent>
                     </Tabs>
                     <Dialog open={isValuationDialogOpen} onOpenChange={setValuationDialogOpen}>
-                        <DialogContent className="sm:max-w-2xl grid-rows-[auto_1fr_auto] max-h-[90vh]">
+                        <DialogContent className="sm:max-w-4xl grid-rows-[auto_1fr_auto] max-h-[90vh]">
                             <DialogHeader>
                                 <DialogTitle>Valuation Form</DialogTitle>
                                 <DialogDescription>
@@ -564,7 +670,7 @@ export default function ValuerDashboardPage() {
                             </DialogHeader>
                             <div className="overflow-y-auto pr-6 -mr-6">
                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(handleValuationSubmit)} className="space-y-4">
+                                <form onSubmit={form.handleSubmit(handleValuationSubmit)} className="space-y-6">
                                     <Card>
                                         <CardHeader>
                                             <CardTitle className="text-lg">Booking Details</CardTitle>
@@ -585,6 +691,80 @@ export default function ValuerDashboardPage() {
                                             </div>
                                         </CardContent>
                                     </Card>
+
+                                    <Card>
+                                        <CardHeader><CardTitle>Vehicle & Policy Details</CardTitle></CardHeader>
+                                        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <FormField control={form.control} name="policyExpiryDate" render={({ field }) => (
+                                                <FormItem className="flex flex-col"><FormLabel>Policy Expiry Date</FormLabel><Popover><PopoverTrigger asChild><FormControl>
+                                                    <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button>
+                                                </FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
+                                            )}/>
+                                            <FormField control={form.control} name="chassisNo" render={({ field }) => (<FormItem><FormLabel>Chassis No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="colour" render={({ field }) => (<FormItem><FormLabel>Colour</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="fuelType" render={({ field }) => (<FormItem><FormLabel>Fuel Type</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="engineNo" render={({ field }) => (<FormItem><FormLabel>Engine No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="engineRating" render={({ field }) => (<FormItem><FormLabel>Engine Rating</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="dateOfReg" render={({ field }) => (
+                                                <FormItem className="flex flex-col"><FormLabel>Date of Reg.</FormLabel><Popover><PopoverTrigger asChild><FormControl>
+                                                    <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button>
+                                                </FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
+                                            )}/>
+                                            <FormField control={form.control} name="yearOfManufacture" render={({ field }) => (<FormItem><FormLabel>Year of Manufacture</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="odometerReadings" render={({ field }) => (<FormItem><FormLabel>Odometer Readings</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="countryOfOrigin" render={({ field }) => (<FormItem><FormLabel>Country of Origin</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="numberOfAirbags" render={({ field }) => (<FormItem><FormLabel>Number of Airbags</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="lightsType" render={({ field }) => (<FormItem><FormLabel>Lights Type</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="transmissionType" render={({ field }) => (<FormItem><FormLabel>Transmission Type</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Collapsible><CollapsibleTrigger asChild><Button variant="outline" className="w-full justify-between">Coach Work <ChevronDown /></Button></CollapsibleTrigger><CollapsibleContent className="space-y-2 pt-4">
+                                        {renderRadioGroup("coachWork.accidentRepairs", "Accident Repairs need?")}
+                                        {renderRadioGroup("coachWork.paintWorkScratched", "Is paint work scratched/faded/dented?")}
+                                        {renderRadioGroup("coachWork.completeRespray", "Has the body had a complete respray?")}
+                                        {renderRadioGroup("coachWork.accidentDamagesNoted", "Accident Damages noted?")}
+                                        {renderRadioGroup("coachWork.innerWingsRepaired", "Are inner wings repaired or damaged?")}
+                                        {renderRadioGroup("coachWork.upholsteryTorn", "Is Upholstery torn/faded/worn out?")}
+                                        {renderRadioGroup("coachWork.roofLiningsDamaged", "Are roof linings damaged or repaired?")}
+                                        {renderRadioGroup("coachWork.bumpersOuterWingRepaired", "Are bumpers/outer wing repaired?")}
+                                        {renderRadioGroup("coachWork.chassisKinked", "Is the chassis kinked or damaged?")}
+                                        <FormField control={form.control} name="coachWorkNotes" render={({ field }) => (<FormItem><FormLabel>Coach Work Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                    </CollapsibleContent></Collapsible>
+
+                                    <Collapsible><CollapsibleTrigger asChild><Button variant="outline" className="w-full justify-between">Mechanical Condition <ChevronDown /></Button></CollapsibleTrigger><CollapsibleContent className="space-y-2 pt-4">
+                                        {renderRadioGroup("mechanicalCondition.parkingBrakeEffective", "Is the parking brake effective?")}
+                                        {renderRadioGroup("mechanicalCondition.gearboxOk", "Is the automatic/manual gearbox okay?")}
+                                        {renderRadioGroup("mechanicalCondition.coolingSystemOk", "Is cooling system operating well?")}
+                                        {renderRadioGroup("mechanicalCondition.brakingSystemOk", "Is the braking system okay?")}
+                                        {renderRadioGroup("mechanicalCondition.steeringSystemOk", "Is the steering system okay?")}
+                                        {renderRadioGroup("mechanicalCondition.fluidLeakage", "Are there signs of fluid or oil leakage?")}
+                                        {renderRadioGroup("mechanicalCondition.driveShaftWorn", "Are the drive shaft/CV joints worn out?")}
+                                        {renderRadioGroup("mechanicalCondition.suspensionSystemOk", "Is the suspension system okay?")}
+                                        {renderRadioGroup("mechanicalCondition.engineMountingsWorn", "Are engine mountings worn out?")}
+                                        <FormField control={form.control} name="mechanicalNotes" render={({ field }) => (<FormItem><FormLabel>Mechanical Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                    </CollapsibleContent></Collapsible>
+                                    
+                                    <Collapsible><CollapsibleTrigger asChild><Button variant="outline" className="w-full justify-between">Electrical Condition <ChevronDown /></Button></CollapsibleTrigger><CollapsibleContent className="space-y-2 pt-4">
+                                        {renderRadioGroup("electricalCondition.indicatorLightsOk", "Do the indicator lights operate well?")}
+                                        {renderRadioGroup("electricalCondition.brakeLightsOk", "Do the brake lights operate well?")}
+                                        {renderRadioGroup("electricalCondition.wipersOk", "Are the wipers operating well?")}
+                                        {renderRadioGroup("electricalCondition.headlightsOk", "Are the headlights operating well?")}
+                                        {renderRadioGroup("electricalCondition.instrumentPanelLightsOk", "Do the instrument panel lights work well?")}
+                                        <FormField control={form.control} name="electricalNotes" render={({ field }) => (<FormItem><FormLabel>Electrical Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                    </CollapsibleContent></Collapsible>
+
+                                    <Card>
+                                        <CardHeader><CardTitle>Tyres & Security</CardTitle></CardHeader>
+                                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <FormField control={form.control} name="antiTheft" render={({ field }) => (<FormItem><FormLabel>Anti-theft System</FormLabel><FormControl><Input {...field} placeholder="Type of anti-theft system" /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="tyresType" render={({ field }) => (<FormItem><FormLabel>Tyres Type</FormLabel><FormControl><Input {...field} placeholder="e.g., Tubeless, Radial" /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="tyresCondition" render={({ field }) => (<FormItem><FormLabel>General Tyre Condition</FormLabel><FormControl><Input {...field} placeholder="e.g., Good, Worn, New" /></FormControl><FormMessage /></FormItem>)}/>
+                                        </CardContent>
+                                    </Card>
+                                    
+                                     <FormField control={form.control} name="extras" render={({ field }) => (<FormItem><FormLabel>Extras</FormLabel><FormControl><Textarea {...field} placeholder="List any extras, e.g., Bull bars, Spoiler" /></FormControl><FormMessage /></FormItem>)}/>
+
 
                                     <FormField
                                         control={form.control}
@@ -718,5 +898,3 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
-
-    
