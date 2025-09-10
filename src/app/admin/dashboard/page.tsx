@@ -101,6 +101,7 @@ interface Staff {
   isAdmin?: boolean;
   uid?: string;
   role?: 'Super Admin' | 'Admin';
+  clientId?: string;
 }
 
 interface Branch {
@@ -1470,6 +1471,10 @@ function AdminDashboard() {
   );
   const totalAllBookingsPages = Math.ceil(allBookings.length / itemsPerPage);
 
+  const adminStaff = useMemo(() => {
+    return staff.filter(s => !s.clientId);
+  }, [staff]);
+
 
   return (
     <SidebarProvider>
@@ -1758,7 +1763,7 @@ function AdminDashboard() {
             )}
             {activeView === 'institutions' && renderUserTable(institutions, "Manage Institutions", "View and manage all registered institutions.", () => setAddInstitutionOpen(true), "institution", institutionsPage, setInstitutionsPage)}
             {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuer", valuersPage, setValuersPage)}
-            {activeView === 'staff' && renderUserTable(staff, "Manage Staff", "View and manage all registered staff members.", () => setAddStaffOpen(true), "staff", staffPage, setStaffPage)}
+            {activeView === 'staff' && renderUserTable(adminStaff, "Manage Staff", "View and manage all registered staff members.", () => setAddStaffOpen(true), "staff", staffPage, setStaffPage)}
             {activeView === 'branches' && (
                 <Card className="shadow-lg border-primary/20">
                     <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -1942,7 +1947,7 @@ function AdminDashboard() {
                                                                 >
                                                                     Valuation Report
                                                                 </Button>
-                                                            )}
+                                                            }
                                                         </div>
                                                     </PopoverContent>
                                                 </Popover>
@@ -2307,3 +2312,6 @@ export default function AdminDashboardPage() {
 
 
 
+
+
+    
