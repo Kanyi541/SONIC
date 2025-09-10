@@ -79,7 +79,7 @@ interface ReportState {
   isVerification: boolean;
 }
 
-const DetailItem = ({ label, value, className, labelSize = 'text-[9px]', valueSize = 'text-[9px]' }: { label: string; value: React.ReactNode, className?: string, labelSize?: string, valueSize?: string }) => (
+const DetailItem = ({ label, value, className, labelSize = 'text-[12px]', valueSize = 'text-[12px]' }: { label: string; value: React.ReactNode, className?: string, labelSize?: string, valueSize?: string }) => (
     <div className={className}>
         <span className={`font-bold text-gray-700 uppercase mr-2 ${labelSize}`}>{label}</span>
         <span className={`text-black font-medium text-right ${valueSize}`}>{value || 'N/A'}</span>
@@ -88,15 +88,15 @@ const DetailItem = ({ label, value, className, labelSize = 'text-[9px]', valueSi
 
 const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' | 'No' }) => (
     <div className="flex justify-between py-0.5">
-        <span className="text-[8px]">{question}</span>
-        <span className="font-bold text-[9px]">{answer || 'N/A'}</span>
+        <span className="text-[11px]">{question}</span>
+        <span className="font-bold text-[12px]">{answer || 'N/A'}</span>
     </div>
 )
 
 const NoteItem = ({ label, value }: { label: string, value?: string }) => (
      <div className="flex items-start">
-        <span className="font-bold uppercase text-gray-600 mr-2 text-[9px]">{label}</span>
-        <p className={`font-medium text-black text-[9px]`}>{value || 'N/A'}</p>
+        <span className="font-bold uppercase text-gray-600 mr-2 text-[12px]">{label}</span>
+        <p className={`font-medium text-black text-[12px]`}>{value || 'N/A'}</p>
     </div>
 )
 
@@ -160,8 +160,6 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)] font-sans-trebuchet italic">
             <header className="relative bg-[#1a1a1a] p-4 flex justify-between items-center print-header">
-                <div className="absolute inset-0 bg-repeat bg-center" style={{backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23333333' fill-opacity='0.1' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20zM40 40V20L20 40z'/%3E%3C/g%3E%3C/svg%3E")`}}></div>
-                
                 <div className="relative z-10 w-48">
                     <Image src="/logo.png" alt="CASA Motor Valuers And Assessors Ltd" width={180} height={70} />
                 </div>
@@ -171,20 +169,18 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <h3 className="font-bold text-base underline">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
                 </div>
                 
-                <div className="relative z-10 h-24 w-24 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-primary border-2 border-yellow-300 transform -skew-x-12"></div>
+                 <div className="relative z-10 h-28 w-28 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-primary transform -skew-x-12"></div>
+                     {qrCodeUrl && (
+                        <div className="relative z-20 text-center">
+                            <Image src={qrCodeUrl} alt="QR Code" width={120} height={120} />
+                            <p className="text-[7px] font-bold text-white mt-1">SCAN TO VERIFY</p>
+                        </div>
+                    )}
                 </div>
             </header>
             <main className="flex-grow px-10 pt-2 pb-4 watermarked-valuation">
              <div className="report-content">
-                 <div className="flex justify-end items-center -mt-8">
-                    {qrCodeUrl && (
-                    <div className="text-center">
-                        <Image src={qrCodeUrl} alt="QR Code" width={40} height={40} />
-                        <p className="text-[7px] font-bold">SCAN TO VERIFY</p>
-                    </div>
-                    )}
-                </div>
 
                 {isVerification && (
                     <Alert variant="default" className="mb-2 bg-green-100 border-green-400 text-green-800">
@@ -195,7 +191,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </Alert>
                 )}
                 
-                <section className="mb-1 text-[9px]">
+                <section className="mb-1 text-[12px]">
                     <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-0">
                        <span className="font-bold">SERIAL No</span>
                        <span className="font-medium">{booking.bookingNumber}</span>
@@ -219,9 +215,9 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </section>
 
-                <p className="text-[9px] my-1 text-center">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
+                <p className="text-[12px] my-1 text-center">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
 
-                <section className="mb-1 text-[9px]">
+                <section className="mb-1 text-[12px]">
                     <div className="grid grid-cols-3 gap-x-4 gap-y-0">
                         <DetailItem label="REGISTRATION NO" value={booking.plateNumber} />
                         <DetailItem label="MAKE" value={booking.carMake} />
@@ -241,7 +237,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </section>
                 
                 <section className="mb-1 break-inside-avoid">
-                     <h4 className="font-bold text-[11px] underline mb-0.5">Coachwork</h4>
+                     <h4 className="font-bold text-[14px] underline mb-0.5">Coachwork</h4>
                      <div className="grid grid-cols-3 gap-x-4">
                         <ConditionItem question="Accident Repairs Noted?" answer={valuation.coachWork?.accidentRepairs} />
                         <ConditionItem question="Accident Damages noted?" answer={valuation.coachWork?.accidentDamagesNoted} />
@@ -256,7 +252,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </section>
 
                 <section className="mb-1 break-inside-avoid">
-                     <h4 className="font-bold text-[11px] underline mb-0.5">Mechanical Condition</h4>
+                     <h4 className="font-bold text-[14px] underline mb-0.5">Mechanical Condition</h4>
                      <div className="grid grid-cols-3 gap-x-4">
                         <ConditionItem question="is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
                         <ConditionItem question="is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
@@ -271,7 +267,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </section>
 
                 <section className="mb-1 break-inside-avoid">
-                     <h4 className="font-bold text-[11px] underline mb-0.5">Electrical Condition</h4>
+                     <h4 className="font-bold text-[14px] underline mb-0.5">Electrical Condition</h4>
                      <div className="grid grid-cols-3 gap-x-4">
                         <ConditionItem question="Do the indicator lights operate well?" answer={valuation.electricalCondition?.indicatorLightsOk} />
                         <ConditionItem question="Are the wipers operating well?" answer={valuation.electricalCondition?.wipersOk} />
@@ -293,13 +289,13 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 
                 <section className="my-1">
                     <div className="py-0.5">
-                        <span className="font-bold uppercase text-[9px] text-gray-600">ASSESSED VALUE : </span>
-                        <span className="font-bold text-black text-[9px]">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
+                        <span className="font-bold uppercase text-[12px] text-gray-600">ASSESSED VALUE : </span>
+                        <span className="font-bold text-black text-[12px]">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
                     </div>
                 </section>
                 
-                <section className="my-1 text-[9px]">
-                    <span className="font-bold uppercase text-[9px] text-gray-600">NOTE VALUE</span>
+                <section className="my-1 text-[12px]">
+                    <span className="font-bold uppercase text-[12px] text-gray-600">NOTE VALUE</span>
                     <div className="grid grid-cols-2 gap-x-12 mt-0.5">
                       <div className="flex justify-between items-baseline">
                           <span className="text-gray-700">Radio Estimate</span>
@@ -318,7 +314,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <NoteItem label="DISCLAIMER :" value="none" />
                 </section>
                 
-                <section className="mt-2 grid grid-cols-2 gap-x-8 text-[9px]">
+                <section className="mt-2 grid grid-cols-2 gap-x-8 text-[12px]">
                     <DetailItem label="COUNTRY OF ORIGIN" value={valuation.countryOfOrigin} />
                     <DetailItem label="DATE OF INSPECTION" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} />
                     <DetailItem label="DESTINATION" value={`${valuation.insurer} prompt insurance agency`} />
@@ -327,7 +323,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <DetailItem label="LOCATION OF INSPECTION" value={booking.branch} />
                 </section>
                 
-                <section className="mt-2 grid grid-cols-2 gap-x-8 text-[9px]">
+                <section className="mt-2 grid grid-cols-2 gap-x-8 text-[12px]">
                   <div>
                     <span className="font-bold uppercase">Signed</span>
                   </div>
@@ -337,11 +333,11 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                   </div>
                 </section>
 
-                <p className="text-center font-bold text-[9px] mt-2">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
+                <p className="text-center font-bold text-[12px] mt-2">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
                 
                 <div className="break-before-page">
                     <div className="my-4 break-inside-avoid">
-                        <h3 className="font-bold text-[11px] underline mb-2">Valuation Photos</h3>
+                        <h3 className="font-bold text-[14px] underline mb-2">Valuation Photos</h3>
                         <div className="grid grid-cols-2 gap-4">
                             {valuation.imageUrls.map((url, index) => (
                                 <div key={index} className="border p-1 rounded-md bg-gray-100 break-inside-avoid">
@@ -352,7 +348,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                     
                     <div className="my-4 break-inside-avoid">
-                        <h3 className="font-bold text-[11px] underline mb-2">Logbook</h3>
+                        <h3 className="font-bold text-[14px] underline mb-2">Logbook</h3>
                         {booking.logbookImage ? (
                             <div className="border p-1 rounded-md max-w-md bg-gray-100">
                                 <Image src={booking.logbookImage} alt="Logbook" width={500} height={400} className="object-contain w-full h-auto" />
@@ -364,7 +360,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </div>
             </div>
             </main>
-            <footer className="bg-[#1a1a1a] p-2 text-white text-[8px] mt-auto print-footer">
+            <footer className="bg-[#1a1a1a] p-2 text-white text-[11px] mt-auto print-footer">
                 <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 text-center">
                     <div className="flex items-center justify-center gap-2">
                         <Phone size={12} className="text-primary"/>
@@ -429,7 +425,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
          if (bookingData) {
             document.title = `Valuation Report - ${bookingData.bookingNumber}`;
             const reportUrl = `${window.location.origin}/admin/valuation-report?id=${bookingId}&verify=true`;
-            const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1, color: { dark: '#000000', light: '#FFFFFF' } });
+            const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1, color: { dark: '#FFFFFF', light: '#00000000' } });
             this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
         }
         
@@ -500,3 +496,5 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
+
+      
