@@ -385,7 +385,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
 
          if (bookingData) {
             document.title = `Valuation Report - ${bookingData.bookingNumber}`;
-            const reportUrl = window.location.href;
+            const reportUrl = 'https://casamotorvaluers.co.ke/';
             const qrUrl = await QRCode.toDataURL(reportUrl, { width: 96, margin: 1 });
             this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
         }
