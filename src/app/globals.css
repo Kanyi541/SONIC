@@ -99,11 +99,31 @@
     background-repeat: no-repeat;
     background-position: center;
     background-size: 50%;
-    opacity: 0.1;
+    opacity: 0.05;
     z-index: 0;
   }
    .report-content {
     position: relative;
     z-index: 1;
   }
+}
+
+@media print {
+    @page {
+        size: a4;
+        margin: 0;
+    }
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .break-before-page {
+        page-break-before: always;
+    }
+    .break-after-page {
+        page-break-after: always;
+    }
+    .break-inside-avoid {
+        page-break-inside: avoid;
+    }
 }
