@@ -77,24 +77,24 @@ interface ReportState {
   qrCodeUrl: string | null;
 }
 
-const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
-    <div className="flex justify-between py-1 border-b border-gray-100">
-        <span className="font-semibold text-gray-700">{label}:</span>
-        <span className="text-gray-900 font-medium text-right">{value || 'N/A'}</span>
+const DetailItem = ({ label, value, isBlue = false }: { label: string; value: React.ReactNode, isBlue?: boolean }) => (
+    <div className="flex justify-between items-baseline">
+        <span className="font-bold text-gray-700 uppercase text-xs">{label}</span>
+        <span className={`text-black font-medium text-xs text-right ${isBlue ? 'text-blue-600' : ''}`}>{value || 'N/A'}</span>
     </div>
 );
 
 const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' | 'No' }) => (
-    <div className="flex justify-between text-sm py-1.5 border-b border-gray-100">
+    <div className="flex justify-between text-xs py-0.5">
         <span>{question}</span>
         <span className="font-bold">{answer || 'N/A'}</span>
     </div>
 )
 
-const NoteItem = ({ label, value }: { label: string, value?: string }) => (
-     <div className="py-2">
-        <span className="font-bold uppercase text-sm text-gray-600">{label}</span>
-        <p className="text-base text-gray-800 mt-1">{value || 'N/A'}</p>
+const NoteItem = ({ label, value, isBlue = false }: { label: string, value?: string, isBlue?: boolean }) => (
+     <div className="flex items-start text-xs">
+        <span className="font-bold uppercase text-gray-600 mr-2">{label}</span>
+        <p className={`font-medium ${isBlue ? 'text-blue-600' : 'text-black'}`}>{value || 'N/A'}</p>
     </div>
 )
 
@@ -156,136 +156,143 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)]">
-            <header className="bg-[#1a1a1a] p-6 relative">
-              <div className="w-48">
-                <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
-              </div>
-              <div className="absolute right-6 top-1/2 -translate-y-1/2 h-24 w-24 p-1 bg-white">
-                 {qrCodeUrl && <Image src={qrCodeUrl} alt="QR Code" width={96} height={96} />}
-              </div>
-            </header>
-
-            <main className="flex-grow p-14 watermarked-valuation">
+            <main className="flex-grow p-10 font-sans">
              <div className="report-content">
-                <h2 className="text-2xl font-bold text-center text-black uppercase tracking-widest mb-4">
-                    Motor Vehicle Valuation Report
-                </h2>
                 
-                <section className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2 pb-2 border-b-2 border-primary">Client & Vehicle Details</h3>
-                    <div className="grid grid-cols-2 gap-x-12 gap-y-1 text-sm">
-                        <DetailItem label="Client Name" value={booking.customerName} />
-                        <DetailItem label="Client Phone" value={booking.customerPhone} />
-                        <DetailItem label="Client Email" value={booking.customerEmail} />
-                        <div />
-                        <DetailItem label="Registration No" value={booking.plateNumber} />
-                        <DetailItem label="Make" value={booking.carMake} />
-                        <DetailItem label="Chassis No" value={valuation.chassisNo} />
-                        <DetailItem label="Type" value={booking.carType} />
-                        <DetailItem label="Engine No" value={valuation.engineNo} />
-                        <DetailItem label="Colour" value={valuation.colour} />
-                        <DetailItem label="Year of Man." value={valuation.yearOfManufacture} />
-                        <DetailItem label="Fuel Type" value={valuation.fuelType} />
-                        <DetailItem label="Air Bags" value={valuation.numberOfAirbags} />
-                        <DetailItem label="Date of Reg." value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} />
-                        <DetailItem label="Engine Rating" value={valuation.engineRating} />
-                        <DetailItem label="Country of Origin" value={valuation.countryOfOrigin} />
-                        <DetailItem label="Odometer Reading" value={valuation.odometerReadings} />
-                        <DetailItem label="Lights" value={valuation.lightsType} />
+                <section className="mb-2">
+                    <div className="grid grid-cols-2 gap-x-16 gap-y-1">
+                        <DetailItem label="SERIAL No" value={booking.bookingNumber} />
+                        <DetailItem label="ISSUED BY" value="Casa Motor Valuers And Assessors" />
+                        <DetailItem label="CLIENT NAME" value={booking.customerName} isBlue />
+                        <DetailItem label="CONTACTS" value="0715239719" />
+                        <DetailItem label="INSURER" value={valuation.insurer} isBlue />
+                        <DetailItem label="POLICY NO." value={booking.policyNumber} />
+                         <div />
+                        <DetailItem label="EXPIRY DATE." value={valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'} />
+                    </div>
+                </section>
+
+                <p className="text-xs italic my-3 text-center">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
+
+                <section className="mb-2">
+                    <div className="grid grid-cols-3 gap-x-8 gap-y-1">
+                        <DetailItem label="REGISTRATION NO" value={booking.plateNumber} isBlue />
+                        <DetailItem label="MAKE" value={booking.carMake} isBlue />
+                        <DetailItem label="TYPE :" value={booking.carType} isBlue />
+                        <DetailItem label="CHASSIS NO" value={valuation.chassisNo} isBlue />
+                        <DetailItem label="COLOUR" value={valuation.colour} isBlue />
+                        <DetailItem label="FUEL TYPE" value={valuation.fuelType} isBlue />
+                        <DetailItem label="ENGINE NO" value={valuation.engineNo} isBlue />
+                        <DetailItem label="ENGINE RATING" value={valuation.engineRating} isBlue />
+                        <DetailItem label="DATE OF REG." value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} isBlue />
+                        <DetailItem label="YEAR OF MAN." value={valuation.yearOfManufacture} isBlue />
+                        <DetailItem label="ODOMETER READING" value={valuation.odometerReadings} isBlue />
+                        <DetailItem label="COUNTRY OF ORIGIN" value={valuation.countryOfOrigin} isBlue />
+                        <DetailItem label="NO OF AIRBAGS" value={valuation.numberOfAirbags} isBlue />
+                        <DetailItem label="LIGHTS" value={valuation.lightsType} isBlue />
                     </div>
                 </section>
                 
-                <section className="mb-6 break-inside-avoid">
-                     <div className="grid grid-cols-2 gap-x-12">
-                        <div>
-                            <h4 className="font-bold text-base underline mb-1">Coachwork</h4>
-                            <div className="space-y-1">
-                                <ConditionItem question="Accident Repairs Noted?" answer={valuation.coachWork?.accidentRepairs} />
-                                <ConditionItem question="Accident Damages noted?" answer={valuation.coachWork?.accidentDamagesNoted} />
-                                <ConditionItem question="Is Paint work Scratched/ Faded/ Dented?" answer={valuation.coachWork?.paintWorkScratched} />
-                                <ConditionItem question="Are Inner wings repaired or damaged?" answer={valuation.coachWork?.innerWingsRepaired} />
-                                <ConditionItem question="Has the body had a complete respray?" answer={valuation.coachWork?.completeRespray} />
-                                <ConditionItem question="Are roof linings damaged or repaired?" answer={valuation.coachWork?.roofLiningsDamaged} />
-                                <ConditionItem question="Is Upholstery Torn/faded/worn out??" answer={valuation.coachWork?.upholsteryTorn} />
-                                <ConditionItem question="Are Bumpers/ Outer Wing repaired?" answer={valuation.coachWork?.bumpersOuterWingRepaired} />
-                                <ConditionItem question="Is the Chassis kinked or damaged?" answer={valuation.coachWork?.chassisKinked} />
-                            </div>
-                        </div>
-                         <div>
-                            <h4 className="font-bold text-base underline mb-1">Mechanical Condition</h4>
-                            <div className="space-y-1">
-                                <ConditionItem question="Is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
-                                <ConditionItem question="Is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
-                                <ConditionItem question="Is the automatic/manual gearbox okay?" answer={valuation.mechanicalCondition?.gearboxOk} />
-                                <ConditionItem question="Is the steering system okay?" answer={valuation.mechanicalCondition?.steeringSystemOk} />
-                                <ConditionItem question="Is cooling system operating well?" answer={valuation.mechanicalCondition?.coolingSystemOk} />
-                                <ConditionItem question="Are There signs of fluid or oil leakage?" answer={valuation.mechanicalCondition?.fluidLeakage} />
-                                <ConditionItem question="Are the drive shafts/cv joints worn out?" answer={valuation.mechanicalCondition?.driveShaftWorn} />
-                                <ConditionItem question="Is the suspension system okay?" answer={valuation.mechanicalCondition?.suspensionSystemOk} />
-                                <ConditionItem question="Are engine mountings worn out?" answer={valuation.mechanicalCondition?.engineMountingsWorn} />
-                            </div>
-                        </div>
+                <section className="mb-2 break-inside-avoid">
+                     <h4 className="font-bold text-sm underline mb-1">Coachwork</h4>
+                     <div className="grid grid-cols-3 gap-x-8">
+                        <ConditionItem question="Accident Repairs Noted?" answer={valuation.coachWork?.accidentRepairs} />
+                        <ConditionItem question="Accident Damages noted?" answer={valuation.coachWork?.accidentDamagesNoted} />
+                        <ConditionItem question="Are roof linings damaged or repaired?" answer={valuation.coachWork?.roofLiningsDamaged} />
+                        <ConditionItem question="Is Paint work Scratched/ Faded/ Dented?" answer={valuation.coachWork?.paintWorkScratched} />
+                        <ConditionItem question="Are Inner wings repaired or damaged?" answer={valuation.coachWork?.innerWingsRepaired} />
+                        <ConditionItem question="Are Bumpers/ Outer Wing repaired?" answer={valuation.coachWork?.bumpersOuterWingRepaired} />
+                        <ConditionItem question="Has the body had a complete respray?" answer={valuation.coachWork?.completeRespray} />
+                        <ConditionItem question="Is Upholstery Torn/faded/worn out??" answer={valuation.coachWork?.upholsteryTorn} />
+                        <ConditionItem question="Is the Chassis kinked or damaged?" answer={valuation.coachWork?.chassisKinked} />
                     </div>
                 </section>
-                <section className="mb-6 break-inside-avoid">
-                     <h4 className="font-bold text-base underline mb-1">Electrical Condition</h4>
-                     <div className="grid grid-cols-3 gap-x-12">
+
+                <section className="mb-2 break-inside-avoid">
+                     <h4 className="font-bold text-sm underline mb-1">Mechanical Condition</h4>
+                     <div className="grid grid-cols-3 gap-x-8">
+                        <ConditionItem question="Is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
+                        <ConditionItem question="Is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
+                        <ConditionItem question="Are the drive shafts/cv joints worn out?" answer={valuation.mechanicalCondition?.driveShaftWorn} />
+                        <ConditionItem question="Is the automatic/manual gearbox okay?" answer={valuation.mechanicalCondition?.gearboxOk} />
+                        <ConditionItem question="Is the steering system okay?" answer={valuation.mechanicalCondition?.steeringSystemOk} />
+                        <ConditionItem question="Is the suspension system okay?" answer={valuation.mechanicalCondition?.suspensionSystemOk} />
+                        <ConditionItem question="Is cooling system operating well?" answer={valuation.mechanicalCondition?.coolingSystemOk} />
+                        <ConditionItem question="Are There signs of fluid or oil leakage?" answer={valuation.mechanicalCondition?.fluidLeakage} />
+                        <ConditionItem question="Are engine mountings worn out?" answer={valuation.mechanicalCondition?.engineMountingsWorn} />
+                    </div>
+                </section>
+
+                <section className="mb-2 break-inside-avoid">
+                     <h4 className="font-bold text-sm underline mb-1">Electrical Condition</h4>
+                     <div className="grid grid-cols-3 gap-x-8">
                         <ConditionItem question="Do the indicator lights operate well?" answer={valuation.electricalCondition?.indicatorLightsOk} />
-                        <ConditionItem question="Do the brake lights operate well?" answer={valuation.electricalCondition?.brakeLightsOk} />
                         <ConditionItem question="Are the wipers operating well?" answer={valuation.electricalCondition?.wipersOk} />
-                        <ConditionItem question="Are the headlights operating well?" answer={valuation.electricalCondition?.headlightsOk} />
                         <ConditionItem question="Do the Instrument panel lights work well?" answer={valuation.electricalCondition?.instrumentPanelLightsOk} />
+                        <ConditionItem question="Do the brake lights operate well?" answer={valuation.electricalCondition?.brakeLightsOk} />
+                        <ConditionItem question="Are the headlights operating well?" answer={valuation.electricalCondition?.headlightsOk} />
                      </div>
                 </section>
 
-                <section className="mb-6 text-sm space-y-2">
-                    <NoteItem label="Coachwork Notes" value={valuation.coachWorkNotes} />
-                    <NoteItem label="Electrical Notes" value={valuation.electricalNotes} />
-                    <NoteItem label="Mechanical Notes" value={valuation.mechanicalNotes} />
-                    <NoteItem label="Anti Theft" value={valuation.antiTheft} />
-                    <NoteItem label="Tyres" value={`${valuation.tyresType} - ${valuation.tyresCondition}`} />
-                    <NoteItem label="General Condition" value="Good" />
-                    <NoteItem label="Extras" value={valuation.extras} />
+                <section className="my-3 space-y-1">
+                    <NoteItem label="COACHWORK NOTES" value={valuation.coachWorkNotes} isBlue/>
+                    <NoteItem label="ELECTRICAL NOTES" value={valuation.electricalNotes} isBlue/>
+                    <NoteItem label="MECHANICAL NOTES" value={valuation.mechanicalNotes} isBlue/>
+                    <NoteItem label="ANTI THEFT" value={valuation.antiTheft} isBlue/>
+                    <NoteItem label="TYRES" value={`${valuation.tyresType} - ${valuation.tyresCondition}`} isBlue/>
+                    <NoteItem label="GENERAL CONDITION" value="good" isBlue/>
+                    <NoteItem label="EXTRAS:" value={valuation.extras} isBlue/>
                 </section>
                 
-                <section className="mb-6">
-                    <div className="border-y-2 border-dashed border-gray-300 py-2">
-                        <span className="font-bold uppercase text-sm text-gray-600">Assessed Value: </span>
-                        <p className="text-base text-gray-800 mt-1">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</p>
+                <section className="my-3">
+                    <div className="py-1">
+                        <span className="font-bold uppercase text-xs text-gray-600">ASSESSED VALUE : </span>
+                        <span className="font-bold text-blue-600 text-xs">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
                     </div>
                 </section>
                 
-                <section className="mb-6 grid grid-cols-2 gap-x-12 text-sm">
-                    <DetailItem label="Noted Value: WS (KES)" value={valuation.wsValue} />
-                    <DetailItem label="Noted Value: RS (KES)" value={valuation.rsValue} />
+                <section className="my-2 grid grid-cols-2 gap-x-12 text-xs">
+                    <div>
+                      <span className="font-bold uppercase text-xs text-gray-600">NOTE VALUE</span>
+                      <div className="flex justify-between items-baseline mt-1">
+                          <span className="text-gray-700">Radio Estimate</span>
+                          <span className="text-black font-medium">{valuation.wsValue}</span>
+                      </div>
+                    </div>
+                     <div>
+                       <div className="flex justify-between items-baseline mt-5">
+                          <span className="text-gray-700">Windscreen Estimate</span>
+                          <span className="text-black font-medium">{valuation.rsValue}</span>
+                      </div>
+                    </div>
                 </section>
 
-                <section className="mb-6">
-                    <NoteItem label="Remarks" value={valuation.comments} />
+                <section className="my-3 space-y-1">
+                    <NoteItem label="REMARKS:" value={valuation.comments} isBlue/>
+                    <NoteItem label="REMEDY :" value="" />
+                    <NoteItem label="DISCLAIMER :" value="none" isBlue/>
                 </section>
                 
-                <section className="mb-8 grid grid-cols-2 gap-x-12 border-y-2 border-dashed border-gray-300 py-2 text-sm">
-                    <DetailItem label="Client Name & Insurer" value={valuation.insurer} />
-                     <DetailItem label="Examiner" value={valuation.valuedBy} />
-                    <DetailItem label="Destination" value={booking.insurerName} />
-                    <DetailItem label="Location of Inspection" value={booking.branch} />
+                <section className="mt-4 grid grid-cols-2 gap-x-16 text-xs">
+                    <DetailItem label="COUNTRY OF ORIGIN" value={valuation.countryOfOrigin} isBlue />
+                    <DetailItem label="DATE OF INSPECTION" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} isBlue />
+                    <div />
+                    <DetailItem label="EXAMINER" value={valuation.valuedBy} isBlue />
+                    <DetailItem label="DESTINATION" value={booking.insurerName} isBlue />
+                    <DetailItem label="LOCATION OF INSPECTION" value={booking.branch} isBlue />
                 </section>
                 
-                <section className="mt-12 flex justify-between items-end">
-                    <div className="w-2/3 text-sm">
-                         <div className="flex justify-between items-center">
-                            <span className="font-bold uppercase text-gray-600">Date of Inspection:</span>
-                            <span className="font-medium">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</span>
-                        </div>
-                         <div className="flex justify-between items-center mt-8">
-                            <span className="font-bold uppercase text-gray-600">Signed:</span>
-                            <div className="w-2/3 border-b-2 border-gray-400"></div>
-                        </div>
-                    </div>
-                    <div className="w-1/3 text-right">
-                         <p className="font-bold text-base italic">CASA Motor Valuers & Assessors Ltd</p>
-                    </div>
+                <section className="mt-4 grid grid-cols-2 gap-x-16 text-xs">
+                  <div>
+                    <span className="font-bold uppercase">Signed</span>
+                  </div>
+                   <div>
+                    <span className="font-bold uppercase mr-2">Date</span>
+                    <span>{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</span>
+                  </div>
                 </section>
+
+                <p className="text-center font-bold text-xs mt-4">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
                 
                 <div className="break-before-page">
                     <div className="my-4 break-inside-avoid">
@@ -312,22 +319,6 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </div>
             </div>
             </main>
-             <footer className="bg-[#1a1a1a] p-4 text-white text-xs mt-auto">
-                <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                        <Phone size={14} className="text-primary"/>
-                        <span>0722924854 / 0737924854</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                        <MapPin size={14} className="text-primary"/>
-                        <span>Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                        <Mail size={14} className="text-primary"/>
-                        <span>casamotorvaluers@gmail.com</span>
-                    </div>
-                </div>
-            </footer>
         </div>
     );
   }
@@ -372,7 +363,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
 
          if (bookingData) {
             document.title = `Valuation Report - ${bookingData.bookingNumber}`;
-            const reportUrl = 'https://casamotorvaluers.co.ke/';
+            const reportUrl = `https://casamotorvaluers.co.ke/`;
             const qrUrl = await QRCode.toDataURL(reportUrl, { width: 96, margin: 1 });
             this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
         }
