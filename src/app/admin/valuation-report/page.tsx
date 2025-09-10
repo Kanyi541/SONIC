@@ -48,10 +48,6 @@ interface Valuation {
     tyresCondition?: string;
     extras?: string;
     comments?: string;
-    remedy?: string;
-    disclaimer?: string;
-    examiner?: string;
-    locationOfInspection?: string;
 }
 
 interface Booking {
@@ -246,10 +242,10 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
              <h4 className="font-bold text-sm underline mb-1">Electrical Condition</h4>
              <div className="grid grid-cols-3 gap-x-4">
                 <ConditionItem question="Do the indicator lights operate well?" answer={valuation.electricalCondition?.indicatorLightsOk} />
-                <ConditionItem question="Are the wipers operating well?" answer={valuation.electricalCondition?.wipersOk} />
-                <ConditionItem question="Do the Instrument panel lights work well?" answer={valuation.electricalCondition?.instrumentPanelLightsOk} />
                 <ConditionItem question="Do the brake lights operate well?" answer={valuation.electricalCondition?.brakeLightsOk} />
+                <ConditionItem question="Are the wipers operating well?" answer={valuation.electricalCondition?.wipersOk} />
                 <ConditionItem question="Are the headlights operating well?" answer={valuation.electricalCondition?.headlightsOk} />
+                <ConditionItem question="Do the Instrument panel lights work well?" answer={valuation.electricalCondition?.instrumentPanelLightsOk} />
              </div>
         </div>
 
@@ -282,8 +278,6 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
         {/* Final Details */}
         <div className="space-y-1 my-2">
              <NoteItem label="Remarks" value="None" />
-             <NoteItem label="Remedy" value={valuation.remedy} />
-             <NoteItem label="Disclaimer" value={valuation.disclaimer} />
         </div>
 
         <div className="grid grid-cols-12 gap-x-4 border-y-2 border-black py-1 my-2">
