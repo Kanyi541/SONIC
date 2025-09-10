@@ -1723,13 +1723,15 @@ function AdminDashboard() {
                                                                 >
                                                                     Booking Report
                                                                 </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    className="justify-start"
-                                                                    onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
-                                                                >
-                                                                    Valuation Report
-                                                                </Button>
+                                                                {booking.status === 'Completed' && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        className="justify-start"
+                                                                        onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
+                                                                    >
+                                                                        Valuation Report
+                                                                    </Button>
+                                                                )}
                                                             </div>
                                                         </PopoverContent>
                                                     </Popover>
@@ -1947,7 +1949,7 @@ function AdminDashboard() {
                                                                 >
                                                                     Valuation Report
                                                                 </Button>
-                                                            }
+                                                            )}
                                                         </div>
                                                     </PopoverContent>
                                                 </Popover>
@@ -2313,5 +2315,7 @@ export default function AdminDashboardPage() {
 
 
 
+
+    
 
     
