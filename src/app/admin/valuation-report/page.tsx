@@ -79,24 +79,24 @@ interface ReportState {
   isVerification: boolean;
 }
 
-const DetailItem = ({ label, value, className }: { label: string; value: React.ReactNode, className?: string }) => (
+const DetailItem = ({ label, value, className, labelSize = 'text-[8px]', valueSize = 'text-[8px]' }: { label: string; value: React.ReactNode, className?: string, labelSize?: string, valueSize?: string }) => (
     <div className={className}>
-        <span className="font-bold text-gray-700 uppercase text-xs mr-2">{label}</span>
-        <span className={`text-black font-medium text-xs text-right`}>{value || 'N/A'}</span>
+        <span className={`font-bold text-gray-700 uppercase mr-2 ${labelSize}`}>{label}</span>
+        <span className={`text-black font-medium text-right ${valueSize}`}>{value || 'N/A'}</span>
     </div>
 );
 
 const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' | 'No' }) => (
-    <div className="flex justify-between text-xs py-0.5">
-        <span>{question}</span>
-        <span className="font-bold">{answer || 'N/A'}</span>
+    <div className="flex justify-between py-0.5">
+        <span className="text-[7px]">{question}</span>
+        <span className="font-bold text-[8px]">{answer || 'N/A'}</span>
     </div>
 )
 
 const NoteItem = ({ label, value }: { label: string, value?: string }) => (
-     <div className="flex items-start text-xs">
-        <span className="font-bold uppercase text-gray-600 mr-2">{label}</span>
-        <p className={`font-medium text-black`}>{value || 'N/A'}</p>
+     <div className="flex items-start">
+        <span className="font-bold uppercase text-gray-600 mr-2 text-[8px]">{label}</span>
+        <p className={`font-medium text-black text-[8px]`}>{value || 'N/A'}</p>
     </div>
 )
 
@@ -158,11 +158,36 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     const assessmentValueInWords = valuation.assessmentValue ? `${numberToWords(valuation.assessmentValue)} Shillings Only` : 'N/A';
     
     return (
-        <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)]">
-            <main className="flex-grow px-10 pt-4 pb-10 font-sans watermarked-valuation">
+        <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)] font-sans-trebuchet italic">
+            <header className="relative bg-[#1a1a1a] p-4 flex justify-between items-center print-header">
+                {/* Diagonal pattern background */}
+                <div className="absolute inset-0 bg-repeat bg-center" style={{backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23333333' fill-opacity='0.1' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20zM40 40V20L20 40z'/%3E%3C/g%3E%3C/svg%3E")`}}></div>
+                
+                {/* Left Side: Logo */}
+                <div className="relative z-10 w-48">
+                    <Image src="/logo.png" alt="CASA Motor Valuers And Assessors Ltd" width={180} height={70} />
+                </div>
+                
+                {/* Right Side: Golden Emblem */}
+                <div className="relative z-10 h-16 w-16 bg-primary border-2 border-yellow-300"></div>
+            </header>
+            <main className="flex-grow px-10 pt-2 pb-4 watermarked-valuation">
              <div className="report-content">
+                 <div className="text-center my-2">
+                    <h2 className="font-bold text-[11px]">CASA MOTOR VALUERS & ASSESSORS LTD</h2>
+                    <h3 className="font-bold text-[11px] underline">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
+                    <div className="flex justify-end items-center mt-1">
+                        {qrCodeUrl && (
+                        <div className="text-center">
+                            <Image src={qrCodeUrl} alt="QR Code" width={40} height={40} />
+                            <p className="text-[7px] font-bold">SCAN TO VERIFY</p>
+                        </div>
+                        )}
+                    </div>
+                </div>
+
                 {isVerification && (
-                    <Alert variant="default" className="mb-4 bg-green-100 border-green-400 text-green-800">
+                    <Alert variant="default" className="mb-2 bg-green-100 border-green-400 text-green-800">
                         <AlertTitle className="font-bold">Authentic Report</AlertTitle>
                         <AlertDescription>
                             This valuation report has been verified as authentic.
@@ -170,23 +195,34 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </Alert>
                 )}
                 
-                <section className="mb-2">
-                    <div className="grid grid-cols-[1fr_1fr] gap-x-8 gap-y-1 text-xs">
-                       <DetailItem label="SERIAL No" value={booking.bookingNumber} className="col-span-1" />
-                       <DetailItem label="ISSUED BY" value="Casa Motor Valuers And Assessors" className="col-span-1" />
-                       <DetailItem label="CLIENT NAME" value={booking.customerName} className="col-span-1" />
-                       <DetailItem label="CONTACTS" value={booking.customerPhone} className="col-span-1" />
-                       <DetailItem label="INSURER" value={valuation.insurer} className="col-span-1" />
-                       <DetailItem label="POLICY NO." value={booking.policyNumber} className="col-span-1" />
+                <section className="mb-1 text-[8px]">
+                    <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-0">
+                       <span className="font-bold">SERIAL No</span>
+                       <span className="font-medium">{booking.bookingNumber}</span>
+                       <span className="font-bold">ISSUED BY</span>
+                       <span className="font-medium">Casa Motor Valuers And Assessors</span>
+                       
+                       <span className="font-bold">CLIENT NAME</span>
+                       <span className="font-medium">{booking.customerName}</span>
+                       <span className="font-bold">CONTACTS</span>
+                       <span className="font-medium">{booking.customerPhone}</span>
+                       
+                       <span className="font-bold">INSURER</span>
+                       <span className="font-medium">{valuation.insurer}</span>
+                       <span className="font-bold">POLICY NO.</span>
+                       <span className="font-medium">{booking.policyNumber}</span>
+                       
                        <div/>
-                       <DetailItem label="EXPIRY DATE." value={valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'} className="col-span-1" />
+                       <div/>
+                       <span className="font-bold">EXPIRY DATE.</span>
+                       <span className="font-medium">{valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'}</span>
                     </div>
                 </section>
 
-                <p className="text-xs italic my-3 text-center">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
+                <p className="text-[8px] my-1 text-center">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
 
-                <section className="mb-2">
-                    <div className="grid grid-cols-3 gap-x-8 gap-y-1 text-xs">
+                <section className="mb-1 text-[8px]">
+                    <div className="grid grid-cols-3 gap-x-4 gap-y-0">
                         <DetailItem label="REGISTRATION NO" value={booking.plateNumber} />
                         <DetailItem label="MAKE" value={booking.carMake} />
                         <DetailItem label="TYPE :" value={booking.carType} />
@@ -204,9 +240,9 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </section>
                 
-                <section className="mb-2 break-inside-avoid">
-                     <h4 className="font-bold text-sm underline mb-1">Coachwork</h4>
-                     <div className="grid grid-cols-3 gap-x-8 text-xs">
+                <section className="mb-1 break-inside-avoid">
+                     <h4 className="font-bold text-[11px] underline mb-0.5">Coachwork</h4>
+                     <div className="grid grid-cols-3 gap-x-4">
                         <ConditionItem question="Accident Repairs Noted?" answer={valuation.coachWork?.accidentRepairs} />
                         <ConditionItem question="Accident Damages noted?" answer={valuation.coachWork?.accidentDamagesNoted} />
                         <ConditionItem question="Are roof linings damaged or repaired?" answer={valuation.coachWork?.roofLiningsDamaged} />
@@ -219,9 +255,9 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </section>
 
-                <section className="mb-2 break-inside-avoid">
-                     <h4 className="font-bold text-sm underline mb-1">Mechanical Condition</h4>
-                     <div className="grid grid-cols-3 gap-x-8 text-xs">
+                <section className="mb-1 break-inside-avoid">
+                     <h4 className="font-bold text-[11px] underline mb-0.5">Mechanical Condition</h4>
+                     <div className="grid grid-cols-3 gap-x-4">
                         <ConditionItem question="is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
                         <ConditionItem question="is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
                         <ConditionItem question="Are the drive shafts/cv joints worn out?" answer={valuation.mechanicalCondition?.driveShaftWorn} />
@@ -234,9 +270,9 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </section>
 
-                <section className="mb-2 break-inside-avoid">
-                     <h4 className="font-bold text-sm underline mb-1">Electrical Condition</h4>
-                     <div className="grid grid-cols-3 gap-x-8 text-xs">
+                <section className="mb-1 break-inside-avoid">
+                     <h4 className="font-bold text-[11px] underline mb-0.5">Electrical Condition</h4>
+                     <div className="grid grid-cols-3 gap-x-4">
                         <ConditionItem question="Do the indicator lights operate well?" answer={valuation.electricalCondition?.indicatorLightsOk} />
                         <ConditionItem question="Are the wipers operating well?" answer={valuation.electricalCondition?.wipersOk} />
                         <ConditionItem question="Do the brake lights operate well?" answer={valuation.electricalCondition?.brakeLightsOk} />
@@ -245,7 +281,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                      </div>
                 </section>
 
-                <section className="my-3 space-y-1">
+                <section className="my-1 space-y-0.5">
                     <NoteItem label="COACHWORK NOTES" value={valuation.coachWorkNotes} />
                     <NoteItem label="ELECTRICAL NOTES" value={valuation.electricalNotes} />
                     <NoteItem label="MECHANICAL NOTES" value={valuation.mechanicalNotes} />
@@ -255,16 +291,16 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <NoteItem label="EXTRAS:" value={valuation.extras} />
                 </section>
                 
-                <section className="my-3">
-                    <div className="py-1">
-                        <span className="font-bold uppercase text-xs text-gray-600">ASSESSED VALUE : </span>
-                        <span className="font-bold text-black text-xs">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
+                <section className="my-1">
+                    <div className="py-0.5">
+                        <span className="font-bold uppercase text-[8px] text-gray-600">ASSESSED VALUE : </span>
+                        <span className="font-bold text-black text-[8px]">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
                     </div>
                 </section>
                 
-                <section className="my-2 text-xs">
-                    <span className="font-bold uppercase text-xs text-gray-600">NOTE VALUE</span>
-                    <div className="grid grid-cols-2 gap-x-12 mt-1">
+                <section className="my-1 text-[8px]">
+                    <span className="font-bold uppercase text-[8px] text-gray-600">NOTE VALUE</span>
+                    <div className="grid grid-cols-2 gap-x-12 mt-0.5">
                       <div className="flex justify-between items-baseline">
                           <span className="text-gray-700">Radio Estimate</span>
                           <span className="text-black font-medium">{valuation.wsValue}</span>
@@ -276,13 +312,13 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </section>
 
-                <section className="my-3 space-y-1">
+                <section className="my-1 space-y-0.5">
                     <NoteItem label="REMARKS:" value={valuation.comments} />
                     <NoteItem label="REMEDY :" value="" />
                     <NoteItem label="DISCLAIMER :" value="none" />
                 </section>
                 
-                <section className="mt-4 grid grid-cols-2 gap-x-16 text-xs">
+                <section className="mt-2 grid grid-cols-2 gap-x-8 text-[8px]">
                     <DetailItem label="COUNTRY OF ORIGIN" value={valuation.countryOfOrigin} />
                     <DetailItem label="DATE OF INSPECTION" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} />
                     <DetailItem label="DESTINATION" value={`${valuation.insurer} prompt insurance agency`} />
@@ -291,7 +327,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <DetailItem label="LOCATION OF INSPECTION" value={booking.branch} />
                 </section>
                 
-                <section className="mt-4 grid grid-cols-2 gap-x-16 text-xs">
+                <section className="mt-2 grid grid-cols-2 gap-x-8 text-[8px]">
                   <div>
                     <span className="font-bold uppercase">Signed</span>
                   </div>
@@ -301,11 +337,11 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                   </div>
                 </section>
 
-                <p className="text-center font-bold text-xs mt-4">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
+                <p className="text-center font-bold text-[8px] mt-2">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
                 
                 <div className="break-before-page">
                     <div className="my-4 break-inside-avoid">
-                        <h3 className="font-bold text-lg underline mb-2">Valuation Photos</h3>
+                        <h3 className="font-bold text-[11px] underline mb-2">Valuation Photos</h3>
                         <div className="grid grid-cols-2 gap-4">
                             {valuation.imageUrls.map((url, index) => (
                                 <div key={index} className="border p-1 rounded-md bg-gray-100 break-inside-avoid">
@@ -316,7 +352,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                     
                     <div className="my-4 break-inside-avoid">
-                        <h3 className="font-bold text-lg underline mb-2">Logbook</h3>
+                        <h3 className="font-bold text-[11px] underline mb-2">Logbook</h3>
                         {booking.logbookImage ? (
                             <div className="border p-1 rounded-md max-w-md bg-gray-100">
                                 <Image src={booking.logbookImage} alt="Logbook" width={500} height={400} className="object-contain w-full h-auto" />
@@ -328,18 +364,18 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </div>
             </div>
             </main>
-            <footer className="bg-[#1a1a1a] p-4 text-white text-xs mt-auto print-footer">
+            <footer className="bg-[#1a1a1a] p-2 text-white text-[7px] mt-auto print-footer">
                 <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 text-center">
                     <div className="flex items-center justify-center gap-2">
-                        <Phone size={14} className="text-primary"/>
+                        <Phone size={12} className="text-primary"/>
                         <span>0722924854 / 0737924854</span>
                     </div>
                     <div className="flex items-center justify-center gap-2">
-                        <MapPin size={14} className="text-primary"/>
+                        <MapPin size={12} className="text-primary"/>
                         <span>Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</span>
                     </div>
                     <div className="flex items-center justify-center gap-2">
-                        <Mail size={14} className="text-primary"/>
+                        <Mail size={12} className="text-primary"/>
                         <span>casamotorvaluers@gmail.com</span>
                     </div>
                 </div>
@@ -393,7 +429,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
          if (bookingData) {
             document.title = `Valuation Report - ${bookingData.bookingNumber}`;
             const reportUrl = `${window.location.origin}/admin/valuation-report?id=${bookingId}&verify=true`;
-            const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1, color: { dark: '#FFFFFF', light: '#00000000' } });
+            const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1, color: { dark: '#000000', light: '#FFFFFF' } });
             this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
         }
         
@@ -464,5 +500,3 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
-
-    

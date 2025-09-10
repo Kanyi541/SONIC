@@ -19,6 +19,7 @@ export default {
       fontFamily: {
         body: ['Poppins', 'sans-serif'],
         headline: ['Poppins', 'sans-serif'],
+        'sans-trebuchet': ['"Trebuchet MS"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
