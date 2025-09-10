@@ -61,11 +61,6 @@ interface Booking {
   comments?: string;
 }
 
-interface Insurer {
-    id: string;
-    name: string;
-}
-
 interface Valuation {
     id: string;
     bookingId: string;
@@ -176,7 +171,6 @@ export default function ValuerDashboardPage() {
     const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [valuations, setValuations] = useState<Valuation[]>([]);
-    const [insurers, setInsurers] = useState<Insurer[]>([]);
     const [loading, setLoading] = useState(true);
     const [isValuationDialogOpen, setValuationDialogOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -197,13 +191,14 @@ export default function ValuerDashboardPage() {
         resolver: zodResolver(valuationSchema),
         defaultValues: {
             images: [],
-            comments: "",
             insurer: "",
+            policyExpiryDate: undefined,
             chassisNo: "",
             colour: "",
             fuelType: "",
             engineNo: "",
             engineRating: "",
+            dateOfReg: undefined,
             yearOfManufacture: "",
             odometerReadings: "",
             countryOfOrigin: "",
@@ -217,6 +212,7 @@ export default function ValuerDashboardPage() {
             tyresType: "",
             tyresCondition: "",
             extras: "",
+            comments: "",
         }
     });
     
@@ -296,18 +292,9 @@ export default function ValuerDashboardPage() {
              console.error("Error fetching valuations:", error);
         });
 
-        const insurersQuery = query(collection(db, "insurers"));
-        const insurersUnsubscribe = onSnapshot(insurersQuery, (snapshot) => {
-            const insurersData: Insurer[] = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
-            setInsurers(insurersData);
-        }, (error) => {
-            console.error("Error fetching insurers:", error);
-        });
-
         return () => {
             bookingsUnsubscribe();
             valuationsUnsubscribe();
-            insurersUnsubscribe();
         };
     }, [loggedInUser, toast]);
     
@@ -733,26 +720,15 @@ export default function ValuerDashboardPage() {
                                     <Card>
                                         <CardHeader><CardTitle>Vehicle & Policy Details</CardTitle></CardHeader>
                                         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            <FormField
+                                             <FormField
                                                 control={form.control}
                                                 name="insurer"
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Insurer</FormLabel>
-                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                            <FormControl>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder="Select an insurer" />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                {insurers.map((insurer) => (
-                                                                    <SelectItem key={insurer.id} value={insurer.name}>
-                                                                        {insurer.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="Enter insurer name" />
+                                                        </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
