@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { Suspense, useEffect, useState } from 'react';
@@ -172,7 +173,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
   }
 
   render() {
-    const { valuation, booking, qrCodeUrl, onDownloadClick } = this.props;
+    const { valuation, booking, qrCodeUrl } = this.props;
 
     if (!valuation || !booking) {
         return <div className="p-4 text-center text-muted-foreground">No valuation report found for this booking.</div>;
@@ -192,12 +193,6 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </div>
                 
                 <div className="relative z-10 flex items-center gap-4">
-                    {qrCodeUrl && (
-                        <div className="relative z-20 text-center">
-                            <Image src={qrCodeUrl} alt="QR Code" width={120} height={120} />
-                            <p className="text-[7px] font-bold text-white mt-1">SCAN TO VERIFY</p>
-                        </div>
-                    )}
                     <div className="h-28 w-8 bg-primary"></div>
                 </div>
             </header>
@@ -307,16 +302,25 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                      </div>
                 </section>
 
-                <section className="my-1 space-y-0.5">
-                    <NoteItem label="COACHWORK NOTES" value={valuation.coachWorkNotes} />
-                    <NoteItem label="ELECTRICAL NOTES" value={valuation.electricalNotes} />
-                    <NoteItem label="MECHANICAL NOTES" value={valuation.mechanicalNotes} />
-                    <NoteItem label="ANTI THEFT" value={valuation.antiTheft} />
-                    <NoteItem label="TYRES" value={`${valuation.tyresType} - ${valuation.tyresCondition}`} />
-                    <NoteItem label="GENERAL CONDITION" value="good" />
-                    <NoteItem label="EXTRAS:" value={valuation.extras} />
-                </section>
-                
+                <div className="grid grid-cols-2 gap-x-8 items-start">
+                    <section className="my-1 space-y-0.5">
+                        <NoteItem label="COACHWORK NOTES" value={valuation.coachWorkNotes} />
+                        <NoteItem label="ELECTRICAL NOTES" value={valuation.electricalNotes} />
+                        <NoteItem label="MECHANICAL NOTES" value={valuation.mechanicalNotes} />
+                        <NoteItem label="ANTI THEFT" value={valuation.antiTheft} />
+                        <NoteItem label="TYRES" value={`${valuation.tyresType} - ${valuation.tyresCondition}`} />
+                        <NoteItem label="GENERAL CONDITION" value="good" />
+                        <NoteItem label="EXTRAS:" value={valuation.extras} />
+                    </section>
+                    
+                    {qrCodeUrl && (
+                        <div className="relative z-20 text-center justify-self-end">
+                            <Image src={qrCodeUrl} alt="QR Code" width={120} height={120} />
+                            <p className="text-[10px] font-bold text-black mt-1">SCAN TO VERIFY</p>
+                        </div>
+                    )}
+                </div>
+
                 <section className="my-1">
                     <div className="py-0.5">
                         <span className="font-bold uppercase text-[12px] text-gray-600">ASSESSED VALUE : </span>
@@ -453,7 +457,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
             const printDate = new Date().toLocaleDateString('en-CA');
             document.title = `${bookingData.bookingNumber} - ${bookingData.customerName} - ${printDate}`;
             const reportUrl = `${window.location.origin}/verify-report?id=${bookingId}&verify=true`;
-            const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1, color: { dark: '#FFFFFF', light: '#00000000' } });
+            const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1 });
             this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
         }
         
