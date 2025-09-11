@@ -445,7 +445,8 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
         }
 
          if (bookingData) {
-            document.title = `Valuation Report - ${bookingData.bookingNumber}`;
+            const printDate = new Date().toLocaleDateString('en-CA');
+            document.title = `${bookingData.bookingNumber} - ${bookingData.customerName} - ${printDate}`;
             const reportUrl = `${window.location.origin}/admin/valuation-report?id=${bookingId}&verify=true`;
             const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1, color: { dark: '#FFFFFF', light: '#00000000' } });
             this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
@@ -516,6 +517,8 @@ export default function ValuationReportPage() {
 }
 
       
+
+    
 
     
 
