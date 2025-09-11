@@ -9,9 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, Phone, MapPin, Mail, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import QRCode from 'qrcode';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { AuthGuard } from '@/hooks/use-auth';
 
 
 interface Valuation {
@@ -79,6 +77,7 @@ interface ReportState {
   loading: boolean;
   qrCodeUrl: string | null;
   isVerification: boolean;
+  isVerificationDialogOpen: boolean;
 }
 
 const DetailItem = ({ label, value, className, labelSize = 'text-[12px]', valueSize = 'text-[12px]' }: { label: string; value: React.ReactNode, className?: string, labelSize?: string, valueSize?: string }) => (
@@ -150,29 +149,10 @@ const numberToWords = (num: number | string): string => {
 };
 
 
-class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null, qrCodeUrl: string | null, isVerification: boolean, onDownloadClick: () => void}> {
-  
-  state = {
-    isVerificationDialogOpen: this.props.isVerification
-  }
-
-  componentDidUpdate(prevProps: { isVerification: boolean; }) {
-    if (this.props.isVerification && !prevProps.isVerification) {
-      this.setState({ isVerificationDialogOpen: true });
-    }
-  }
-
-  handleDownload = () => {
-    this.setState({ isVerificationDialogOpen: false }, () => {
-      // Use a timeout to allow the dialog to close before printing
-      setTimeout(() => {
-        window.print();
-      }, 100);
-    });
-  }
+class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null, qrCodeUrl: string | null, isVerificationDialogOpen: boolean, onDownloadClick: () => void, setDialogState: (open: boolean) => void}> {
 
   render() {
-    const { valuation, booking, qrCodeUrl, onDownloadClick } = this.props;
+    const { valuation, booking, qrCodeUrl, isVerificationDialogOpen, onDownloadClick, setDialogState } = this.props;
 
     if (!valuation || !booking) {
         return <div className="p-4 text-center text-muted-foreground">No valuation report found for this booking.</div>;
@@ -204,19 +184,19 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
             <main className="flex-grow px-10 pt-2 pb-4 watermarked-valuation">
              <div className="report-content">
                 
-                <AlertDialog open={this.state.isVerificationDialogOpen} onOpenChange={(open) => this.setState({ isVerificationDialogOpen: open })}>
+                <AlertDialog open={isVerificationDialogOpen} onOpenChange={setDialogState}>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Verified Authentic Report</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This is a Verified Authentic Report from CASA. Click the button below to download.
+                        This is a Verified Authentic Report from CASA.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Close</AlertDialogCancel>
-                        <AlertDialogAction onClick={this.handleDownload}>
-                            Download Report
-                        </AlertDialogAction>
+                      <AlertDialogCancel>Close</AlertDialogCancel>
+                      <AlertDialogAction onClick={onDownloadClick}>
+                          Download Report
+                      </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -411,20 +391,21 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
   }
 }
 
-class ValuationReportPageContent extends React.Component<{ router: any; searchParams: any }, ReportState> {
+class VerificationReportPageContent extends React.Component<{ router: any; searchParams: any }, ReportState> {
   state: ReportState = {
     valuation: null,
     booking: null,
     loading: true,
     qrCodeUrl: null,
     isVerification: false,
+    isVerificationDialogOpen: false,
   };
   
   componentDidMount() {
     const bookingId = this.props.searchParams.get('id');
     const isVerification = this.props.searchParams.get('verify') === 'true';
     
-    this.setState({ isVerification });
+    this.setState({ isVerification, isVerificationDialogOpen: isVerification });
 
     if (bookingId) {
       this.fetchReports(bookingId);
@@ -469,7 +450,12 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
   };
 
   handleDownload = () => {
-      window.print();
+    this.setState({ isVerificationDialogOpen: false }, () => {
+        // Use a small timeout to allow the dialog to close before printing
+        setTimeout(() => {
+            window.print();
+        }, 100);
+    });
   }
 
   render() {
@@ -499,8 +485,9 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
             valuation={this.state.valuation} 
             booking={this.state.booking} 
             qrCodeUrl={this.state.qrCodeUrl}
-            isVerification={this.state.isVerification}
+            isVerificationDialogOpen={this.state.isVerificationDialogOpen}
             onDownloadClick={this.handleDownload}
+            setDialogState={(open) => this.setState({ isVerificationDialogOpen: open })}
           />
         </div>
       </div>
@@ -508,28 +495,20 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
   }
 }
 
-function ValuationReportWrapper() {
+function VerifyReportWrapper() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    return <ValuationReportPageContent router={router} searchParams={searchParams} />;
+    return <VerificationReportPageContent router={router} searchParams={searchParams} />;
 }
 
-export default function ValuationReportPage() {
+export default function VerifyReportPage() {
   return (
     <Suspense fallback={
         <div className="flex justify-center items-center h-screen bg-gray-100">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
     }>
-        <AuthGuard>
-            <ValuationReportWrapper />
-        </AuthGuard>
+      <VerifyReportWrapper />
     </Suspense>
   );
 }
-
-    
-
-    
-
-    
