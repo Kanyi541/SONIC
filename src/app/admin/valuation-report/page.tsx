@@ -349,7 +349,6 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </section>
                 
                 <section className="mt-2 grid grid-cols-2 gap-x-8 text-[12px]">
-                    <DetailItem label="COUNTRY OF ORIGIN" value={valuation.countryOfOrigin} />
                     <DetailItem label="DATE OF INSPECTION" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} />
                     <DetailItem label="DESTINATION" value={`${valuation.insurer} prompt insurance agency`} />
                     <DetailItem label="EXAMINER" value={valuation.valuedBy} />
@@ -537,3 +536,4 @@ export default function ValuationReportPage() {
     
 
     
+
