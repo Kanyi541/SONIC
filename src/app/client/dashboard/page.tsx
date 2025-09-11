@@ -527,48 +527,80 @@ export default function ClientDashboardPage() {
     }
   };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setUrl: (url: string | null) => void, fileType: 'pdf' | 'image') => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setUrl: (url: string | null) => void) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             const MAX_FILE_SIZE = 3.2 * 1024 * 1024; // 3.2 MB
 
-            // Validate file size
-            if (file.size > MAX_FILE_SIZE) {
-                toast({
-                    variant: "destructive",
-                    title: "File Too Large",
-                    description: `The selected file must be smaller than 3.2 MB.`,
-                });
-                e.target.value = ''; // Clear the input
-                return;
-            }
-
-            // Validate file type
-            if (fileType === 'pdf' && !file.type.includes('pdf')) {
+            if (!file.type.startsWith('image/')) {
                 toast({
                     variant: "destructive",
                     title: "Invalid File Type",
-                    description: "Please select a PDF file for the insurance letter.",
+                    description: "Please select an image file.",
                 });
                 e.target.value = '';
                 return;
             }
+            
+            const compressImage = (file: File): Promise<string> => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = (loadEvent) => {
+                        const img = new window.Image();
+                        img.src = loadEvent.target?.result as string;
+                        img.onload = () => {
+                            const canvas = document.createElement("canvas");
+                            const MAX_WIDTH = 1024;
+                            const MAX_HEIGHT = 1024;
+                            let width = img.width;
+                            let height = img.height;
 
-            if (fileType === 'image' && !file.type.startsWith('image/')) {
-                 toast({
-                    variant: "destructive",
-                    title: "Invalid File Type",
-                    description: "Please select an image file for the logbook.",
+                            if (width > height) {
+                                if (width > MAX_WIDTH) {
+                                    height *= MAX_WIDTH / width;
+                                    width = MAX_WIDTH;
+                                }
+                            } else {
+                                if (height > MAX_HEIGHT) {
+                                    width *= MAX_HEIGHT / height;
+                                    height = MAX_HEIGHT;
+                                }
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext("2d");
+                            if (!ctx) {
+                                return reject(new Error("Could not get canvas context"));
+                            }
+                            ctx.drawImage(img, 0, 0, width, height);
+                            const dataUrl = canvas.toDataURL("image/jpeg", 0.7); // Compress to 70% quality JPEG
+                            
+                            if (dataUrl.length > MAX_FILE_SIZE) {
+                                reject(new Error("Compressed file is still too large."));
+                            } else {
+                                resolve(dataUrl);
+                            }
+                        };
+                        img.onerror = reject;
+                    };
+                    reader.onerror = reject;
                 });
-                e.target.value = '';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (loadEvent) => {
-                setUrl(loadEvent.target?.result as string);
             };
-            reader.readAsDataURL(file);
+
+            compressImage(file).then(compressedUrl => {
+                setUrl(compressedUrl);
+            }).catch(error => {
+                console.error("Error compressing image:", error);
+                toast({
+                    variant: "destructive",
+                    title: "File Error",
+                    description: error.message || "Could not process the image. It might be too large even after compression.",
+                });
+                e.target.value = '';
+                setUrl(null);
+            });
+
         } else {
             setUrl(null);
         }
@@ -1167,12 +1199,12 @@ export default function ClientDashboardPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormItem>
-                                <FormLabel>Insurance Letter (PDF only)</FormLabel>
+                                <FormLabel>Insurance Letter (Image)</FormLabel>
                                 <FormControl>
                                     <Input
                                         type="file"
-                                        accept=".pdf"
-                                        onChange={(e) => handleFileChange(e, setInsuranceLetterUrl, 'pdf')}
+                                        accept="image/*"
+                                        onChange={(e) => handleFileChange(e, setInsuranceLetterUrl)}
                                         className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                                     />
                                 </FormControl>
@@ -1184,7 +1216,7 @@ export default function ClientDashboardPage() {
                                     <Input
                                         type="file"
                                         accept="image/*"
-                                        onChange={(e) => handleFileChange(e, setLogbookImageUrl, 'image')}
+                                        onChange={(e) => handleFileChange(e, setLogbookImageUrl)}
                                         className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                                     />
                                 </FormControl>
@@ -1783,5 +1815,6 @@ export default function ClientDashboardPage() {
     
 
     
+
 
 
