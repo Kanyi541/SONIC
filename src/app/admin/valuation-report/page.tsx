@@ -161,6 +161,15 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     }
   }
 
+  handleDownload = () => {
+    this.setState({ isVerificationDialogOpen: false }, () => {
+      // Use a timeout to allow the dialog to close before printing
+      setTimeout(() => {
+        window.print();
+      }, 100);
+    });
+  }
+
   render() {
     const { valuation, booking, qrCodeUrl } = this.props;
 
@@ -200,11 +209,11 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                       <AlertDialogTitle>Verified Authentic Report</AlertDialogTitle>
                       <AlertDialogDescription>
                         This is a Verified Authentic Report from CASA.
-                         <Button variant="link" onClick={() => window.print()} className="p-0 h-auto block">Click here to download it</Button>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogAction>Close</AlertDialogAction>
+                        <Button variant="link" onClick={this.handleDownload} className="p-0 h-auto">Click here to download it</Button>
+                        <AlertDialogAction>Close</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -511,3 +520,5 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
+
+    
