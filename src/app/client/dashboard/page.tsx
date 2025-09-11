@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -530,7 +529,7 @@ export default function ClientDashboardPage() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setUrl: (url: string | null) => void) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            const MAX_FILE_SIZE = 3.2 * 1024 * 1024; // 3.2 MB
+            const MAX_FILE_SIZE_MB = 1; 
 
             if (!file.type.startsWith('image/')) {
                 toast({
@@ -551,36 +550,40 @@ export default function ClientDashboardPage() {
                         img.src = loadEvent.target?.result as string;
                         img.onload = () => {
                             const canvas = document.createElement("canvas");
-                            const MAX_WIDTH = 1024;
-                            const MAX_HEIGHT = 1024;
-                            let width = img.width;
-                            let height = img.height;
+                            const MAX_DIMENSION = 1024;
+                            let { width, height } = img;
 
                             if (width > height) {
-                                if (width > MAX_WIDTH) {
-                                    height *= MAX_WIDTH / width;
-                                    width = MAX_WIDTH;
+                                if (width > MAX_DIMENSION) {
+                                    height *= MAX_DIMENSION / width;
+                                    width = MAX_DIMENSION;
                                 }
                             } else {
-                                if (height > MAX_HEIGHT) {
-                                    width *= MAX_HEIGHT / height;
-                                    height = MAX_HEIGHT;
+                                if (height > MAX_DIMENSION) {
+                                    width *= MAX_DIMENSION / height;
+                                    height = MAX_DIMENSION;
                                 }
                             }
                             canvas.width = width;
                             canvas.height = height;
                             const ctx = canvas.getContext("2d");
-                            if (!ctx) {
-                                return reject(new Error("Could not get canvas context"));
-                            }
-                            ctx.drawImage(img, 0, 0, width, height);
-                            const dataUrl = canvas.toDataURL("image/jpeg", 0.7); // Compress to 70% quality JPEG
+                            if (!ctx) return reject(new Error("Could not get canvas context"));
                             
-                            if (dataUrl.length > MAX_FILE_SIZE) {
-                                reject(new Error("Compressed file is still too large."));
-                            } else {
-                                resolve(dataUrl);
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            let quality = 0.7;
+                            let dataUrl = canvas.toDataURL("image/jpeg", quality);
+
+                            while (dataUrl.length / 1024 / 1024 > MAX_FILE_SIZE_MB && quality > 0.1) {
+                                quality -= 0.1;
+                                dataUrl = canvas.toDataURL("image/jpeg", quality);
                             }
+
+                            if (dataUrl.length / 1024 / 1024 > MAX_FILE_SIZE_MB) {
+                                return reject(new Error("Image is too large even after compression."));
+                            }
+                            
+                            resolve(dataUrl);
                         };
                         img.onerror = reject;
                     };
@@ -595,7 +598,7 @@ export default function ClientDashboardPage() {
                 toast({
                     variant: "destructive",
                     title: "File Error",
-                    description: error.message || "Could not process the image. It might be too large even after compression.",
+                    description: error.message || "Could not process the image.",
                 });
                 e.target.value = '';
                 setUrl(null);
@@ -1809,12 +1812,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
-
-    
-
-    
-
-
-
