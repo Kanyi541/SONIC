@@ -359,8 +359,10 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 <section className="mt-2 grid grid-cols-2 gap-x-8 text-[12px]">
                   <div>
                     <span className="font-bold uppercase">Signed</span>
-                     <div className="relative h-12 w-32">
-                        <Image src="/signature.png" layout="fill" objectFit="contain" alt="Signature" />
+                    <div className="relative h-12 w-48">
+                      <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+                          <path d="M10 40 Q 50 10, 90 30 T 190 20" stroke="black" fill="transparent" strokeWidth="2"/>
+                      </svg>
                     </div>
                   </div>
                    <div>
@@ -539,5 +541,6 @@ export default function ValuationReportPage() {
     
 
     
+
 
 
