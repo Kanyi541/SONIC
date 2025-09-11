@@ -22,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="google-site-verification" content="sQNTflIRGrcrQa1I-krENNhA3oRwYiW5ONoTFPgle6o" />
         <link rel="canonical" href="https://casadash.casamotorvaluers.co.ke/" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
