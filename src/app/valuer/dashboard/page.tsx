@@ -5,12 +5,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
-import { collection, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, query, where } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, query, where, getDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle, FileSignature, FileWarning, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Car, Clock, CheckCircle, Hourglass, FilePen, Printer, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Search, XCircle, FileSignature, FileWarning, ChevronLeft, ChevronRight, ChevronDown, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -59,6 +59,8 @@ interface Booking {
   authorisedBy?: string;
   branch?: string;
   comments?: string;
+  insuranceLetterId?: string;
+  logbookImageId?: string;
 }
 
 interface Valuation {
@@ -173,7 +175,7 @@ export default function ValuerDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [isValuationDialogOpen, setValuationDialogOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-    const [imageData, setImageData] = useState<string[]>([]);
+    const [valuationImages, setValuationImages] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
@@ -185,6 +187,13 @@ export default function ValuerDashboardPage() {
     const [pendingCurrentPage, setPendingCurrentPage] = useState(1);
     const [completedCurrentPage, setCompletedCurrentPage] = useState(1);
     const [rejectedCurrentPage, setRejectedCurrentPage] = useState(1);
+
+    const [loadingBookingDocs, setLoadingBookingDocs] = useState(false);
+    const [insuranceLetter, setInsuranceLetter] = useState<string | null>(null);
+    const [logbookImage, setLogbookImage] = useState<string | null>(null);
+    const [newInsuranceLetterData, setNewInsuranceLetterData] = useState<string | null>(null);
+    const [newLogbookImageData, setNewLogbookImageData] = useState<string | null>(null);
+
 
     const form = useForm<ValuationFormValues>({
         resolver: zodResolver(valuationSchema),
@@ -334,13 +343,34 @@ export default function ValuerDashboardPage() {
         });
     };
 
-    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setData: (data: string | null) => void) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (!file.type.startsWith('image/')) {
+                toast({ variant: "destructive", title: "Invalid File Type", description: "Please select an image file." });
+                e.target.value = '';
+                return;
+            }
+            compressImage(file).then(compressedData => {
+                setData(compressedData);
+            }).catch(error => {
+                console.error("Error compressing image:", error);
+                toast({ variant: "destructive", title: "File Error", description: "Could not process the image." });
+                setData(null);
+            });
+        } else {
+            setData(null);
+        }
+    };
+
+
+    const handleValuationImagesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             const files = Array.from(event.target.files);
             const compressionPromises = files.map(compressImage);
 
             Promise.all(compressionPromises).then(compressedUrls => {
-                setImageData(prevUrls => [...prevUrls, ...compressedUrls]);
+                setValuationImages(prevUrls => [...prevUrls, ...compressedUrls]);
             }).catch(error => {
                 console.error("Error compressing images:", error);
                 toast({
@@ -352,36 +382,70 @@ export default function ValuerDashboardPage() {
         }
     };
 
-    const removeImage = (index: number) => {
-        setImageData(prevData => prevData.filter((_, i) => i !== index));
+    const removeValuationImage = (index: number) => {
+        setValuationImages(prevData => prevData.filter((_, i) => i !== index));
     };
     
     const handleValuationSubmit = async (data: ValuationFormValues) => {
         if (!selectedBooking || !loggedInUser) return;
-    
-        if (imageData.length === 0) {
-            toast({ variant: "destructive", title: "Missing Photos", description: "Please upload at least one valuation photo." });
+        
+        const isInsuranceLetterMissing = !insuranceLetter && !newInsuranceLetterData;
+        const isLogbookMissing = !logbookImage && !newLogbookImageData;
+
+        if (valuationImages.length === 0 || isInsuranceLetterMissing || isLogbookMissing) {
+            toast({ variant: "destructive", title: "Missing Photos", description: "Please upload all required photos (Valuation, Insurance Letter, Logbook)." });
             return;
         }
 
         setIsSubmitting(true);
     
         try {
-            const imageUrls: string[] = [];
-            for (const dataUrl of imageData) {
+            const uploadedValuationImageIds: string[] = [];
+            for (const dataUrl of valuationImages) {
                 const uploadRef = await addDoc(collection(db, "uploads"), {
                     bookingId: selectedBooking.id,
                     imageData: dataUrl,
                     createdAt: serverTimestamp(),
                     type: 'valuationPhoto',
                 });
-                imageUrls.push(uploadRef.id);
+                uploadedValuationImageIds.push(uploadRef.id);
+            }
+            
+            const bookingDocRef = doc(db, "bookings", selectedBooking.id);
+            let updatedInsuranceLetterId = selectedBooking.insuranceLetterId;
+            let updatedLogbookImageId = selectedBooking.logbookImageId;
+
+            if (newInsuranceLetterData) {
+                const uploadRef = await addDoc(collection(db, "uploads"), {
+                    bookingId: selectedBooking.id,
+                    imageData: newInsuranceLetterData,
+                    createdAt: serverTimestamp(),
+                    type: 'insuranceLetter',
+                });
+                updatedInsuranceLetterId = uploadRef.id;
+            }
+
+            if (newLogbookImageData) {
+                const uploadRef = await addDoc(collection(db, "uploads"), {
+                    bookingId: selectedBooking.id,
+                    imageData: newLogbookImageData,
+                    createdAt: serverTimestamp(),
+                    type: 'logbookImage',
+                });
+                updatedLogbookImageId = uploadRef.id;
+            }
+            
+            if (newInsuranceLetterData || newLogbookImageData) {
+                await updateDoc(bookingDocRef, {
+                    insuranceLetterId: updatedInsuranceLetterId,
+                    logbookImageId: updatedLogbookImageId,
+                });
             }
 
             const valuationData = {
                 ...data,
                 bookingId: selectedBooking.id,
-                imageUrls, 
+                imageUrls: uploadedValuationImageIds,
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
                 status: "Pending Approval",
@@ -389,7 +453,6 @@ export default function ValuerDashboardPage() {
 
             await addDoc(collection(db, "valuations"), valuationData);
     
-            const bookingDocRef = doc(db, "bookings", selectedBooking.id);
             await updateDoc(bookingDocRef, {
                 status: "Valuated"
             });
@@ -400,8 +463,6 @@ export default function ValuerDashboardPage() {
             });
             
             setValuationDialogOpen(false);
-            form.reset();
-            setImageData([]);
     
         } catch (error) {
             console.error("Error submitting valuation:", error);
@@ -416,11 +477,38 @@ export default function ValuerDashboardPage() {
     };
     
 
-    const openValuationDialog = (booking: Booking) => {
+    const openValuationDialog = async (booking: Booking) => {
         form.reset();
-        setImageData([]);
+        setValuationImages([]);
+        setInsuranceLetter(null);
+        setLogbookImage(null);
+        setNewInsuranceLetterData(null);
+        setNewLogbookImageData(null);
         setSelectedBooking(booking);
         setValuationDialogOpen(true);
+        setLoadingBookingDocs(true);
+
+        try {
+            if (booking.insuranceLetterId) {
+                const docRef = doc(db, "uploads", booking.insuranceLetterId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setInsuranceLetter(docSnap.data().imageData);
+                }
+            }
+             if (booking.logbookImageId) {
+                const docRef = doc(db, "uploads", booking.logbookImageId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setLogbookImage(docSnap.data().imageData);
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching booking documents:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not load booking documents." });
+        } finally {
+            setLoadingBookingDocs(false);
+        }
     };
 
     const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -650,6 +738,8 @@ export default function ValuerDashboardPage() {
             )}
         />
     );
+    
+    const isSubmitDisabled = isSubmitting || valuationImages.length === 0 || (!insuranceLetter && !newInsuranceLetterData) || (!logbookImage && !newLogbookImageData);
 
     return (
         <UnifiedDashboardLayout
@@ -754,6 +844,50 @@ export default function ValuerDashboardPage() {
                                                 <div className="space-y-1"><Label className="text-muted-foreground">Authorised By</Label><p className="font-medium">{selectedBooking?.authorisedBy}</p></div>
                                                 <div className="space-y-1 col-span-2"><Label className="text-muted-foreground">Booking Comments</Label><p className="font-medium text-sm p-2 bg-muted rounded-md">{selectedBooking?.comments || 'N/A'}</p></div>
                                             </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-lg">Booking Documents</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {loadingBookingDocs ? (
+                                                <div className="flex items-center justify-center h-24">
+                                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div>
+                                                        <Label className="font-semibold">Insurance Letter</Label>
+                                                        {insuranceLetter ? (
+                                                            <div className="mt-2 border rounded-md p-2">
+                                                                <Image src={insuranceLetter} alt="Insurance Letter" width={300} height={200} className="rounded-md w-full object-contain" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="mt-2">
+                                                                <p className="text-sm text-destructive mb-2">Insurance letter is missing. Please upload it.</p>
+                                                                <Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setNewInsuranceLetterData)} />
+                                                                {newInsuranceLetterData && <p className="text-xs text-green-600 mt-1">Image ready for upload.</p>}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                     <div>
+                                                        <Label className="font-semibold">Logbook</Label>
+                                                        {logbookImage ? (
+                                                            <div className="mt-2 border rounded-md p-2">
+                                                                <Image src={logbookImage} alt="Logbook" width={300} height={200} className="rounded-md w-full object-contain" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="mt-2">
+                                                                <p className="text-sm text-destructive mb-2">Logbook image is missing. Please upload it.</p>
+                                                                <Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setNewLogbookImageData)} />
+                                                                {newLogbookImageData && <p className="text-xs text-green-600 mt-1">Image ready for upload.</p>}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
 
@@ -908,7 +1042,7 @@ export default function ValuerDashboardPage() {
                                     />
 
                                     <div>
-                                        <Label>Valuation Photos</Label>
+                                        <Label>Valuation Photos <span className="text-destructive">*</span></Label>
                                         <div className="mt-2 flex justify-center rounded-lg border border-dashed border-input px-6 py-10">
                                             <div className="text-center">
                                                 <ImageIcon className="mx-auto h-12 w-12 text-gray-300" />
@@ -918,16 +1052,16 @@ export default function ValuerDashboardPage() {
                                                     className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 hover:text-primary/80"
                                                 >
                                                     <span>Upload files</span>
-                                                    <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleImageChange} accept="image/*" ref={fileInputRef} />
+                                                    <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleValuationImagesChange} accept="image/*" ref={fileInputRef} />
                                                 </label>
                                                 <p className="pl-1">or drag and drop</p>
                                                 </div>
                                                 <p className="text-xs leading-5 text-gray-600">Images will be compressed automatically</p>
                                             </div>
                                         </div>
-                                         {imageData.length > 0 && (
+                                         {valuationImages.length > 0 && (
                                             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                                {imageData.map((preview, index) => (
+                                                {valuationImages.map((preview, index) => (
                                                 <div key={index} className="relative group">
                                                     <Image src={preview} alt={`preview ${index}`} width={150} height={150} className="w-full h-auto object-cover rounded-md" />
                                                     <Button
@@ -935,7 +1069,7 @@ export default function ValuerDashboardPage() {
                                                     variant="destructive"
                                                     size="icon"
                                                     className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"
-                                                    onClick={() => removeImage(index)}
+                                                    onClick={() => removeValuationImage(index)}
                                                     >
                                                     <X className="h-4 w-4" />
                                                     </Button>
@@ -946,7 +1080,7 @@ export default function ValuerDashboardPage() {
                                     </div>
                                     <DialogFooter className="pt-4 !mt-8">
                                         <Button type="button" variant="outline" onClick={() => setValuationDialogOpen(false)}>Cancel</Button>
-                                        <Button type="submit" disabled={isSubmitting}>
+                                        <Button type="submit" disabled={isSubmitDisabled}>
                                             {isSubmitting ? (
                                                 <>
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
