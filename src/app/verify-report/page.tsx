@@ -162,18 +162,18 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)] font-sans-trebuchet italic">
-             <header className="relative bg-[#1a1a1a] p-4 flex justify-between items-center print-header">
-                <div className="relative z-10 w-48">
-                    <Image src="/logo.png" alt="CASA Motor Valuers And Assessors Ltd" width={180} height={70} />
+             <header className="relative bg-[#1a1a1a] p-2 flex justify-between items-center print-header">
+                <div className="relative z-10 w-36">
+                    <Image src="/logo.png" alt="CASA Motor Valuers And Assessors Ltd" width={140} height={50} />
                 </div>
 
                 <div className="relative z-10 text-center text-white">
-                    <h2 className="font-bold text-lg">CASA MOTOR VALUERS & ASSESSORS LTD</h2>
-                    <h3 className="font-bold text-base">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
+                    <h2 className="font-bold text-base">CASA MOTOR VALUERS & ASSESSORS LTD</h2>
+                    <h3 className="font-bold text-sm">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
                 </div>
                 
                 <div className="relative z-10 flex items-center gap-4">
-                    <div className="h-28 w-8 bg-primary"></div>
+                    <div className="h-16 w-6 bg-primary"></div>
                 </div>
             </header>
             <main className="flex-grow px-10 pt-2 pb-4 watermarked-valuation">
