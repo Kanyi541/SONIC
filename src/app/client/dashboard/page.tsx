@@ -370,7 +370,7 @@ export default function ClientDashboardPage() {
         const bookingsQuery = query(collection(db, "bookings"), where("insurerId", "==", loggedInUser.username));
         const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
-            const sortedBookings = bookingsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+            const sortedBookings = bookingsData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
             setBookings(sortedBookings);
             generateChartData(sortedBookings);
             setLoading(false);
