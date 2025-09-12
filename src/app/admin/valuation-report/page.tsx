@@ -70,6 +70,7 @@ interface Booking {
   branch?: string; 
   insurerName?: string;
   logbookImageId?: string;
+  insuranceLetterId?: string;
   status: string;
 }
 
@@ -77,6 +78,7 @@ interface PopulatedReportData {
     valuation: Valuation;
     booking: Booking;
     logbookImage?: string;
+    insuranceLetterImage?: string;
     valuationImages: string[];
 }
 
@@ -184,7 +186,7 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
         return <div className="p-4 text-center text-muted-foreground">No valuation report found for this booking.</div>;
     }
 
-    const { valuation, booking, logbookImage, valuationImages } = reportData;
+    const { valuation, booking, logbookImage, valuationImages, insuranceLetterImage } = reportData;
     const assessmentValueInWords = valuation.assessmentValue ? `${numberToWords(valuation.assessmentValue)} Shillings Only` : 'N/A';
     
     return (
@@ -389,12 +391,27 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                             ))}
                         </div>
                     </div>
-                    
+                </div>
+
+                <div className="break-before-page">
+                    <div className="my-2 break-inside-avoid">
+                        <h3 className="font-bold text-[12px] underline mb-1">Insurance Letter</h3>
+                        {insuranceLetterImage ? (
+                            <div className="border p-1 rounded-md max-w-full bg-gray-100">
+                                <Image src={insuranceLetterImage} alt="Insurance Letter" width={800} height={1000} className="object-contain w-full h-auto" />
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 italic text-xs">No insurance letter provided.</p>
+                        )}
+                    </div>
+                </div>
+                
+                <div className="break-before-page">
                     <div className="my-2 break-inside-avoid">
                         <h3 className="font-bold text-[12px] underline mb-1">Logbook</h3>
                         {logbookImage ? (
-                            <div className="border p-1 rounded-md max-w-xs bg-gray-100">
-                                <Image src={logbookImage} alt="Logbook" width={400} height={300} className="object-contain w-full h-auto" />
+                            <div className="border p-1 rounded-md max-w-full bg-gray-100">
+                                <Image src={logbookImage} alt="Logbook" width={800} height={1000} className="object-contain w-full h-auto" />
                             </div>
                         ) : (
                             <p className="text-gray-500 italic text-xs">No logbook provided.</p>
@@ -471,6 +488,15 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
             }
         }
         
+        // Fetch Insurance Letter Image
+        let insuranceLetterImage: string | undefined;
+        if (bookingData.insuranceLetterId) {
+            const insuranceDoc = await getDoc(doc(db, "uploads", bookingData.insuranceLetterId));
+            if (insuranceDoc.exists()) {
+                insuranceLetterImage = insuranceDoc.data().imageData;
+            }
+        }
+        
         // Fetch Valuation Images
         let valuationImages: string[] = [];
         if (valuationData.imageUrls && valuationData.imageUrls.length > 0) {
@@ -484,6 +510,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
                 booking: bookingData, 
                 valuation: valuationData,
                 logbookImage,
+                insuranceLetterImage,
                 valuationImages,
             }
         });

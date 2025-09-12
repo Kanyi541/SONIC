@@ -68,6 +68,7 @@ interface Booking {
   branch?: string; 
   insurerName?: string;
   logbookImage?: string;
+  insuranceLetterId?: string;
   status: string;
 }
 
@@ -78,6 +79,9 @@ interface ReportState {
   qrCodeUrl: string | null;
   isVerification: boolean;
   isVerificationDialogOpen: boolean;
+  valuationImages: string[];
+  logbookImage?: string;
+  insuranceLetterImage?: string;
 }
 
 const DetailItem = ({ label, value, className, labelSize = 'text-[10px]', valueSize = 'text-[10px]' }: { label: string; value: React.ReactNode, className?: string, labelSize?: string, valueSize?: string }) => (
@@ -149,10 +153,10 @@ const numberToWords = (num: number | string): string => {
 };
 
 
-class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null, qrCodeUrl: string | null, isVerificationDialogOpen: boolean, onDownloadClick: () => void, setDialogState: (open: boolean) => void}> {
+class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null, qrCodeUrl: string | null, isVerificationDialogOpen: boolean, onDownloadClick: () => void, setDialogState: (open: boolean) => void, valuationImages: string[], logbookImage?: string, insuranceLetterImage?: string}> {
 
   render() {
-    const { valuation, booking, qrCodeUrl, isVerificationDialogOpen, onDownloadClick, setDialogState } = this.props;
+    const { valuation, booking, qrCodeUrl, isVerificationDialogOpen, onDownloadClick, setDialogState, valuationImages, logbookImage, insuranceLetterImage } = this.props;
 
     if (!valuation || !booking) {
         return <div className="p-4 text-center text-muted-foreground">No valuation report found for this booking.</div>;
@@ -355,19 +359,34 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <div className="my-2 break-inside-avoid">
                         <h3 className="font-bold text-[12px] underline mb-1">Valuation Photos</h3>
                         <div className="grid grid-cols-3 gap-2">
-                            {valuation.imageUrls.map((url, index) => (
+                            {valuationImages.map((url, index) => (
                                 <div key={index} className="border p-1 rounded-md bg-gray-100 break-inside-avoid">
                                     <Image src={url} alt={`Valuation Photo ${index + 1}`} width={250} height={180} className="object-contain w-full h-auto" />
                                 </div>
                             ))}
                         </div>
                     </div>
-                    
+                </div>
+
+                <div className="break-before-page">
+                    <div className="my-2 break-inside-avoid">
+                        <h3 className="font-bold text-[12px] underline mb-1">Insurance Letter</h3>
+                        {insuranceLetterImage ? (
+                            <div className="border p-1 rounded-md max-w-full bg-gray-100">
+                                <Image src={insuranceLetterImage} alt="Insurance Letter" width={800} height={1000} className="object-contain w-full h-auto" />
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 italic text-xs">No insurance letter provided.</p>
+                        )}
+                    </div>
+                </div>
+                
+                <div className="break-before-page">
                     <div className="my-2 break-inside-avoid">
                         <h3 className="font-bold text-[12px] underline mb-1">Logbook</h3>
-                        {booking.logbookImage ? (
-                            <div className="border p-1 rounded-md max-w-xs bg-gray-100">
-                                <Image src={booking.logbookImage} alt="Logbook" width={400} height={300} className="object-contain w-full h-auto" />
+                        {logbookImage ? (
+                            <div className="border p-1 rounded-md max-w-full bg-gray-100">
+                                <Image src={logbookImage} alt="Logbook" width={800} height={1000} className="object-contain w-full h-auto" />
                             </div>
                         ) : (
                              <p className="text-gray-500 italic text-xs">No logbook provided.</p>
@@ -405,6 +424,7 @@ class VerificationReportPageContent extends React.Component<{ router: any; searc
     qrCodeUrl: null,
     isVerification: false,
     isVerificationDialogOpen: false,
+    valuationImages: [],
   };
   
   componentDidMount() {
@@ -435,13 +455,43 @@ class VerificationReportPageContent extends React.Component<{ router: any; searc
         if (bookingSnap.exists()) {
              bookingData = { id: bookingSnap.id, ...bookingSnap.data() } as Booking;
         }
+        
+        let logbookImage: string | undefined;
+        if (bookingData?.logbookImage) { // assuming logbookImage is a direct URL now for simplicity
+            const logbookDoc = await getDoc(doc(db, "uploads", bookingData.logbookImage));
+            if (logbookDoc.exists()) {
+                logbookImage = logbookDoc.data().imageData;
+            }
+        }
+
+        let insuranceLetterImage: string | undefined;
+        if (bookingData?.insuranceLetterId) {
+            const insuranceDoc = await getDoc(doc(db, "uploads", bookingData.insuranceLetterId));
+            if (insuranceDoc.exists()) {
+                insuranceLetterImage = insuranceDoc.data().imageData;
+            }
+        }
+        
+        let valuationImages: string[] = [];
+        if (valuationData?.imageUrls && valuationData.imageUrls.length > 0) {
+            const imageDocsQuery = query(collection(db, "uploads"), where("__name__", "in", valuationData.imageUrls));
+            const imageDocsSnapshot = await getDocs(imageDocsQuery);
+            valuationImages = imageDocsSnapshot.docs.map(d => d.data().imageData);
+        }
 
          if (bookingData) {
             const printDate = new Date().toLocaleDateString('en-CA');
             document.title = `${bookingData.bookingNumber} - ${bookingData.customerName} - ${printDate}`;
             const reportUrl = `${window.location.origin}/verify-report?id=${bookingId}&verify=true`;
             const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1 });
-            this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
+            this.setState({ 
+                booking: bookingData, 
+                valuation: valuationData, 
+                qrCodeUrl: qrUrl,
+                valuationImages,
+                logbookImage,
+                insuranceLetterImage
+            });
         }
         
     } catch (error) {
@@ -494,6 +544,9 @@ class VerificationReportPageContent extends React.Component<{ router: any; searc
             isVerificationDialogOpen={this.state.isVerificationDialogOpen}
             onDownloadClick={this.handleDownload}
             setDialogState={(open) => this.setState({ isVerificationDialogOpen: open })}
+            valuationImages={this.state.valuationImages}
+            logbookImage={this.state.logbookImage}
+            insuranceLetterImage={this.state.insuranceLetterImage}
           />
         </div>
       </div>
