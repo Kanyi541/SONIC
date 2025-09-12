@@ -80,7 +80,7 @@ interface ReportState {
   isVerificationDialogOpen: boolean;
 }
 
-const DetailItem = ({ label, value, className, labelSize = 'text-[12px]', valueSize = 'text-[12px]' }: { label: string; value: React.ReactNode, className?: string, labelSize?: string, valueSize?: string }) => (
+const DetailItem = ({ label, value, className, labelSize = 'text-[10px]', valueSize = 'text-[10px]' }: { label: string; value: React.ReactNode, className?: string, labelSize?: string, valueSize?: string }) => (
     <div className={className}>
         <span className={`font-bold text-gray-700 uppercase mr-2 ${labelSize}`}>{label}</span>
         <span className={`text-blue-600 font-medium text-right ${valueSize}`}>{value || 'N/A'}</span>
@@ -88,16 +88,16 @@ const DetailItem = ({ label, value, className, labelSize = 'text-[12px]', valueS
 );
 
 const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' | 'No' }) => (
-    <div className="flex justify-between py-0.5">
-        <span className="text-[11px]">{question}</span>
-        <span className="font-bold text-blue-600 text-[12px]">{answer || 'N/A'}</span>
+    <div className="flex justify-between py-0">
+        <span className="text-[9px]">{question}</span>
+        <span className="font-bold text-blue-600 text-[10px]">{answer || 'N/A'}</span>
     </div>
 )
 
 const NoteItem = ({ label, value }: { label: string, value?: string }) => (
      <div className="flex items-start">
-        <span className="font-bold uppercase text-gray-600 mr-2 text-[12px]">{label}</span>
-        <p className={`font-medium text-blue-600 text-[12px]`}>{value || 'N/A'}</p>
+        <span className="font-bold uppercase text-gray-600 mr-2 text-[10px]">{label}</span>
+        <p className={`font-medium text-blue-600 text-[10px]`}>{value || 'N/A'}</p>
     </div>
 )
 
@@ -161,20 +161,20 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)] font-sans-trebuchet italic">
-             <header className="relative bg-[#1a1a1a] p-2 flex justify-between items-center print-header">
-                <div className="relative z-10 w-36">
-                    <Image src="/logo.png" alt="CASA Motor Valuers And Assessors Ltd" width={140} height={50} />
+             <header className="relative bg-[#1a1a1a] p-1 flex justify-between items-center print-header">
+                <div className="relative z-10 w-28">
+                    <Image src="/logo.png" alt="CASA Motor Valuers And Assessors Ltd" width={112} height={40} />
                 </div>
 
                 <div className="relative z-10 text-center text-white">
-                    <h2 className="font-bold text-base">CASA MOTOR VALUERS & ASSESSORS LTD</h2>
+                    <h2 className="font-bold text-sm">CASA MOTOR VALUERS & ASSESSORS LTD</h2>
                 </div>
                 
                 <div className="relative z-10 flex items-center gap-4">
-                    <div className="h-16 w-6 bg-primary"></div>
+                    <div className="h-12 w-4 bg-primary"></div>
                 </div>
             </header>
-            <main className="flex-grow px-10 pt-2 pb-4 watermarked-valuation">
+            <main className="flex-grow px-8 pt-1 pb-2 watermarked-valuation">
              <div className="report-content">
                 
                 <AlertDialog open={isVerificationDialogOpen} onOpenChange={setDialogState}>
@@ -194,9 +194,9 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                   </AlertDialogContent>
                 </AlertDialog>
                 
-                <h3 className="font-bold text-sm text-center my-2">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
+                <h3 className="font-bold text-xs text-center my-1">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
 
-                <section className="mb-1 text-[12px]">
+                <section className="mb-1 text-[10px]">
                     <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-0">
                        <span className="font-bold">SERIAL No</span>
                        <span className="font-medium text-blue-600">{booking.bookingNumber}</span>
@@ -220,9 +220,9 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </section>
 
-                <p className="text-[12px] my-1 text-center">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
+                <p className="text-[10px] my-1 text-center">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
 
-                <section className="mb-1 text-[12px]">
+                <section className="mb-1 text-[10px]">
                     <div className="grid grid-cols-3 gap-x-4 gap-y-0">
                         <DetailItem label="REGISTRATION NO" value={booking.plateNumber} />
                         <DetailItem label="MAKE" value={booking.carMake} />
@@ -241,8 +241,8 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </section>
                 
-                <section className="mb-1 break-inside-avoid">
-                     <h4 className="font-bold text-[14px] underline mb-0.5">Coachwork</h4>
+                <section className="mb-1">
+                     <h4 className="font-bold text-[11px] underline mb-0.5">Coachwork</h4>
                      <div className="grid grid-cols-3 gap-x-4">
                         <ConditionItem question="Accident Repairs Noted?" answer={valuation.coachWork?.accidentRepairs} />
                         <ConditionItem question="Accident Damages noted?" answer={valuation.coachWork?.accidentDamagesNoted} />
@@ -256,8 +256,8 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </section>
 
-                <section className="mb-1 break-inside-avoid">
-                     <h4 className="font-bold text-[14px] underline mb-0.5">Mechanical Condition</h4>
+                <section className="mb-1">
+                     <h4 className="font-bold text-[11px] underline mb-0.5">Mechanical Condition</h4>
                      <div className="grid grid-cols-3 gap-x-4">
                         <ConditionItem question="is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
                         <ConditionItem question="is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
@@ -271,8 +271,8 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </section>
 
-                <section className="mb-1 break-inside-avoid">
-                     <h4 className="font-bold text-[14px] underline mb-0.5">Electrical Condition</h4>
+                <section className="mb-1">
+                     <h4 className="font-bold text-[11px] underline mb-0.5">Electrical Condition</h4>
                      <div className="grid grid-cols-3 gap-x-4">
                         <ConditionItem question="Do the indicator lights operate well?" answer={valuation.electricalCondition?.indicatorLightsOk} />
                         <ConditionItem question="Are the wipers operating well?" answer={valuation.electricalCondition?.wipersOk} />
@@ -283,7 +283,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </section>
                 
                 <div className="grid grid-cols-2 gap-x-8 items-start">
-                    <section className="my-1 space-y-0.5">
+                    <section className="my-1 space-y-0">
                         <NoteItem label="COACHWORK NOTES" value={valuation.coachWorkNotes} />
                         <NoteItem label="ELECTRICAL NOTES" value={valuation.electricalNotes} />
                         <NoteItem label="MECHANICAL NOTES" value={valuation.mechanicalNotes} />
@@ -295,22 +295,22 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     
                     {qrCodeUrl && (
                         <div className="relative z-20 text-center justify-self-end">
-                            <Image src={qrCodeUrl} alt="QR Code" width={120} height={120} />
-                            <p className="text-[10px] font-bold text-black mt-1">SCAN TO VERIFY</p>
+                            <Image src={qrCodeUrl} alt="QR Code" width={80} height={80} />
+                            <p className="text-[8px] font-bold text-black mt-1">SCAN TO VERIFY</p>
                         </div>
                     )}
                 </div>
 
                 <section className="my-1">
                     <div className="py-0.5">
-                        <span className="font-bold uppercase text-[12px] text-gray-600">ASSESSED VALUE : </span>
-                        <span className="font-bold text-blue-600 text-[12px]">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
+                        <span className="font-bold uppercase text-[10px] text-gray-600">ASSESSED VALUE : </span>
+                        <span className="font-bold text-blue-600 text-[10px]">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
                     </div>
                 </section>
                 
-                <section className="my-1 text-[12px]">
-                    <span className="font-bold uppercase text-[12px] text-gray-600">NOTE VALUE</span>
-                    <div className="grid grid-cols-2 gap-x-12 mt-0.5">
+                <section className="my-1 text-[10px]">
+                    <span className="font-bold uppercase text-[10px] text-gray-600">NOTE VALUE</span>
+                    <div className="grid grid-cols-2 gap-x-12 mt-0">
                       <div className="flex justify-between items-baseline">
                           <span className="text-gray-700">Radio Estimate</span>
                           <span className="text-blue-600 font-medium">{valuation.wsValue}</span>
@@ -322,14 +322,13 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     </div>
                 </section>
 
-                <section className="my-1 space-y-0.5">
+                <section className="my-1 space-y-0">
                     <NoteItem label="REMARKS:" value={valuation.comments} />
                     <NoteItem label="REMEDY :" value="" />
                     <NoteItem label="DISCLAIMER :" value="none" />
                 </section>
                 
-                <section className="mt-2 grid grid-cols-2 gap-x-8 text-[12px]">
-                    <DetailItem label="COUNTRY OF ORIGIN" value={valuation.countryOfOrigin} />
+                <section className="mt-1 grid grid-cols-2 gap-x-8 text-[10px]">
                     <DetailItem label="DATE OF INSPECTION" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} />
                     <DetailItem label="DESTINATION" value={`${valuation.insurer} prompt insurance agency`} />
                     <DetailItem label="EXAMINER" value={valuation.valuedBy} />
@@ -337,55 +336,58 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <DetailItem label="LOCATION OF INSPECTION" value={booking.branch} />
                 </section>
                 
-                <section className="mt-2 grid grid-cols-2 gap-x-8 text-[12px]">
-                  <div>
-                    <span className="font-bold uppercase">Signed</span>
-                  </div>
-                   <div>
-                    <span className="font-bold uppercase mr-2">Date</span>
-                    <span className="text-blue-600">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</span>
-                  </div>
+                <section className="mt-1 grid grid-cols-2 gap-x-8 text-[10px]">
+                    <div>
+                        <span className="font-bold uppercase">Signed</span>
+                         <div className="relative h-12 w-32 mt-1">
+                             <Image src="/signature.png" alt="Signature" layout="fill" objectFit="contain" />
+                        </div>
+                    </div>
+                    <div>
+                        <span className="font-bold uppercase mr-2">Date</span>
+                        <span className="text-blue-600">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</span>
+                    </div>
                 </section>
-
-                <p className="text-center font-bold text-[12px] mt-2">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
+                
+                <p className="text-center font-bold text-[10px] mt-1">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
                 
                 <div className="break-before-page">
-                    <div className="my-4 break-inside-avoid">
-                        <h3 className="font-bold text-[14px] underline mb-2">Valuation Photos</h3>
-                        <div className="grid grid-cols-2 gap-4">
+                    <div className="my-2 break-inside-avoid">
+                        <h3 className="font-bold text-[12px] underline mb-1">Valuation Photos</h3>
+                        <div className="grid grid-cols-3 gap-2">
                             {valuation.imageUrls.map((url, index) => (
                                 <div key={index} className="border p-1 rounded-md bg-gray-100 break-inside-avoid">
-                                    <Image src={url} alt={`Valuation Photo ${index + 1}`} width={400} height={300} className="object-contain w-full h-auto" />
+                                    <Image src={url} alt={`Valuation Photo ${index + 1}`} width={250} height={180} className="object-contain w-full h-auto" />
                                 </div>
                             ))}
                         </div>
                     </div>
                     
-                    <div className="my-4 break-inside-avoid">
-                        <h3 className="font-bold text-[14px] underline mb-2">Logbook</h3>
+                    <div className="my-2 break-inside-avoid">
+                        <h3 className="font-bold text-[12px] underline mb-1">Logbook</h3>
                         {booking.logbookImage ? (
-                            <div className="border p-1 rounded-md max-w-md bg-gray-100">
-                                <Image src={booking.logbookImage} alt="Logbook" width={500} height={400} className="object-contain w-full h-auto" />
+                            <div className="border p-1 rounded-md max-w-xs bg-gray-100">
+                                <Image src={booking.logbookImage} alt="Logbook" width={400} height={300} className="object-contain w-full h-auto" />
                             </div>
                         ) : (
-                            <p className="text-gray-500 italic">No logbook provided.</p>
+                             <p className="text-gray-500 italic text-xs">No logbook provided.</p>
                         )}
                     </div>
                 </div>
             </div>
             </main>
-            <footer className="bg-[#1a1a1a] p-2 text-white text-[11px] mt-auto print-footer">
+            <footer className="bg-[#1a1a1a] p-1 text-white text-[9px] mt-auto print-footer">
                 <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                        <Phone size={12} className="text-primary"/>
+                    <div className="flex items-center justify-center gap-1">
+                        <Phone size={10} className="text-primary"/>
                         <span>0722924854 / 0737924854</span>
                     </div>
-                    <div className="flex items-center justify-center gap-2">
-                        <MapPin size={12} className="text-primary"/>
-                        <span>Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</span>
+                    <div className="flex items-center justify-center gap-1">
+                        <MapPin size={10} className="text-primary"/>
+                        <span className="text-[8px]">Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</span>
                     </div>
-                    <div className="flex items-center justify-center gap-2">
-                        <Mail size={12} className="text-primary"/>
+                    <div className="flex items-center justify-center gap-1">
+                        <Mail size={10} className="text-primary"/>
                         <span>casamotorvaluers@gmail.com</span>
                     </div>
                 </div>
