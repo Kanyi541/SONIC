@@ -72,6 +72,7 @@ interface Valuation {
     valuedAt: any;
     status: 'Approved' | 'Rejected' | 'Pending Approval';
     rejectionReason?: string;
+    purpose?: string;
     
     // New Fields
     insurer: string;
@@ -111,6 +112,7 @@ type ChartDataPoint = {
 
 const valuationSchema = z.object({
   assessmentDate: z.date({ required_error: "An assessment date is required." }),
+  purpose: z.string().min(1, "Purpose of valuation is required."),
   comments: z.string().optional(),
   insurer: z.string().min(1, "Insurer is required."),
   policyExpiryDate: z.date().optional(),
@@ -199,6 +201,7 @@ export default function ValuerDashboardPage() {
         resolver: zodResolver(valuationSchema),
         defaultValues: {
             insurer: "",
+            purpose: "",
             policyExpiryDate: undefined,
             chassisNo: "",
             colour: "",
@@ -282,8 +285,9 @@ export default function ValuerDashboardPage() {
 
         const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Booking }));
-            setBookings(bookingsData);
-            generateChartData(bookingsData);
+            const sortedBookings = bookingsData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+            setBookings(sortedBookings);
+            generateChartData(sortedBookings);
             setLoading(false);
         }, (error) => {
             console.error("Error fetching bookings:", error);
@@ -547,7 +551,7 @@ export default function ValuerDashboardPage() {
             if (orderA !== orderB) {
                 return orderA - orderB;
             }
-            return b.createdAt.toMillis() - a.createdAt.toMillis();
+            return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
         });
     }, [bookings, searchTerm]);
 
@@ -894,6 +898,19 @@ export default function ValuerDashboardPage() {
                                     <Card>
                                         <CardHeader><CardTitle>Vehicle & Policy Details</CardTitle></CardHeader>
                                         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="purpose"
+                                                render={({ field }) => (
+                                                    <FormItem className="col-span-1 md:col-span-2 lg:col-span-3">
+                                                        <FormLabel>Purpose of Valuation</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="e.g., Insurance, Loan Application" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
                                              <FormField
                                                 control={form.control}
                                                 name="insurer"

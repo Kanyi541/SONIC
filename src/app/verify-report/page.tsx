@@ -25,6 +25,7 @@ interface Valuation {
     valuedAt: any;
     status?: 'Approved' | 'Rejected' | 'Pending Approval';
     rejectionReason?: string;
+    purpose?: string;
     policyExpiryDate?: any;
     chassisNo?: string;
     colour?: string;
@@ -204,26 +205,41 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 </AlertDialog>
                 
                 <h3 className="font-bold text-xs text-center my-1">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
+                
+                <section className="mt-2 mb-1">
+                    <div className="flex justify-between items-center text-[10px]">
+                        <div>
+                            <span className="font-bold">Serial No.:</span>
+                            <span className="font-medium text-green-700 ml-2">{booking.bookingNumber}</span>
+                        </div>
+                        <div>
+                            <span className="font-bold">PURPOSE:</span>
+                            <span className="font-medium text-green-700 ml-2">{valuation.purpose || 'N/A'}</span>
+                        </div>
+                    </div>
+                    <div className="h-px bg-gray-400 mt-1 relative">
+                        <div className="absolute w-full h-px bg-gray-600 -top-px"></div>
+                        <div className="absolute w-full h-px bg-white top-px"></div>
+                    </div>
+                </section>
 
                 <section className="mb-1 text-[10px]">
                     <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-0">
-                       <span className="font-bold">SERIAL No</span>
-                       <span className="font-medium text-blue-600">{booking.bookingNumber}</span>
                        <span className="font-bold">ISSUED BY</span>
                        <span className="font-medium text-blue-600">Casa Motor Valuers And Assessors</span>
                        
                        <span className="font-bold">CLIENT NAME</span>
                        <span className="font-medium text-blue-600">{booking.customerName}</span>
+
                        <span className="font-bold">CONTACTS</span>
                        <span className="font-medium text-blue-600">{booking.customerPhone}</span>
                        
                        <span className="font-bold">INSURER</span>
                        <span className="font-medium text-blue-600">{valuation.insurer}</span>
+                       
                        <span className="font-bold">POLICY NO.</span>
                        <span className="font-medium text-blue-600">{booking.policyNumber}</span>
-                       
-                       <div/>
-                       <div/>
+
                        <span className="font-bold">EXPIRY DATE.</span>
                        <span className="font-medium text-blue-600">{valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'}</span>
                     </div>

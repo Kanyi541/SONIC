@@ -589,7 +589,10 @@ export default function ClientDashboardPage() {
         }
 
         try {
-            const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+            const year = new Date().getFullYear();
+            const randomNumber = Math.floor(1000 + Math.random() * 9000);
+            const bookingNumber = `CASA/${year}/${randomNumber}`;
+            
             const newBookingRef = doc(collection(db, "bookings"));
             const bookingId = newBookingRef.id;
 
