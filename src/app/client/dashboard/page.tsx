@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc, serverTimestamp } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight, KeyRound, Upload, File as FileIcon, X, File, FileText, Calendar as CalendarIcon } from "lucide-react";
@@ -590,8 +590,6 @@ export default function ClientDashboardPage() {
 
         try {
             const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-            
-            // Create booking document first to get its ID
             const newBookingRef = doc(collection(db, "bookings"));
             const bookingId = newBookingRef.id;
 
@@ -616,19 +614,18 @@ export default function ClientDashboardPage() {
                 });
                 logbookImageId = uploadRef.id;
             }
-
-            await updateDoc(newBookingRef, {
+            
+            await setDoc(newBookingRef, {
                 ...data,
                 id: bookingId,
                 bookingNumber,
-                createdAt: new Date(),
+                createdAt: serverTimestamp(),
                 status: "Pending Approval",
                 insurerId: loggedInUser.username,
                 insurerName: loggedInUser.name,
                 insuranceLetterId: insuranceLetterId,
                 logbookImageId: logbookImageId,
             });
-
 
             toast({
                 title: "Booking Created",
@@ -1795,3 +1792,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    

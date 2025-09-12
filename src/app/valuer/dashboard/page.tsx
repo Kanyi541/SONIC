@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
-import { collection, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, query, where, getDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, query, where, getDoc, setDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -442,16 +442,16 @@ export default function ValuerDashboardPage() {
                 });
             }
 
-            const valuationData = {
+            const valuationDocRef = doc(collection(db, "valuations"));
+            await setDoc(valuationDocRef, {
                 ...data,
+                id: valuationDocRef.id,
                 bookingId: selectedBooking.id,
                 imageUrls: uploadedValuationImageIds,
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
                 status: "Pending Approval",
-             };
-
-            await addDoc(collection(db, "valuations"), valuationData);
+            });
     
             await updateDoc(bookingDocRef, {
                 status: "Valuated"
@@ -1101,3 +1101,5 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    
