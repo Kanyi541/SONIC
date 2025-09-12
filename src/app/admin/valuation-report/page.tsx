@@ -368,12 +368,14 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                   <div>
                     <span className="font-bold uppercase">Signed</span>
                     <div className="relative h-12 w-48">
-                      <Image src="/signature.png" alt="Signature" layout="fill" objectFit="contain" />
+                        <svg viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg" className="absolute -left-8 -top-8 w-[200px] h-auto">
+                            <path d="M 10,90 Q 50,-20 100,90 T 190,90 Q 230,20 280,90 T 370,90" fill="none" stroke="rgb(18, 54, 91)" strokeWidth="4" />
+                        </svg>
                     </div>
                   </div>
                    <div>
                     <span className="font-bold uppercase mr-2">Date</span>
-                    <span className="text-blue-600">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</span>
+                    <span className="text-blue-600">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'NA'}</span>
                   </div>
                 </section>
 
@@ -382,7 +384,7 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                 <div className="break-before-page">
                     <div className="my-4 break-inside-avoid">
                         <h3 className="font-bold text-[14px] underline mb-2">Valuation Photos</h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                             {valuationImages.map((url, index) => (
                                 <div key={index} className="border p-1 rounded-md bg-gray-100 break-inside-avoid">
                                     <Image src={url} alt={`Valuation Photo ${index + 1}`} width={400} height={300} className="object-contain w-full h-auto" />
@@ -394,7 +396,7 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                     <div className="my-4 break-inside-avoid">
                         <h3 className="font-bold text-[14px] underline mb-2">Logbook</h3>
                         {logbookImage ? (
-                            <div className="border p-1 rounded-md max-w-md bg-gray-100">
+                            <div className="border p-1 rounded-md max-w-sm bg-gray-100">
                                 <Image src={logbookImage} alt="Logbook" width={500} height={400} className="object-contain w-full h-auto" />
                             </div>
                         ) : (
@@ -564,5 +566,3 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
-
-    
