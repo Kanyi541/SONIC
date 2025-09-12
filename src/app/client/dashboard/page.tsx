@@ -620,7 +620,6 @@ export default function ClientDashboardPage() {
             
             await setDoc(newBookingRef, {
                 ...data,
-                id: bookingId,
                 bookingNumber,
                 createdAt: serverTimestamp(),
                 status: "Pending Approval",

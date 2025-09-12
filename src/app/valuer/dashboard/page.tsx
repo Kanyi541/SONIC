@@ -449,7 +449,6 @@ export default function ValuerDashboardPage() {
             const valuationDocRef = doc(collection(db, "valuations"));
             await setDoc(valuationDocRef, {
                 ...data,
-                id: valuationDocRef.id,
                 bookingId: selectedBooking.id,
                 imageUrls: uploadedValuationImageIds,
                 valuedBy: loggedInUser.name,
