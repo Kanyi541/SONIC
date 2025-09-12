@@ -45,11 +45,11 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
 
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)]">
-            <header className="bg-[#1a1a1a] p-6 relative">
-              <div className="w-48">
-                <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
-              </div>
-              <div className="absolute right-0 top-0 h-full w-4 bg-primary" />
+            <header className="bg-[#1a1a1a] p-4 flex justify-between items-center relative">
+                <div className="w-48">
+                    <Image src="/logo.png" alt="Company Logo" width={180} height={70} />
+                </div>
+                <div className="absolute right-0 top-0 h-full w-4 bg-primary" />
             </header>
 
             <main className="flex-grow p-14 watermarked">
@@ -141,7 +141,7 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
               </div>
             </div>
             </main>
-             <footer className="bg-[#1a1a1a] p-4 text-white text-xs mt-auto">
+             <footer className="bg-[#1a1a1a] p-2 text-white text-xs mt-auto">
                 <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 text-center">
                     <div className="flex items-center justify-center gap-2">
                         <Phone size={14} className="text-primary"/>
