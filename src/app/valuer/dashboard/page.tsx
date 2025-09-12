@@ -109,7 +109,6 @@ type ChartDataPoint = {
 
 const valuationSchema = z.object({
   assessmentDate: z.date({ required_error: "An assessment date is required." }),
-  images: z.array(z.string().url()).min(1, "At least one image is required."),
   comments: z.string().optional(),
   insurer: z.string().min(1, "Insurer is required."),
   policyExpiryDate: z.date().optional(),
@@ -174,7 +173,7 @@ export default function ValuerDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [isValuationDialogOpen, setValuationDialogOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-    const [imageDataUrls, setImageDataUrls] = useState<string[]>([]);
+    const [imageData, setImageData] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
@@ -190,7 +189,6 @@ export default function ValuerDashboardPage() {
     const form = useForm<ValuationFormValues>({
         resolver: zodResolver(valuationSchema),
         defaultValues: {
-            images: [],
             insurer: "",
             policyExpiryDate: undefined,
             chassisNo: "",
@@ -298,56 +296,51 @@ export default function ValuerDashboardPage() {
         };
     }, [loggedInUser, toast]);
     
+    const compressImage = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (loadEvent) => {
+                const img = new window.Image();
+                img.src = loadEvent.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    const MAX_WIDTH = 1024;
+                    const MAX_HEIGHT = 1024;
+                    let { width, height } = img;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    if (!ctx) return reject(new Error("Could not get canvas context"));
+                    
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL("image/jpeg", 0.7));
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
+    };
+
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             const files = Array.from(event.target.files);
-            
-            const compressImage = (file: File): Promise<string> => {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = (loadEvent) => {
-                        const img = document.createElement("img");
-                        img.src = loadEvent.target?.result as string;
-                        img.onload = () => {
-                            const canvas = document.createElement("canvas");
-                            const MAX_WIDTH = 1024;
-                            const MAX_HEIGHT = 1024;
-                            let width = img.width;
-                            let height = img.height;
-
-                            if (width > height) {
-                                if (width > MAX_WIDTH) {
-                                    height *= MAX_WIDTH / width;
-                                    width = MAX_WIDTH;
-                                }
-                            } else {
-                                if (height > MAX_HEIGHT) {
-                                    width *= MAX_HEIGHT / height;
-                                    height = MAX_HEIGHT;
-                                }
-                            }
-                            canvas.width = width;
-                            canvas.height = height;
-                            const ctx = canvas.getContext("2d");
-                            if (!ctx) {
-                                return reject(new Error("Could not get canvas context"));
-                            }
-                            ctx.drawImage(img, 0, 0, width, height);
-                            // Get the data-URL with JPEG format and a quality level of 0.7
-                            const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-                            resolve(dataUrl);
-                        };
-                        img.onerror = reject;
-                    };
-                    reader.onerror = reject;
-                });
-            };
-
             const compressionPromises = files.map(compressImage);
 
             Promise.all(compressionPromises).then(compressedUrls => {
-                setImageDataUrls(prevUrls => [...prevUrls, ...compressedUrls]);
+                setImageData(prevUrls => [...prevUrls, ...compressedUrls]);
             }).catch(error => {
                 console.error("Error compressing images:", error);
                 toast({
@@ -359,30 +352,39 @@ export default function ValuerDashboardPage() {
         }
     };
 
-    useEffect(() => {
-        form.setValue('images', imageDataUrls, { shouldValidate: true });
-    }, [imageDataUrls, form]);
-    
     const removeImage = (index: number) => {
-        const newImageDataUrls = imageDataUrls.filter((_, i) => i !== index);
-        setImageDataUrls(newImageDataUrls);
+        setImageData(prevData => prevData.filter((_, i) => i !== index));
     };
     
     const handleValuationSubmit = async (data: ValuationFormValues) => {
         if (!selectedBooking || !loggedInUser) return;
     
+        if (imageData.length === 0) {
+            toast({ variant: "destructive", title: "Missing Photos", description: "Please upload at least one valuation photo." });
+            return;
+        }
+
         setIsSubmitting(true);
     
         try {
-             const valuationData: Partial<Valuation> = {
+            const imageUrls: string[] = [];
+            for (const dataUrl of imageData) {
+                const uploadRef = await addDoc(collection(db, "uploads"), {
+                    bookingId: selectedBooking.id,
+                    imageData: dataUrl,
+                    createdAt: serverTimestamp(),
+                    type: 'valuationPhoto',
+                });
+                imageUrls.push(uploadRef.id);
+            }
+
+            const valuationData = {
+                ...data,
                 bookingId: selectedBooking.id,
-                assessmentDate: data.assessmentDate,
-                imageUrls: imageDataUrls,
-                comments: data.comments,
+                imageUrls, 
                 valuedBy: loggedInUser.name,
                 valuedAt: serverTimestamp(),
                 status: "Pending Approval",
-                ...data,
              };
 
             await addDoc(collection(db, "valuations"), valuationData);
@@ -399,7 +401,7 @@ export default function ValuerDashboardPage() {
             
             setValuationDialogOpen(false);
             form.reset();
-            setImageDataUrls([]);
+            setImageData([]);
     
         } catch (error) {
             console.error("Error submitting valuation:", error);
@@ -416,7 +418,7 @@ export default function ValuerDashboardPage() {
 
     const openValuationDialog = (booking: Booking) => {
         form.reset();
-        setImageDataUrls([]);
+        setImageData([]);
         setSelectedBooking(booking);
         setValuationDialogOpen(true);
     };
@@ -457,7 +459,6 @@ export default function ValuerDashboardPage() {
             if (orderA !== orderB) {
                 return orderA - orderB;
             }
-            // If statuses are the same, sort by creation date (newest first)
             return b.createdAt.toMillis() - a.createdAt.toMillis();
         });
     }, [bookings, searchTerm]);
@@ -924,33 +925,24 @@ export default function ValuerDashboardPage() {
                                                 <p className="text-xs leading-5 text-gray-600">Images will be compressed automatically</p>
                                             </div>
                                         </div>
-                                         <FormField
-                                            control={form.control}
-                                            name="images"
-                                            render={() => (
-                                                <FormItem>
-                                                    {imageDataUrls.length > 0 && (
-                                                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                                            {imageDataUrls.map((preview, index) => (
-                                                            <div key={index} className="relative group">
-                                                                <Image src={preview} alt={`preview ${index}`} width={150} height={150} className="w-full h-auto object-cover rounded-md" />
-                                                                <Button
-                                                                type="button"
-                                                                variant="destructive"
-                                                                size="icon"
-                                                                className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"
-                                                                onClick={() => removeImage(index)}
-                                                                >
-                                                                <X className="h-4 w-4" />
-                                                                </Button>
-                                                            </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                    <FormMessage/>
-                                                </FormItem>
-                                            )}
-                                        />
+                                         {imageData.length > 0 && (
+                                            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                                {imageData.map((preview, index) => (
+                                                <div key={index} className="relative group">
+                                                    <Image src={preview} alt={`preview ${index}`} width={150} height={150} className="w-full h-auto object-cover rounded-md" />
+                                                    <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    size="icon"
+                                                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"
+                                                    onClick={() => removeImage(index)}
+                                                    >
+                                                    <X className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                     <DialogFooter className="pt-4 !mt-8">
                                         <Button type="button" variant="outline" onClick={() => setValuationDialogOpen(false)}>Cancel</Button>

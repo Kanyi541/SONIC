@@ -114,8 +114,8 @@ interface Booking {
   status: string;
   insurerName?: string;
   assignedValuerName?: string;
-  insuranceLetter?: string;
-  logbookImage?: string;
+  insuranceLetterId?: string; // Changed from insuranceLetter
+  logbookImageId?: string;   // Changed from logbookImage
 }
 
 interface Valuation {
@@ -202,8 +202,6 @@ const bookingSchema = z.object({
   maxValuationDays: z.string().min(1, "Maximum valuation days are required"),
   authorisedBy: z.string().min(1, "Authorising agent is required"),
   comments: z.string().optional(),
-  insuranceLetter: z.string().optional(),
-  logbookImage: z.string().optional(),
 });
 
 type BookingFormValues = z.infer<typeof bookingSchema>;
@@ -257,8 +255,9 @@ export default function ClientDashboardPage() {
   const [staffSearchTerm, setStaffSearchTerm] = useState("");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
 
-  const [insuranceLetterUrl, setInsuranceLetterUrl] = useState<string | null>(null);
-  const [logbookImageUrl, setLogbookImageUrl] = useState<string | null>(null);
+  const [insuranceLetterData, setInsuranceLetterData] = useState<string | null>(null);
+  const [logbookImageData, setLogbookImageData] = useState<string | null>(null);
+
 
   const [itemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -293,8 +292,6 @@ export default function ClientDashboardPage() {
         maxValuationDays: "",
         authorisedBy: "",
         comments: "",
-        insuranceLetter: "",
-        logbookImage: ""
     }
   });
 
@@ -526,88 +523,64 @@ export default function ClientDashboardPage() {
     }
   };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setUrl: (url: string | null) => void) => {
+   const compressImage = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (loadEvent) => {
+                const img = new window.Image();
+                img.src = loadEvent.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    const MAX_WIDTH = 1024;
+                    const MAX_HEIGHT = 1024;
+                    let { width, height } = img;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    if (!ctx) return reject(new Error("Could not get canvas context"));
+                    
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL("image/jpeg", 0.7)); // 70% quality
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setData: (data: string | null) => void) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            const MAX_FILE_SIZE_MB = 1; 
-
             if (!file.type.startsWith('image/')) {
-                toast({
-                    variant: "destructive",
-                    title: "Invalid File Type",
-                    description: "Please select an image file.",
-                });
+                toast({ variant: "destructive", title: "Invalid File Type", description: "Please select an image file." });
                 e.target.value = '';
                 return;
             }
-            
-            const compressImage = (file: File): Promise<string> => {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = (loadEvent) => {
-                        const img = new window.Image();
-                        img.src = loadEvent.target?.result as string;
-                        img.onload = () => {
-                            const canvas = document.createElement("canvas");
-                            const MAX_DIMENSION = 1024;
-                            let { width, height } = img;
-
-                            if (width > height) {
-                                if (width > MAX_DIMENSION) {
-                                    height *= MAX_DIMENSION / width;
-                                    width = MAX_DIMENSION;
-                                }
-                            } else {
-                                if (height > MAX_DIMENSION) {
-                                    width *= MAX_DIMENSION / height;
-                                    height = MAX_DIMENSION;
-                                }
-                            }
-                            canvas.width = width;
-                            canvas.height = height;
-                            const ctx = canvas.getContext("2d");
-                            if (!ctx) return reject(new Error("Could not get canvas context"));
-                            
-                            ctx.drawImage(img, 0, 0, width, height);
-                            
-                            let quality = 0.7;
-                            let dataUrl = canvas.toDataURL("image/jpeg", quality);
-
-                            while (dataUrl.length / 1024 / 1024 > MAX_FILE_SIZE_MB && quality > 0.1) {
-                                quality -= 0.1;
-                                dataUrl = canvas.toDataURL("image/jpeg", quality);
-                            }
-
-                            if (dataUrl.length / 1024 / 1024 > MAX_FILE_SIZE_MB) {
-                                return reject(new Error("Image is too large even after compression."));
-                            }
-                            
-                            resolve(dataUrl);
-                        };
-                        img.onerror = reject;
-                    };
-                    reader.onerror = reject;
-                });
-            };
-
-            compressImage(file).then(compressedUrl => {
-                setUrl(compressedUrl);
+            compressImage(file).then(compressedData => {
+                setData(compressedData);
             }).catch(error => {
                 console.error("Error compressing image:", error);
-                toast({
-                    variant: "destructive",
-                    title: "File Error",
-                    description: error.message || "Could not process the image.",
-                });
-                e.target.value = '';
-                setUrl(null);
+                toast({ variant: "destructive", title: "File Error", description: "Could not process the image." });
+                setData(null);
             });
-
         } else {
-            setUrl(null);
+            setData(null);
         }
     };
+
 
     const handleSaveBooking = async (data: BookingFormValues) => {
         if (!loggedInUser) {
@@ -617,17 +590,45 @@ export default function ClientDashboardPage() {
 
         try {
             const bookingNumber = `BKG-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+            
+            // Create booking document first to get its ID
+            const newBookingRef = doc(collection(db, "bookings"));
+            const bookingId = newBookingRef.id;
 
-            await addDoc(collection(db, "bookings"), {
+            let insuranceLetterId: string | undefined = undefined;
+            if (insuranceLetterData) {
+                const uploadRef = await addDoc(collection(db, "uploads"), {
+                    bookingId,
+                    imageData: insuranceLetterData,
+                    createdAt: serverTimestamp(),
+                    type: 'insuranceLetter',
+                });
+                insuranceLetterId = uploadRef.id;
+            }
+
+            let logbookImageId: string | undefined = undefined;
+            if (logbookImageData) {
+                const uploadRef = await addDoc(collection(db, "uploads"), {
+                    bookingId,
+                    imageData: logbookImageData,
+                    createdAt: serverTimestamp(),
+                    type: 'logbookImage',
+                });
+                logbookImageId = uploadRef.id;
+            }
+
+            await updateDoc(newBookingRef, {
                 ...data,
+                id: bookingId,
                 bookingNumber,
                 createdAt: new Date(),
                 status: "Pending Approval",
                 insurerId: loggedInUser.username,
                 insurerName: loggedInUser.name,
-                insuranceLetter: insuranceLetterUrl,
-                logbookImage: logbookImageUrl,
+                insuranceLetterId: insuranceLetterId,
+                logbookImageId: logbookImageId,
             });
+
 
             toast({
                 title: "Booking Created",
@@ -635,8 +636,8 @@ export default function ClientDashboardPage() {
             });
             setBookingDialogOpen(false);
             resetBookingForm();
-            setInsuranceLetterUrl(null);
-            setLogbookImageUrl(null);
+            setInsuranceLetterData(null);
+            setLogbookImageData(null);
 
         } catch (error) {
             console.error("Error creating booking: ", error);
@@ -866,26 +867,6 @@ export default function ClientDashboardPage() {
                                                     <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right space-x-2">
-                                                    {booking.insuranceLetter && (
-                                                        <Popover>
-                                                            <PopoverTrigger asChild>
-                                                                <Button variant="ghost" size="icon"><FileText className="text-red-500" /></Button>
-                                                            </PopoverTrigger>
-                                                            <PopoverContent className="w-96 h-96">
-                                                                <iframe src={booking.insuranceLetter} className="w-full h-full" />
-                                                            </PopoverContent>
-                                                        </Popover>
-                                                    )}
-                                                    {booking.logbookImage && (
-                                                         <Popover>
-                                                            <PopoverTrigger asChild>
-                                                                <Button variant="ghost" size="icon"><FileIcon className="text-blue-500" /></Button>
-                                                            </PopoverTrigger>
-                                                            <PopoverContent>
-                                                                <img src={booking.logbookImage} alt="Logbook" className="w-full h-auto" />
-                                                            </PopoverContent>
-                                                        </Popover>
-                                                    )}
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
@@ -1201,17 +1182,18 @@ export default function ClientDashboardPage() {
                           />
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormItem>
+                           <FormItem>
                                 <FormLabel>Insurance Letter (Image)</FormLabel>
                                 <FormControl>
                                     <Input
                                         type="file"
                                         accept="image/*"
-                                        onChange={(e) => handleFileChange(e, setInsuranceLetterUrl)}
+                                        onChange={(e) => handleFileChange(e, setInsuranceLetterData)}
                                         className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                                     />
                                 </FormControl>
                                 <FormMessage />
+                                {insuranceLetterData && <p className="text-xs text-green-600 mt-1">Image ready for upload.</p>}
                             </FormItem>
                             <FormItem>
                                 <FormLabel>Logbook Image (Optional)</FormLabel>
@@ -1219,11 +1201,12 @@ export default function ClientDashboardPage() {
                                     <Input
                                         type="file"
                                         accept="image/*"
-                                        onChange={(e) => handleFileChange(e, setLogbookImageUrl)}
+                                        onChange={(e) => handleFileChange(e, setLogbookImageData)}
                                         className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                                     />
                                 </FormControl>
                                 <FormMessage />
+                                {logbookImageData && <p className="text-xs text-green-600 mt-1">Image ready for upload.</p>}
                             </FormItem>
                         </div>
 
