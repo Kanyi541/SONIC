@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown } from 'lucide-react';
 import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc, getDoc } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -346,7 +346,7 @@ function AdminDashboard() {
     const notifQuery = query(collection(db, "bookings"), where("status", "==", "Pending Approval"));
     const notifUnsubscribe = onSnapshot(notifQuery, (snapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Booking }));
-        const sortedData = data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        const sortedData = data.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
         setPendingBookingsForNotif(sortedData.slice(0, 5));
     }, (error) => {
         console.error("Error in notification listener:", error);
@@ -400,7 +400,7 @@ function AdminDashboard() {
     if (requiredBookingViews.includes(activeView) || activeView === 'dashboard') {
         const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Booking[];
-            setBookings(data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
+            setBookings(data.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
             if(activeView === 'dashboard') {
               generateChartData(data);
             }
@@ -1548,7 +1548,7 @@ function AdminDashboard() {
           b.customerName.toLowerCase().includes(searchTerm)
         )
       })
-      .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+      .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
   }, [bookings, allCarsSearchTerm]);
 
   const allBookingsPaginated = allBookings.slice(
@@ -2453,3 +2453,5 @@ export default function AdminDashboardPage() {
 
 
     
+
+  
