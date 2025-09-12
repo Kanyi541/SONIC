@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { Suspense, useEffect, useState } from 'react';
@@ -169,7 +168,6 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
                 <div className="relative z-10 text-center text-white">
                     <h2 className="font-bold text-base">CASA MOTOR VALUERS & ASSESSORS LTD</h2>
-                    <h3 className="font-bold text-sm">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
                 </div>
                 
                 <div className="relative z-10 flex items-center gap-4">
@@ -196,6 +194,8 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                   </AlertDialogContent>
                 </AlertDialog>
                 
+                <h3 className="font-bold text-sm text-center my-2">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
+
                 <section className="mb-1 text-[12px]">
                     <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-0">
                        <span className="font-bold">SERIAL No</span>
