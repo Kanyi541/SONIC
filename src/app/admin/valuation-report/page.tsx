@@ -331,8 +331,8 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
 
                 <section className="my-1">
                     <div className="py-0.5">
-                        <span className="font-bold uppercase text-[10px] text-gray-600">ASSESSED VALUE : </span>
-                        <span className="font-bold text-blue-600 text-[10px]">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
+                        <span className="font-bold uppercase text-xs text-gray-600">ASSESSED VALUE : </span>
+                        <span className="font-bold uppercase text-blue-600 text-xs">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
                     </div>
                 </section>
                 
