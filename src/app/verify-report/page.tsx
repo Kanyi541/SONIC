@@ -3,7 +3,7 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { doc, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, Phone, MapPin, Mail, XCircle } from 'lucide-react';
@@ -67,7 +67,7 @@ interface Booking {
   createdAt: any;
   branch?: string; 
   insurerName?: string;
-  logbookImage?: string;
+  logbookImageId?: string;
   insuranceLetterId?: string;
   status: string;
 }
@@ -163,6 +163,11 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     }
     const assessmentValueInWords = valuation.assessmentValue ? `${numberToWords(valuation.assessmentValue)} Shillings Only` : 'N/A';
     
+    const chunkedImages = [];
+    for (let i = 0; i < valuationImages.length; i += 9) {
+        chunkedImages.push(valuationImages.slice(i, i + 9));
+    }
+
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)] font-sans-trebuchet italic">
              <header className="relative bg-[#1a1a1a] p-1 flex justify-between items-center print-header">
@@ -355,18 +360,20 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 
                 <p className="text-center font-bold text-[10px] mt-1">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
                 
-                <div className="break-before-page">
-                    <div className="my-2 break-inside-avoid">
-                        <h3 className="font-bold text-[12px] underline mb-1">Valuation Photos</h3>
-                        <div className="grid grid-cols-3 gap-2">
-                            {valuationImages.map((url, index) => (
-                                <div key={index} className="border p-1 rounded-md bg-gray-100 break-inside-avoid">
-                                    <Image src={url} alt={`Valuation Photo ${index + 1}`} width={250} height={180} className="object-contain w-full h-auto" />
-                                </div>
-                            ))}
+                {chunkedImages.map((imageChunk, pageIndex) => (
+                    <div key={pageIndex} className="break-before-page">
+                        <div className="my-2 break-inside-avoid">
+                            <h3 className="font-bold text-[12px] underline mb-1">Valuation Photos (Page {pageIndex + 1})</h3>
+                            <div className="grid grid-cols-3 gap-2">
+                                {imageChunk.map((url, index) => (
+                                    <div key={index} className="border p-1 rounded-md bg-gray-100 break-inside-avoid">
+                                        <Image src={url} alt={`Valuation Photo ${index + 1}`} width={250} height={180} className="object-contain w-full h-auto" />
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
+                ))}
 
                 <div className="break-before-page">
                     <div className="my-2 break-inside-avoid">
@@ -457,8 +464,8 @@ class VerificationReportPageContent extends React.Component<{ router: any; searc
         }
         
         let logbookImage: string | undefined;
-        if (bookingData?.logbookImage) { // assuming logbookImage is a direct URL now for simplicity
-            const logbookDoc = await getDoc(doc(db, "uploads", bookingData.logbookImage));
+        if (bookingData?.logbookImageId) {
+            const logbookDoc = await getDoc(doc(db, "uploads", bookingData.logbookImageId));
             if (logbookDoc.exists()) {
                 logbookImage = logbookDoc.data().imageData;
             }
@@ -474,9 +481,15 @@ class VerificationReportPageContent extends React.Component<{ router: any; searc
         
         let valuationImages: string[] = [];
         if (valuationData?.imageUrls && valuationData.imageUrls.length > 0) {
-            const imageDocsQuery = query(collection(db, "uploads"), where("__name__", "in", valuationData.imageUrls));
+            const imageDocsQuery = query(
+                collection(db, "uploads"), 
+                where("__name__", "in", valuationData.imageUrls),
+                orderBy("createdAt", "asc")
+            );
             const imageDocsSnapshot = await getDocs(imageDocsQuery);
-            valuationImages = imageDocsSnapshot.docs.map(d => d.data().imageData);
+            const imageDataMap = new Map(imageDocsSnapshot.docs.map(d => [d.id, d.data().imageData as string]));
+            // Sort based on the original order in imageUrls to maintain upload order
+            valuationImages = valuationData.imageUrls.map(id => imageDataMap.get(id)).filter(Boolean) as string[];
         }
 
          if (bookingData) {
