@@ -23,7 +23,7 @@ interface Valuation {
     forcedValue: string;
     wsValue: string;
     rsValue: string;
-    imageUrls: string[];
+    imageUrls: string[]; // These are now IDs
     valuedBy: string;
     valuedAt: any;
     status?: 'Approved' | 'Rejected' | 'Pending Approval';
@@ -70,13 +70,19 @@ interface Booking {
   createdAt: any;
   branch?: string; 
   insurerName?: string;
-  logbookImage?: string;
+  logbookImageId?: string;
   status: string;
 }
 
+interface PopulatedReportData {
+    valuation: Valuation;
+    booking: Booking;
+    logbookImage?: string;
+    valuationImages: string[];
+}
+
 interface ReportState {
-  valuation: Valuation | null;
-  booking: Booking | null;
+  reportData: PopulatedReportData | null;
   loading: boolean;
   qrCodeUrl: string | null;
   isVerification: boolean;
@@ -151,7 +157,7 @@ const numberToWords = (num: number | string): string => {
 };
 
 
-class ReportToPrint extends React.Component<{valuation: Valuation | null, booking: Booking | null, qrCodeUrl: string | null, isVerification: boolean, onDownloadClick: () => void}> {
+class ReportToPrint extends React.Component<{reportData: PopulatedReportData | null, qrCodeUrl: string | null, isVerification: boolean, onDownloadClick: () => void}> {
   
   state = {
     isVerificationDialogOpen: this.props.isVerification
@@ -173,11 +179,13 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
   }
 
   render() {
-    const { valuation, booking, qrCodeUrl } = this.props;
+    const { reportData, qrCodeUrl } = this.props;
 
-    if (!valuation || !booking) {
+    if (!reportData) {
         return <div className="p-4 text-center text-muted-foreground">No valuation report found for this booking.</div>;
     }
+
+    const { valuation, booking, logbookImage, valuationImages } = reportData;
     const assessmentValueInWords = valuation.assessmentValue ? `${numberToWords(valuation.assessmentValue)} Shillings Only` : 'N/A';
     
     return (
@@ -375,7 +383,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     <div className="my-4 break-inside-avoid">
                         <h3 className="font-bold text-[14px] underline mb-2">Valuation Photos</h3>
                         <div className="grid grid-cols-2 gap-4">
-                            {valuation.imageUrls.map((url, index) => (
+                            {valuationImages.map((url, index) => (
                                 <div key={index} className="border p-1 rounded-md bg-gray-100 break-inside-avoid">
                                     <Image src={url} alt={`Valuation Photo ${index + 1}`} width={400} height={300} className="object-contain w-full h-auto" />
                                 </div>
@@ -385,9 +393,9 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                     
                     <div className="my-4 break-inside-avoid">
                         <h3 className="font-bold text-[14px] underline mb-2">Logbook</h3>
-                        {booking.logbookImage ? (
+                        {logbookImage ? (
                             <div className="border p-1 rounded-md max-w-md bg-gray-100">
-                                <Image src={booking.logbookImage} alt="Logbook" width={500} height={400} className="object-contain w-full h-auto" />
+                                <Image src={logbookImage} alt="Logbook" width={500} height={400} className="object-contain w-full h-auto" />
                             </div>
                         ) : (
                             <p className="text-gray-500 italic">No logbook provided.</p>
@@ -419,8 +427,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
 
 class ValuationReportPageContent extends React.Component<{ router: any; searchParams: any }, ReportState> {
   state: ReportState = {
-    valuation: null,
-    booking: null,
+    reportData: null,
     loading: true,
     qrCodeUrl: null,
     isVerification: false,
@@ -440,29 +447,54 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
   fetchReports = async (bookingId: string) => {
     this.setState({ loading: true });
     try {
-        const q = query(collection(db, "valuations"), where("bookingId", "==", bookingId));
-        const valuationSnapshot = await getDocs(q);
-        let valuationData: Valuation | null = null;
-        if (!valuationSnapshot.empty) {
-            const valuationDoc = valuationSnapshot.docs[0];
-            valuationData = { id: valuationDoc.id, ...valuationDoc.data() } as Valuation;
-        }
-
-        const bookingDocRef = doc(db, 'bookings', bookingId as string);
+        // Fetch Booking
+        const bookingDocRef = doc(db, 'bookings', bookingId);
         const bookingSnap = await getDoc(bookingDocRef);
-        let bookingData: Booking | null = null;
-        if (bookingSnap.exists()) {
-             bookingData = { id: bookingSnap.id, ...bookingSnap.data() } as Booking;
+        if (!bookingSnap.exists()) {
+            throw new Error("Booking not found");
         }
+        const bookingData = { id: bookingSnap.id, ...bookingSnap.data() } as Booking;
+        
+        // Fetch Valuation
+        const valQuery = query(collection(db, "valuations"), where("bookingId", "==", bookingId));
+        const valuationSnapshot = await getDocs(valQuery);
+        if (valuationSnapshot.empty) {
+            throw new Error("Valuation not found");
+        }
+        const valuationData = { id: valuationSnapshot.docs[0].id, ...valuationSnapshot.docs[0].data() } as Valuation;
 
-         if (bookingData) {
-            const printDate = new Date().toLocaleDateString('en-CA');
-            document.title = `${bookingData.bookingNumber} - ${bookingData.customerName} - ${printDate}`;
-            const reportUrl = `${window.location.origin}/verify-report?id=${bookingId}&verify=true`;
-            const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1 });
-            this.setState({ booking: bookingData, valuation: valuationData, qrCodeUrl: qrUrl });
+        // Fetch Logbook Image
+        let logbookImage: string | undefined;
+        if (bookingData.logbookImageId) {
+            const logbookDoc = await getDoc(doc(db, "uploads", bookingData.logbookImageId));
+            if (logbookDoc.exists()) {
+                logbookImage = logbookDoc.data().imageData;
+            }
         }
         
+        // Fetch Valuation Images
+        let valuationImages: string[] = [];
+        if (valuationData.imageUrls && valuationData.imageUrls.length > 0) {
+            const imageDocsQuery = query(collection(db, "uploads"), where("__name__", "in", valuationData.imageUrls));
+            const imageDocsSnapshot = await getDocs(imageDocsQuery);
+            valuationImages = imageDocsSnapshot.docs.map(d => d.data().imageData);
+        }
+        
+        this.setState({ 
+            reportData: { 
+                booking: bookingData, 
+                valuation: valuationData,
+                logbookImage,
+                valuationImages,
+            }
+        });
+        
+        const printDate = new Date().toLocaleDateString('en-CA');
+        document.title = `${bookingData.bookingNumber} - ${bookingData.customerName} - ${printDate}`;
+        const reportUrl = `${window.location.origin}/verify-report?id=${bookingId}&verify=true`;
+        const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1 });
+        this.setState({ qrCodeUrl: qrUrl });
+
     } catch (error) {
         console.error("Error fetching reports:", error);
     } finally {
@@ -502,8 +534,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
               </div>
           )}
           <ReportToPrint 
-            valuation={this.state.valuation} 
-            booking={this.state.booking} 
+            reportData={this.state.reportData} 
             qrCodeUrl={this.state.qrCodeUrl}
             isVerification={this.state.isVerification}
             onDownloadClick={this.handleDownload}
@@ -535,12 +566,3 @@ export default function ValuationReportPage() {
 }
 
     
-
-    
-
-    
-
-
-
-
-

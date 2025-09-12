@@ -128,7 +128,7 @@ interface Booking {
   assignedValuerId?: string;
   assignedValuerName?: string;
   assignmentDate?: any;
-  logbookImage?: string;
+  logbookImageId?: string;
 }
 
 interface Valuation {
@@ -169,6 +169,11 @@ interface Valuation {
     tyresCondition?: string;
     extras?: string;
     comments?: string;
+}
+
+interface PopulatedValuation extends Valuation {
+    logbookImage?: string;
+    valuationImages: string[];
 }
 
 type ChartDataPoint = {
@@ -255,7 +260,7 @@ function AdminDashboard() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
   const [selectedStaffForPromotion, setSelectedStaffForPromotion] = useState<Staff | null>(null);
-  const [selectedValuationForAction, setSelectedValuationForAction] = useState<Valuation | null>(null);
+  const [selectedValuationForAction, setSelectedValuationForAction] = useState<PopulatedValuation | null>(null);
   const [loadingValuationDetails, setLoadingValuationDetails] = useState(false);
   const [selectedValuerId, setSelectedValuerId] = useState<string>("");
   const [currentUserRole, setCurrentUserRole] = useState<'Super Admin' | 'Admin' | null>(null);
@@ -718,25 +723,49 @@ function AdminDashboard() {
   }
   
   const openCompleteValuationDialog = async (booking: Booking) => {
-    setSelectedBookingForAction(booking);
-    setCompleteValuationOpen(true);
-    setLoadingValuationDetails(true);
-    try {
-        const q = query(collection(db, "valuations"), where("bookingId", "==", booking.id), limit(1));
-        const valuationSnapshot = await getDocs(q);
-        if (!valuationSnapshot.empty) {
-            const valuationDoc = valuationSnapshot.docs[0];
-            setSelectedValuationForAction({ id: valuationDoc.id, ...valuationDoc.data() } as Valuation);
-        } else {
-            toast({ variant: "destructive", title: "Error", description: "Could not find the valuation report for this booking." });
-            setSelectedValuationForAction(null);
-        }
-    } catch (error) {
-        console.error("Error fetching valuation details:", error);
-        toast({ variant: "destructive", title: "Error", description: "Failed to fetch valuation details." });
-    } finally {
-        setLoadingValuationDetails(false);
-    }
+      setSelectedBookingForAction(booking);
+      setCompleteValuationOpen(true);
+      setLoadingValuationDetails(true);
+      try {
+          const q = query(collection(db, "valuations"), where("bookingId", "==", booking.id), limit(1));
+          const valuationSnapshot = await getDocs(q);
+
+          if (valuationSnapshot.empty) {
+              toast({ variant: "destructive", title: "Error", description: "Could not find the valuation report." });
+              setSelectedValuationForAction(null);
+              return;
+          }
+
+          const valuationDoc = valuationSnapshot.docs[0];
+          const valuationData = { id: valuationDoc.id, ...valuationDoc.data() } as Valuation;
+
+          let logbookImage: string | undefined = undefined;
+          if (booking.logbookImageId) {
+              const logbookDoc = await getDoc(doc(db, "uploads", booking.logbookImageId));
+              if (logbookDoc.exists()) {
+                  logbookImage = logbookDoc.data().imageData;
+              }
+          }
+          
+          let valuationImages: string[] = [];
+          if (valuationData.imageUrls && valuationData.imageUrls.length > 0) {
+              const imageDocsQuery = query(collection(db, "uploads"), where("__name__", "in", valuationData.imageUrls));
+              const imageDocsSnapshot = await getDocs(imageDocsQuery);
+              valuationImages = imageDocsSnapshot.docs.map(d => d.data().imageData);
+          }
+          
+          setSelectedValuationForAction({
+              ...valuationData,
+              logbookImage,
+              valuationImages,
+          });
+
+      } catch (error) {
+          console.error("Error fetching valuation details:", error);
+          toast({ variant: "destructive", title: "Error", description: "Failed to fetch valuation details." });
+      } finally {
+          setLoadingValuationDetails(false);
+      }
   };
 
   const openPromoteAdminDialog = (staff: Staff) => {
@@ -2235,7 +2264,7 @@ function AdminDashboard() {
                                         <h4 className="font-medium text-lg">Valuation Photos</h4>
                                         <Carousel className="w-full">
                                             <CarouselContent>
-                                                {Array.isArray(selectedValuationForAction.imageUrls) && selectedValuationForAction.imageUrls.map((url, index) => (
+                                                {Array.isArray(selectedValuationForAction.valuationImages) && selectedValuationForAction.valuationImages.map((url, index) => (
                                                     <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
                                                         <div className="p-1">
                                                             <Card>
@@ -2262,11 +2291,11 @@ function AdminDashboard() {
                                     </Button>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent className="py-4">
-                                    {selectedBookingForAction.logbookImage ? (
+                                    {selectedValuationForAction.logbookImage ? (
                                         <Card>
                                             <CardHeader><CardTitle>Logbook Image</CardTitle></CardHeader>
                                             <CardContent>
-                                                <Image src={selectedBookingForAction.logbookImage} alt="Logbook" width={800} height={600} className="rounded-md object-contain" />
+                                                <Image src={selectedValuationForAction.logbookImage} alt="Logbook" width={800} height={600} className="rounded-md object-contain" />
                                             </CardContent>
                                         </Card>
                                     ) : (
@@ -2419,5 +2448,8 @@ export default function AdminDashboardPage() {
     
 
     
+
+    
+
 
     
