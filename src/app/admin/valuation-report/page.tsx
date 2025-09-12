@@ -364,6 +364,20 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                     <DetailItem label="LOCATION OF INSPECTION" value={booking.branch} />
                 </section>
                 
+                <section className="mt-8 grid grid-cols-2 gap-x-8 text-[12px]">
+                    <div>
+                        <span className="font-bold uppercase">Signed</span>
+                        <div className="relative h-12 w-48 mt-2">
+                             <Image src="/signature.png" alt="Signature" layout="fill" objectFit="contain" />
+                        </div>
+                    </div>
+                    <div>
+                        <span className="font-bold uppercase mr-2">Date</span>
+                        <span className="text-blue-600">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'NA'}</span>
+                    </div>
+                </section>
+                <p className="text-center font-bold text-[12px] mt-4">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
+
                 <div className="break-before-page">
                     <div className="my-4 break-inside-avoid">
                         <h3 className="font-bold text-[14px] underline mb-2">Valuation Photos</h3>
@@ -386,19 +400,6 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                             <p className="text-gray-500 italic">No logbook provided.</p>
                         )}
                     </div>
-                    <section className="mt-8 grid grid-cols-2 gap-x-8 text-[12px]">
-                        <div>
-                            <span className="font-bold uppercase">Signed</span>
-                            <div className="relative h-12 w-48 mt-2">
-                                 <Image src="/signature.png" alt="Signature" layout="fill" objectFit="contain" />
-                            </div>
-                        </div>
-                        <div>
-                            <span className="font-bold uppercase mr-2">Date</span>
-                            <span className="text-blue-600">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'NA'}</span>
-                        </div>
-                    </section>
-                    <p className="text-center font-bold text-[12px] mt-4">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
                 </div>
             </div>
             </main>
