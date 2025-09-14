@@ -635,6 +635,13 @@ export default function ClientDashboardPage() {
             });
         }
     };
+    
+  const handleOpenReportInNewTab = (reportType: 'booking' | 'valuation', bookingId: string) => {
+    const url = reportType === 'booking' 
+      ? `/client/booking-report?id=${bookingId}`
+      : `/admin/valuation-report?id=${bookingId}`;
+    window.open(url, '_blank');
+  };
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
@@ -834,14 +841,34 @@ export default function ClientDashboardPage() {
                                                 </TableCell>
                                                 <TableCell className="font-mono">{booking.valuation?.assessmentValue || 'N/A'}</TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
-                                                    >
-                                                        <Printer className="mr-2 h-4 w-4" />
-                                                        <span className="hidden sm:inline">View Report</span>
-                                                    </Button>
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button variant="outline" size="sm">
+                                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                                Reports
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-56 p-2">
+                                                            <div className="grid gap-2">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    className="justify-start"
+                                                                    onClick={() => handleOpenReportInNewTab('booking', booking.id)}
+                                                                >
+                                                                    Booking Report
+                                                                </Button>
+                                                                {booking.status === 'Completed' && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        className="justify-start"
+                                                                        onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
+                                                                    >
+                                                                        Valuation Report
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </PopoverContent>
+                                                    </Popover>
                                                 </TableCell>
                                             </>
                                         ) : (
@@ -849,19 +876,39 @@ export default function ClientDashboardPage() {
                                                 <TableCell className="font-mono text-xs truncate">{booking.bookingNumber}</TableCell>
                                                 <TableCell className="font-medium hidden sm:table-cell">{booking.customerName}</TableCell>
                                                 <TableCell className="hidden md:table-cell">{booking.plateNumber}</TableCell>
-                                                <TableCell className="hidden sm:table-cell">{new Date(booking.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                                                <TableCell className="hidden sm:table-cell">{booking.createdAt ? new Date(booking.createdAt.toDate()).toLocaleDateString() : 'N/A'}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right space-x-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => router.push(`/client/booking-report?id=${booking.id}`)}
-                                                    >
-                                                        <Printer className="mr-2 h-4 w-4" />
-                                                        <span className="hidden sm:inline">View Report</span>
-                                                    </Button>
+                                                     <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button variant="outline" size="sm">
+                                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                                Reports
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-56 p-2">
+                                                            <div className="grid gap-2">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    className="justify-start"
+                                                                    onClick={() => handleOpenReportInNewTab('booking', booking.id)}
+                                                                >
+                                                                    Booking Report
+                                                                </Button>
+                                                                {booking.status === 'Completed' && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        className="justify-start"
+                                                                        onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
+                                                                    >
+                                                                        Valuation Report
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </PopoverContent>
+                                                    </Popover>
                                                 </TableCell>
                                             </>
                                         )}
@@ -1754,6 +1801,8 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    
 
     
 

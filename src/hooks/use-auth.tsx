@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, type ReactNode } from 'react';
@@ -21,17 +22,31 @@ export function useAuth() {
     return { user, loading };
 }
 
-export function AuthGuard({ children }: { children: ReactNode }) {
+export function AuthGuard({ children, allowClients = false }: { children: ReactNode, allowClients?: boolean }) {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const [isClientAuthed, setClientAuthed] = useState(false);
 
     useEffect(() => {
-        if (!loading && !user) {
-            router.push('/');
-        }
-    }, [user, loading, router]);
+        if (loading) return;
 
-    if (loading || !user) {
+        let clientSession = null;
+        if (typeof window !== 'undefined') {
+            clientSession = sessionStorage.getItem('loggedInUser');
+        }
+
+        const isFirebaseUser = !!user;
+        const isClientSessionUser = allowClients && !!clientSession;
+        
+        if (!isFirebaseUser && !isClientSessionUser) {
+            router.push('/');
+        } else {
+            setClientAuthed(true);
+        }
+
+    }, [user, loading, router, allowClients]);
+
+    if (loading || !isClientAuthed) {
         return (
             <div className="flex h-screen items-center justify-center">
                 <p>Loading...</p>
@@ -41,3 +56,5 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
     return <>{children}</>;
 }
+
+    

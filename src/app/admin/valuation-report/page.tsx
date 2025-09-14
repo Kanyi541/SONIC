@@ -73,6 +73,7 @@ interface Booking {
   logbookImageId?: string;
   insuranceLetterId?: string;
   status: string;
+  rejectionReason?: string;
 }
 
 interface PopulatedReportData {
@@ -613,9 +614,11 @@ export default function ValuationReportPage() {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
     }>
-        <AuthGuard>
+        <AuthGuard allowClients={true}>
             <ValuationReportWrapper />
         </AuthGuard>
     </Suspense>
   );
 }
+
+    
