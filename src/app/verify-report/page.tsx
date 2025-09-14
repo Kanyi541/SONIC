@@ -170,7 +170,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
     }
 
     return (
-        <div className="bg-white shadow-2xl rounded-lg flex flex-col min-h-[calc(100vh-4rem)] font-sans-trebuchet italic">
+        <div className="bg-white shadow-2xl rounded-lg flex flex-col font-sans-trebuchet italic">
              <header className="relative bg-[#1a1a1a] p-1 flex justify-between items-center print-header">
                 <div className="relative z-10 w-28">
                     <Image src="/logo.png" alt="CASA Motor Valuers And Assessors Ltd" width={112} height={40} />
@@ -600,3 +600,5 @@ export default function VerifyReportPage() {
     </Suspense>
   );
 }
+
+    
