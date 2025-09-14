@@ -34,6 +34,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { carData } from '@/lib/car-data';
 
 
 interface LoggedInUser {
@@ -76,6 +77,7 @@ interface Valuation {
     
     // New Fields
     insurer: string;
+    carType?: string;
     policyExpiryDate?: any;
     chassisNo?: string;
     colour?: string;
@@ -115,6 +117,7 @@ const valuationSchema = z.object({
   purpose: z.string().min(1, "Purpose of valuation is required."),
   comments: z.string().optional(),
   insurer: z.string().min(1, "Insurer is required."),
+  carType: z.string().optional(),
   policyExpiryDate: z.date().optional(),
   chassisNo: z.string().optional(),
   colour: z.string().optional(),
@@ -202,6 +205,7 @@ export default function ValuerDashboardPage() {
         defaultValues: {
             insurer: "",
             purpose: "",
+            carType: "",
             policyExpiryDate: undefined,
             chassisNo: "",
             colour: "",
@@ -225,6 +229,15 @@ export default function ValuerDashboardPage() {
             comments: "",
         }
     });
+
+    const carTypes = useMemo(() => {
+        if (selectedBooking) {
+            const make = carData.find(m => m.brand === selectedBooking.carMake);
+            const model = make?.models.find(m => m.name === selectedBooking.carModel);
+            return model?.types || [];
+        }
+        return [];
+    }, [selectedBooking]);
     
     useEffect(() => {
         const storedUserString = sessionStorage.getItem('loggedInUser');
@@ -923,6 +936,30 @@ export default function ValuerDashboardPage() {
                                                     </FormItem>
                                                 )}
                                             />
+                                            <FormField
+                                                control={form.control}
+                                                name="carType"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                    <FormLabel>Car Type</FormLabel>
+                                                        <Select onValueChange={field.onChange} value={field.value} disabled={carTypes.length === 0}>
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Select a car type" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                {carTypes.map((type) => (
+                                                                    <SelectItem key={type} value={type}>
+                                                                        {type}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
                                             <FormField control={form.control} name="policyExpiryDate" render={({ field }) => (
                                                 <FormItem className="flex flex-col"><FormLabel>Policy Expiry Date</FormLabel><Popover><PopoverTrigger asChild><FormControl>
                                                     <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button>
@@ -1117,5 +1154,7 @@ export default function ValuerDashboardPage() {
         </UnifiedDashboardLayout>
     );
 }
+
+    
 
     
