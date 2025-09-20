@@ -759,7 +759,7 @@ export default function ValuerDashboardPage() {
 
     return (
         <UnifiedDashboardLayout
-            title="CASA Motor Valuers & Assessors Ltd"
+            title="CASA Motor Assessors Ltd"
             userRole={loggedInUser?.name || "Valuer"}
             userEmail={loggedInUser?.email || ""}
             menuItems={[
@@ -768,7 +768,7 @@ export default function ValuerDashboardPage() {
             footerContent={(
                  <>
                     <p className="text-sm text-muted-foreground">
-                        &copy; {new Date().getFullYear()} CASA Motor Valuers & Assessors Ltd. All rights reserved.
+                        &copy; {new Date().getFullYear()} CASA Motor Assessors Ltd. All rights reserved.
                     </p>
                     <p className="text-sm text-muted-foreground">
                         Designed by <a href="https://elvisdev.netlify.app/" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4">Tekivo Technologies</a>
@@ -1152,9 +1152,4 @@ export default function ValuerDashboardPage() {
                 </>
             )}
         </UnifiedDashboardLayout>
-    );
-}
-
-    
-
     

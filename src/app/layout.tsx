@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'CASA DASH - Motor Vehicle Valuers & Assessors in Kenya',
+  title: 'CASA DASH - Motor Vehicle Assessors in Kenya',
   description: 'Professional motor vehicle valuation and assessment services in Kenya. Trusted by insurance companies, banks, and financial institutions for car valuation, accident damage assessment, and more.',
   keywords: [
     'Motor valuers in Kenya',

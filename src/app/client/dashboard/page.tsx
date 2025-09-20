@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -582,12 +581,11 @@ export default function ClientDashboardPage() {
             const bookingNumber = `CASA/${year}/${randomNumber}`;
             
             const newBookingRef = doc(collection(db, "bookings"));
-            const bookingId = newBookingRef.id;
 
             let insuranceLetterId: string | undefined = undefined;
             if (insuranceLetterData) {
                 const uploadRef = await addDoc(collection(db, "uploads"), {
-                    bookingId,
+                    bookingId: newBookingRef.id,
                     imageData: insuranceLetterData,
                     createdAt: serverTimestamp(),
                     type: 'insuranceLetter',
@@ -598,7 +596,7 @@ export default function ClientDashboardPage() {
             let logbookImageId: string | undefined = undefined;
             if (logbookImageData) {
                 const uploadRef = await addDoc(collection(db, "uploads"), {
-                    bookingId,
+                    bookingId: newBookingRef.id,
                     imageData: logbookImageData,
                     createdAt: serverTimestamp(),
                     type: 'logbookImage',
@@ -613,8 +611,8 @@ export default function ClientDashboardPage() {
                 status: "Pending Approval",
                 insurerId: loggedInUser.username,
                 insurerName: loggedInUser.name,
-                insuranceLetterId: insuranceLetterId,
-                logbookImageId: logbookImageId,
+                insuranceLetterId,
+                logbookImageId,
             });
 
             toast({
@@ -972,7 +970,7 @@ export default function ClientDashboardPage() {
 
   return (
     <UnifiedDashboardLayout
-      title="CASA Motor Valuers & Assessors Ltd"
+      title="CASA Motor Assessors Ltd"
       userRole={userDisplayRole}
       userEmail={loggedInUser?.email || ""}
       menuItems={filteredMenuItems}
@@ -980,7 +978,7 @@ export default function ClientDashboardPage() {
       footerContent={(
         <>
             <p className="text-sm text-muted-foreground">
-                &copy; {new Date().getFullYear()} CASA Motor Valuers & Assessors Ltd. All rights reserved.
+                &copy; {new Date().getFullYear()} CASA Motor Assessors Ltd. All rights reserved.
             </p>
             <p className="text-sm text-muted-foreground">
                 Designed by <a href="https://elvisdev.netlify.app/" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4">Tekivo Technologies</a>
@@ -1189,7 +1187,7 @@ export default function ClientDashboardPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                            <FormItem>
-                                <FormLabel>Insurance Letter (Image)</FormLabel>
+                                <FormLabel>Insurance Letter (Optional)</FormLabel>
                                 <FormControl>
                                     <Input
                                         type="file"
@@ -1801,9 +1799,3 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
-
-    
-
-    
-
-    

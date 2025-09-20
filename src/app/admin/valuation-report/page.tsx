@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { Suspense, useEffect, useState } from 'react';
@@ -200,11 +199,11 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
         <div className="bg-white shadow-2xl rounded-lg flex flex-col font-sans-trebuchet italic">
              <header className="relative bg-[#1a1a1a] p-1 flex justify-between items-center print-header">
                 <div className="relative z-10 w-28">
-                    <Image src="/logo.png" alt="CASA Motor Valuers And Assessors Ltd" width={112} height={40} />
+                    <Image src="/logo.png" alt="CASA Motor Assessors Ltd" width={112} height={40} />
                 </div>
 
                 <div className="relative z-10 text-center text-white">
-                    <h2 className="font-bold text-lg">CASA MOTOR VALUERS & ASSESSORS LTD</h2>
+                    <h2 className="font-bold text-lg">CASA MOTOR ASSESSORS LTD</h2>
                 </div>
                 
                 <div className="relative z-10 flex items-center gap-4">
@@ -253,7 +252,7 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                 <section className="mb-1 text-sm">
                     <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-0">
                        <span className="font-bold">ISSUED BY</span>
-                       <span className="font-medium text-blue-600">Casa Motor Valuers And Assessors</span>
+                       <span className="font-medium text-blue-600">CASA Motor Assessors</span>
                        
                        <span className="font-bold">CLIENT NAME</span>
                        <span className="font-medium text-blue-600">{booking.customerName}</span>
@@ -400,7 +399,7 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                         <span className="text-blue-600">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</span>
                     </div>
                 </section>
-                <p className="text-center font-bold text-sm mt-1">For and on Behalf of CASA Motor Valuers & Assessors Ltd</p>
+                <p className="text-center font-bold text-sm mt-1">For and on Behalf of CASA Motor Assessors Ltd</p>
 
                 {chunkedImages.map((imageChunk, pageIndex) => (
                     <div key={pageIndex} className="break-before-page">
@@ -620,7 +619,3 @@ export default function ValuationReportPage() {
     </Suspense>
   );
 }
-
-    
-
-    

@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef, useMemo } from 'react';
@@ -1228,7 +1227,7 @@ function AdminDashboard() {
                     <TableCell className="text-right space-x-2">
                         <Button variant="outline" size="sm" onClick={() => openAssignDialog(booking)}>
                             <FileSearch className="mr-2 h-4 w-4" />
-                            Assign & Approve
+                            Assign &amp; Approve
                         </Button>
                     </TableCell>
                     </TableRow>
@@ -1608,7 +1607,7 @@ function AdminDashboard() {
             <div className="container flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
                     <SidebarTrigger className="text-white hover:text-white/80" />
-                    <h1 className="text-xl font-headline font-bold text-white">CASA Motor Valuers & Assessors Ltd</h1>
+                    <h1 className="text-xl font-headline font-bold text-white">CASA Motor Assessors Ltd</h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <Popover>
@@ -1670,7 +1669,7 @@ function AdminDashboard() {
               <div className="grid gap-8">
                 <div>
                     <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, Admin!</h1>
-                    <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Valuers & Assessors.</p>
+                    <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Assessors Ltd.</p>
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <StatCard 
@@ -1849,546 +1848,499 @@ function AdminDashboard() {
                 </Card>
               </div>
             )}
-            {activeView === 'institutions' && renderUserTable(institutions, "Manage Institutions", "View and manage all registered institutions.", () => setAddInstitutionOpen(true), "institution", institutionsPage, setInstitutionsPage)}
-            {activeView === 'valuers' && renderUserTable(valuers, "Manage Valuers", "View and manage all registered valuers.", () => setAddValuerOpen(true), "valuer", valuersPage, setValuersPage)}
-            {activeView === 'staff' && renderUserTable(adminStaff, "Manage Staff", "View and manage all registered staff members.", () => setAddStaffOpen(true), "staff", staffPage, setStaffPage)}
-            {activeView === 'branches' && (
-                <Card className="shadow-lg border-primary/20">
-                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div>
-                        <CardTitle className="font-headline text-3xl text-primary">Our Branches</CardTitle>
-                        <CardDescription>View and manage all company branches.</CardDescription>
-                        </div>
-                        <Button onClick={() => setAddBranchOpen(true)}>
-                            <PlusCircle className="mr-2" />
-                            Add Branch
-                        </Button>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                        <TableHeader>
-                            <TableRow className="bg-muted/50">
-                            <TableHead className="font-semibold w-[50px]">No.</TableHead>
-                            <TableHead className="font-semibold text-left">Branch Name</TableHead>
-                            <TableHead className="font-semibold text-left">Branch Manager</TableHead>
-                            <TableHead className="font-semibold text-left">Location</TableHead>
-                            <TableHead className="text-right font-semibold">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {branches.map((branch, index) => (
-                            <TableRow key={branch.id}>
-                                <TableCell>{index + 1}</TableCell>
-                                <TableCell className="font-medium">{branch.name}</TableCell>
-                                <TableCell>{branch.manager}</TableCell>
-                                <TableCell>{branch.location}</TableCell>
-                                <TableCell className="text-right">
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="outline" size="icon" className="bg-black text-primary hover:bg-black/90 hover:text-primary/90">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This action cannot be undone. This will permanently delete the branch {branch.name}.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeleteBranch(branch.id, branch.name)}>
-                                                    Continue
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </TableCell>
-                            </TableRow>
-                            ))}
-                        </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            )}
-            
-            {renderUserDialog(isAddInstitutionOpen, setAddInstitutionOpen, 'institution')}
-            {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
-            {renderUserDialog(isAddStaffOpen, setAddStaffOpen, 'staff')}
-            
-            <Dialog open={isAddBranchOpen} onOpenChange={setAddBranchOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                    <DialogTitle>Add New Branch</DialogTitle>
-                    <DialogDescription>
-                        Fill in the details below to create a new branch.
-                    </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleAddBranch} className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="branchName" className="text-right">Name</Label>
-                        <Input id="branchName" name="branchName" className="col-span-3" required />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="branchManager" className="text-right">Manager</Label>
-                        <Input id="branchManager" name="branchManager" className="col-span-3" required />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="branchLocation" className="text-right">Location</Label>
-                        <Input id="branchLocation" name="branchLocation" className="col-span-3" required />
-                    </div>
-                    <DialogFooter>
-                        <Button type="submit">Create Branch</Button>
-                    </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
-            {activeView === 'valuations' && renderValuationsTable(valuations.filter(v => v.status === 'Approved'), "Approved Valuations", "View and manage all approved valuation reports.", valuationsPage, setValuationsPage)}
-            
-            {activeView === 'all-cars' && (
+              {activeView === 'institutions' && renderUserTable(
+                institutions,
+                "Client Institutions",
+                "Manage all client institutions.",
+                () => setAddInstitutionOpen(true),
+                "institution",
+                institutionsPage,
+                setInstitutionsPage
+              )}
+              {activeView === 'valuers' && renderUserTable(
+                valuers,
+                "Valuers",
+                "Manage all valuers.",
+                () => setAddValuerOpen(true),
+                "valuer",
+                valuersPage,
+                setValuersPage
+              )}
+              {activeView === 'staff' && renderUserTable(
+                adminStaff,
+                "Our Staff",
+                "Manage all staff members.",
+                () => setAddStaffOpen(true),
+                "staff",
+                staffPage,
+                setStaffPage
+              )}
+               {activeView === 'new-bookings' && renderNewBookingsTable(
+                  bookings.filter(booking => booking.status === 'Pending Approval'),
+                  "New Bookings",
+                  "Approve and assign new booking requests.",
+                  newBookingsPage,
+                  setNewBookingsPage
+               )}
+               {activeView === 'pending-valuation' && renderPendingValuationTable(
+                  bookings.filter(booking => booking.status === 'Pending Valuation'),
+                  "Pending Valuation",
+                  "Monitor bookings pending valuation.",
+                  pendingValuationPage,
+                  setPendingValuationPage
+               )}
+                {activeView === 'valuated-bookings' && renderValuatedTable(
+                  bookings.filter(booking => booking.status === 'Valuated'),
+                  "For Valuation",
+                  "Complete the assessment for valuated bookings.",
+                  valuatedBookingsPage,
+                  setValuatedBookingsPage
+               )}
+               {activeView === 'rejected-bookings' && renderRejectedBookingsTable(
+                  bookings.filter(booking => booking.status === 'Rejected'),
+                  "Rejected Bookings",
+                  "View rejected bookings and their reasons.",
+                  rejectedBookingsPage,
+                  setRejectedBookingsPage
+               )}
+               {activeView === 'all-cars' && (
                 <Card>
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <CardTitle>All Bookings</CardTitle>
-                                <CardDescription>A complete list of every booking in the system.</CardDescription>
-                            </div>
-                            <div className="relative w-full max-w-sm">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="search"
-                                    placeholder="Search by plate, booking ID, customer..."
-                                    className="w-full rounded-lg bg-background pl-8"
-                                    value={allCarsSearchTerm}
-                                    onChange={(e) => setAllCarsSearchTerm(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>No.</TableHead>
-                                    <TableHead>Plate Number</TableHead>
-                                    <TableHead>Booking ID</TableHead>
-                                    <TableHead>Make and Model</TableHead>
-                                    <TableHead>Customer</TableHead>
-                                    <TableHead>Institution</TableHead>
-                                    <TableHead>Valuer</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    Array.from({ length: itemsPerPage }).map((_, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                                        <TableCell className="text-right"><Skeleton className="h-9 w-24" /></TableCell>
-                                    </TableRow>
-                                    ))
-                                ) : allBookingsPaginated.length > 0 ? (
-                                    allBookingsPaginated.map((booking, index) => (
-                                        <TableRow key={booking.id}>
-                                            <TableCell>{(allCarsPage - 1) * itemsPerPage + index + 1}</TableCell>
-                                            <TableCell>{booking.plateNumber}</TableCell>
-                                            <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
-                                            <TableCell>{`${booking.carMake} ${booking.carModel}`}</TableCell>
-                                            <TableCell>{booking.customerName}</TableCell>
-                                            <TableCell>{booking.insurerName}</TableCell>
-                                            <TableCell>{booking.assignedValuerName || 'N/A'}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button variant="outline" size="sm">
-                                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                                            Reports
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-56 p-2">
-                                                        <div className="grid gap-2">
-                                                            <Button
-                                                                variant="ghost"
-                                                                className="justify-start"
-                                                                onClick={() => handleOpenReportInNewTab('booking', booking.id)}
-                                                            >
-                                                                Booking Report
-                                                            </Button>
-                                                            {booking.status === 'Completed' && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    className="justify-start"
-                                                                    onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
-                                                                >
-                                                                    Valuation Report
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={9} className="h-24 text-center">
-                                            No bookings found.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                         <div className="flex justify-end items-center gap-2 mt-4">
-                            <Button variant="outline" size="sm" onClick={() => setAllCarsPage(allCarsPage - 1)} disabled={allCarsPage === 1}>
-                                <ChevronLeft className="h-4 w-4" />
-                                Previous
-                            </Button>
-                            <span className="text-sm">Page {allCarsPage} of {totalAllBookingsPages}</span>
-                            <Button variant="outline" size="sm" onClick={() => setAllCarsPage(allCarsPage + 1)} disabled={allCarsPage === totalAllBookingsPages}>
-                                Next
-                                <ChevronRight className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-            
-            {activeView === 'new-bookings' && renderNewBookingsTable(bookings.filter(b => b.status === 'Pending Approval'), "New Bookings", "Review and approve or reject new bookings.", newBookingsPage, setNewBookingsPage)}
-
-            {activeView === 'pending-valuation' && renderPendingValuationTable(bookings.filter(b => b.status === 'Pending Valuation'), "Pending Valuations", "Bookings assigned to a valuer and awaiting their report.", pendingValuationPage, setPendingValuationPage)}
-            
-            {activeView === 'valuated-bookings' && renderValuatedTable(bookings.filter(b => b.status === 'Valuated'), "Valuated Bookings", "Bookings that have been valuated and are awaiting final approval.", valuatedBookingsPage, setValuatedBookingsPage)}
-
-            {activeView === 'rejected-bookings' && renderRejectedBookingsTable(bookings.filter(b => b.status === 'Rejected'), "Rejected Bookings", "View all rejected bookings.", rejectedBookingsPage, setRejectedBookingsPage)}
-
-            {activeView === 'settings' && (
-                <div className="grid gap-6">
-                <Card>
-                    <CardHeader>
-                    <CardTitle>Application Settings</CardTitle>
-                    <CardDescription>Manage general application settings.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">
-                        General settings will be available here. (e.g., Site Name, Logo, Theme)
-                    </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                    <CardTitle>User Roles</CardTitle>
-                    <CardDescription>Manage permissions for different user roles.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                     <p className="text-muted-foreground">
-                        Role-based access control settings will be configured here.
-                    </p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Notifications</CardTitle>
-                        <CardDescription>Configure email and in-app notification preferences.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">
-                           Notification settings will be available here.
-                        </p>
-                    </CardContent>
-                </Card>
-                </div>
-            )}
+                  <CardHeader>
+                      <div className="flex justify-between items-center">
+                          <div>
+                              <CardTitle>All Cars</CardTitle>
+                              <CardDescription>A summary of all vehicles in the system.</CardDescription>
+                          </div>
+                          <div className="relative w-full max-w-sm">
+                              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                  type="search"
+                                  placeholder="Search by plate, booking ID, customer..."
+                                  className="w-full rounded-lg bg-background pl-8"
+                                  value={allCarsSearchTerm}
+                                  onChange={(e) => setAllCarsSearchTerm(e.target.value)}
+                              />
+                          </div>
+                      </div>
+                  </CardHeader>
+                  <CardContent>
+                      <Table>
+                          <TableHeader>
+                              <TableRow>
+                                  <TableHead>No.</TableHead>
+                                  <TableHead>Plate Number</TableHead>
+                                  <TableHead>Booking ID</TableHead>
+                                  <TableHead>Make and Model</TableHead>
+                                  <TableHead>Customer</TableHead>
+                                  <TableHead>Institution</TableHead>
+                                  <TableHead>Valuer</TableHead>
+                                  <TableHead>Status</TableHead>
+                                  <TableHead className="text-right">Actions</TableHead>
+                              </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                              {loading ? (
+                                  Array.from({ length: 5 }).map((_, index) => (
+                                  <TableRow key={index}>
+                                      <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                      <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                                      <TableCell className="text-right"><Skeleton className="h-9 w-24" /></TableCell>
+                                  </TableRow>
+                                  ))
+                              ) : allBookingsPaginated.length > 0 ? (
+                                  allBookingsPaginated.map((booking, index) => (
+                                      <TableRow key={booking.id}>
+                                          <TableCell>{(allCarsPage - 1) * itemsPerPage + index + 1}</TableCell>
+                                          <TableCell>{booking.plateNumber}</TableCell>
+                                          <TableCell className="font-mono text-xs">{booking.bookingNumber}</TableCell>
+                                          <TableCell>{`${booking.carMake} ${booking.carModel}`}</TableCell>
+                                          <TableCell>{booking.customerName}</TableCell>
+                                          <TableCell>{booking.insurerName}</TableCell>
+                                          <TableCell>{booking.assignedValuerName || 'N/A'}</TableCell>
+                                          <TableCell>
+                                              <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                                          </TableCell>
+                                          <TableCell className="text-right">
+                                              <Button variant="outline" size="sm" onClick={() => handleOpenReportInNewTab('booking', booking.id)}>
+                                                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                  Report
+                                              </Button>
+                                          </TableCell>
+                                      </TableRow>
+                                  ))
+                              ) : (
+                                  <TableRow>
+                                      <TableCell colSpan={9} className="h-24 text-center">
+                                          No bookings found.
+                                      </TableCell>
+                                  </TableRow>
+                              )}
+                          </TableBody>
+                      </Table>
+                      <div className="flex justify-end items-center gap-2 mt-4">
+                          <Button variant="outline" size="sm" onClick={() => setAllCarsPage(allCarsPage - 1)} disabled={allCarsPage === 1}>
+                              <ChevronLeft className="h-4 w-4" />
+                              Previous
+                          </Button>
+                          <span className="text-sm">Page {allCarsPage} of {totalAllBookingsPages}</span>
+                          <Button variant="outline" size="sm" onClick={() => setAllCarsPage(allCarsPage + 1)} disabled={allCarsPage === totalAllBookingsPages}>
+                              <ChevronRight className="h-4 w-4" />
+                              Next
+                          </Button>
+                      </div>
+                  </CardContent>
+              </Card>
+               )}
         </main>
-        <footer className="py-6 md:px-8 md:py-0 border-t bg-card/50">
-            <div className="container flex flex-col items-center justify-center gap-2 md:h-24 md:flex-row">
-                 <p className="text-sm text-muted-foreground">
-                    &copy; {new Date().getFullYear()} CASA Motor Valuers & Assessors Ltd. All rights reserved.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                    Designed by <a href="https://elvisdev.netlify.app/" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4">Tekivo Technologies</a>
-                </p>
-            </div>
-        </footer>
       </SidebarInset>
+      {renderUserDialog(isAddInstitutionOpen, setAddInstitutionOpen, 'institution')}
+      {renderUserDialog(isAddValuerOpen, setAddValuerOpen, 'valuer')}
+      {renderUserDialog(isAddStaffOpen, setAddStaffOpen, 'staff')}
 
-        <Dialog open={isAssignDialogOpen} onOpenChange={setAssignDialogOpen}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Assign & Approve Booking #{selectedBookingForAction?.bookingNumber}</DialogTitle>
-                    <DialogDescription>Review details, assign a valuer, and approve the booking.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4 text-sm">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                         <span className="font-semibold text-muted-foreground">Customer:</span>
-                        <span>{selectedBookingForAction?.customerName}</span>
+      <Dialog open={isAddBranchOpen} onOpenChange={setAddBranchOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Register New Branch</DialogTitle>
+            <DialogDescription>
+              Fill in the details below to create a new company branch.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddBranch} className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="branchName" className="text-right">Branch Name</Label>
+              <Input id="branchName" name="branchName" className="col-span-3" required />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="branchManager" className="text-right">Branch Manager</Label>
+              <Input id="branchManager" name="branchManager" className="col-span-3" required />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="branchLocation" className="text-right">Branch Location</Label>
+              <Input id="branchLocation" name="branchLocation" className="col-span-3" required />
+            </div>
+            <DialogFooter>
+              <Button type="submit">Create Branch</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-                        <span className="font-semibold text-muted-foreground">Vehicle:</span>
-                        <span>{selectedBookingForAction?.carMake} {selectedBookingForAction?.carModel}</span>
-                        
-                        <span className="font-semibold text-muted-foreground">Plate No:</span>
-                        <span>{selectedBookingForAction?.plateNumber}</span>
-                    </div>
-                     <div className="space-y-2 mt-4">
-                        <Label htmlFor="valuer-select">Assign Valuer</Label>
-                        <Select value={selectedValuerId} onValueChange={setSelectedValuerId}>
-                            <SelectTrigger id="valuer-select" className="w-full">
-                                <SelectValue placeholder="Select a valuer" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {valuers.map(valuer => (
-                                    <SelectItem key={valuer.id} value={valuer.id} disabled={!valuer.active}>
-                                        {valuer.name} {!valuer.active && "(Inactive)"}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="destructive" onClick={openRejectDialog}>Reject</Button>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                             <Button variant="default" disabled={!selectedValuerId}>Approve & Assign</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Confirm Approval & Assignment</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Are you sure you want to approve this booking and assign it to the selected valuer?
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>No, Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleAssignmentAndApproval}>Yes, Approve & Assign</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-        
-        <Dialog open={isRejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Reject Booking</DialogTitle>
-                    <DialogDescription>
-                        Please provide a reason for rejecting this booking. This will be visible to the client.
+       <Dialog open={isAssignDialogOpen} onOpenChange={setAssignDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                  <DialogTitle>Approve &amp; Assign Booking</DialogTitle>
+                  <DialogDescription>
+                      Assign the booking to a valuer and approve it for valuation.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                {selectedBookingForAction && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      &lt;div>
+                        <Label>Customer Name:</Label>
+                        &lt;p className="font-medium">{selectedBookingForAction.customerName}</p>
+                      &lt;/div>
+                       &lt;div>
+                        <Label>Car Make:</Label>
+                        &lt;p className="font-medium">{selectedBookingForAction.carMake} {selectedBookingForAction.carModel}</p>
+                      &lt;/div>
+                      &lt;div>
+                        <Label>Booking Number:</Label>
+                        &lt;p className="font-medium">{selectedBookingForAction.bookingNumber}</p>
+                      &lt;/div>
+                      &lt;div>
+                        <Label>Plate Number:</Label>
+                        &lt;p className="font-medium">{selectedBookingForAction.plateNumber}</p>
+                      &lt;/div>
+                     &lt;/div>
+                      <Label htmlFor="valuer">Select Valuer</Label>
+                      <Select value={selectedValuerId} onValueChange={setSelectedValuerId}>
+                          &lt;SelectTrigger>
+                              &lt;SelectValue placeholder="Select a valuer" />
+                          &lt;/SelectTrigger>
+                          &lt;SelectContent>
+                              {valuers.map(valuer => (
+                                  &lt;SelectItem key={valuer.id} value={valuer.id}>
+                                      {valuer.name}
+                                  &lt;/SelectItem>
+                              ))}
+                          &lt;/SelectContent>
+                      </Select>
+                  &lt/>
+                )}
+              </div>
+              <DialogFooter>
+                  <Button variant="destructive" onClick={openRejectDialog}>
+                      Reject Booking
+                  </Button>
+                  <Button onClick={handleAssignmentAndApproval} disabled={!selectedValuerId}>
+                      Approve &amp; Assign
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
+      
+       <Dialog open={isRejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+            &lt;DialogContent className="sm:max-w-[425px]">
+                &lt;DialogHeader>
+                    &lt;DialogTitle>Reject Booking</DialogTitle>
+                    &lt;DialogDescription>
+                        Please provide a reason for rejecting this booking.
                     </DialogDescription>
-                </DialogHeader>
-                <Textarea
-                    placeholder="Enter rejection reason here..."
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                />
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button variant="destructive" onClick={handleBookingRejection}>
+                &lt;/DialogHeader>
+                &lt;div className="grid gap-4 py-4">
+                    &lt;Label htmlFor="rejectionReason">Rejection Reason</Label>
+                    &lt;Textarea
+                        id="rejectionReason"
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        placeholder="Enter reason for rejection"
+                    />
+                &lt/div>
+                &lt;DialogFooter>
+                    &lt;Button type="button" variant="secondary" onClick={() => {
+                        setRejectDialogOpen(false);
+                        setAssignDialogOpen(true);
+                    }}>
+                        Back
+                    &lt/Button>
+                    &lt;Button type="button" variant="destructive" onClick={handleBookingRejection} disabled={!rejectionReason}>
                         Confirm Rejection
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
-        <Dialog open={isCompleteValuationOpen} onOpenChange={(open) => {
-            if (!open) {
-                setSelectedBookingForAction(null);
-                setSelectedValuationForAction(null);
-            }
-            setCompleteValuationOpen(open);
-        }}>
-            <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-                <DialogHeader>
-                    <DialogTitle>Complete Valuation for #{selectedBookingForAction?.bookingNumber}</DialogTitle>
-                    <DialogDescription>Review the details and enter the final valuation values.</DialogDescription>
-                </DialogHeader>
-                <div className="flex-grow overflow-y-auto pr-6 -mr-6 space-y-6">
-                    {loadingValuationDetails ? (
-                         <div className="flex items-center justify-center h-64">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                         </div>
-                    ) : selectedValuationForAction && selectedBookingForAction ? (
-                        <>
-                            <Card>
-                                <CardHeader><CardTitle>Client & Vehicle Details</CardTitle></CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Client Name:</span><span>{selectedBookingForAction.customerName}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Client Phone:</span><span>{selectedBookingForAction.customerPhone}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Client Email:</span><span>{selectedBookingForAction.customerEmail}</span></div>
-                                        
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Insurance Co:</span><span>{selectedBookingForAction.insurerName}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Policy Number:</span><span>{selectedBookingForAction.policyNumber}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Policy Expiry:</span><span>{selectedValuationForAction.policyExpiryDate ? format(selectedValuationForAction.policyExpiryDate.toDate(), 'PPP') : 'N/A'}</span></div>
-
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Vehicle Make:</span><span>{selectedBookingForAction.carMake}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Vehicle Model:</span><span>{selectedBookingForAction.carModel}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Registration No:</span><span>{selectedBookingForAction.plateNumber}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Date of Reg:</span><span>{selectedValuationForAction.dateOfReg ? format(selectedValuationForAction.dateOfReg.toDate(), 'PPP') : 'N/A'}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Year of Manuf:</span><span>{selectedValuationForAction.yearOfManufacture}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Colour:</span><span>{selectedValuationForAction.colour}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Chassis No:</span><span>{selectedValuationForAction.chassisNo}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Engine No:</span><span>{selectedValuationForAction.engineNo}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Engine Rating:</span><span>{selectedValuationForAction.engineRating}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Fuel Type:</span><span>{selectedValuationForAction.fuelType}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Odometer:</span><span>{selectedValuationForAction.odometerReadings}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Transmission:</span><span>{selectedValuationForAction.transmissionType}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Airbags:</span><span>{selectedValuationForAction.numberOfAirbags}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Lights Type:</span><span>{selectedValuationForAction.lightsType}</span></div>
-                                        <div className="flex justify-between"><span className="font-medium text-muted-foreground">Origin:</span><span>{selectedValuationForAction.countryOfOrigin}</span></div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader><CardTitle>Valuer's Submission</CardTitle></CardHeader>
-                                <CardContent>
-                                     <div className="space-y-4">
-                                        <p><span className="font-medium text-muted-foreground">Valued By:</span> {selectedValuationForAction.valuedBy}</p>
-                                        {selectedValuationForAction.comments && <p><span className="font-medium text-muted-foreground">Comments:</span> {selectedValuationForAction.comments}</p>}
-                                        
-                                        <h4 className="font-medium text-lg">Valuation Photos</h4>
-                                        <Carousel className="w-full">
-                                            <CarouselContent>
-                                                {Array.isArray(selectedValuationForAction.valuationImages) && selectedValuationForAction.valuationImages.map((url, index) => (
-                                                    <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                                                        <div className="p-1">
-                                                            <Card>
-                                                                <CardContent className="flex aspect-square items-center justify-center p-0 overflow-hidden rounded-lg">
-                                                                     <Image src={url} alt={`Valuation image ${index + 1}`} width={400} height={300} className="object-cover w-full h-full" />
-                                                                </CardContent>
-                                                            </Card>
-                                                        </div>
-                                                    </CarouselItem>
-                                                ))}
-                                            </CarouselContent>
-                                            <CarouselPrevious />
-                                            <CarouselNext />
-                                        </Carousel>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            
-                             <Collapsible>
-                                <CollapsibleTrigger asChild>
-                                    <Button variant="outline" className="w-full justify-between">
-                                        View Uploaded Documents
-                                        <FileDown className="h-4 w-4" />
-                                    </Button>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent className="py-4">
-                                    {selectedValuationForAction.logbookImage ? (
-                                        <Card>
-                                            <CardHeader><CardTitle>Logbook Image</CardTitle></CardHeader>
-                                            <CardContent>
-                                                <Image src={selectedValuationForAction.logbookImage} alt="Logbook" width={800} height={600} className="rounded-md object-contain" />
-                                            </CardContent>
-                                        </Card>
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground text-center py-4">No logbook image was uploaded for this booking.</p>
+                    &lt/Button>
+                &lt/DialogFooter>
+            &lt/DialogContent>
+        &lt/Dialog>
+        
+         <Dialog open={isCompleteValuationOpen} onOpenChange={setCompleteValuationOpen}>
+            &lt;DialogContent className="sm:max-w-[800px]">
+                &lt;DialogHeader>
+                    &lt;DialogTitle>Complete Valuation</DialogTitle>
+                    &lt;DialogDescription>
+                        Enter official assessment values to complete the valuation process.
+                    </DialogDescription>
+                &lt;/DialogHeader>
+                &lt;Tabs defaultValue="report" className="space-y-4">
+                    &lt;TabsList>
+                        &lt;TabsTrigger value="report">Valuation Report</TabsTrigger>
+                        &lt;TabsTrigger value="images">Images</TabsTrigger>
+                        &lt;TabsTrigger value="admin-values">Assessment Values</TabsTrigger>
+                    &lt/TabsList>
+                    &lt;TabsContent value="report" className="space-y-4">
+                         {loadingValuationDetails ? (
+                            &lt;div className="space-y-2">
+                                &lt;Skeleton className="h-4 w-[200px]" />
+                                &lt;Skeleton className="h-4 w-[250px]" />
+                                &lt;Skeleton className="h-4 w-[220px]" />
+                                &lt;Skeleton className="h-4 w-[180px]" />
+                            &lt/div>
+                        ) : selectedValuationForAction ? (
+                           &lt;Collapsible>
+                                &lt;CollapsibleTrigger asChild>
+                                    &lt;Button variant="ghost" className="w-full justify-start">
+                                        Vehicle Information &lt;ChevronDown className="ml-auto h-4 w-4 shrink-0 transition-transform peer-data-[state=open]:rotate-180" />
+                                    &lt/Button>
+                                &lt/CollapsibleTrigger>
+                                &lt;CollapsibleContent className="pl-4">
+                                    &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        &lt;Card>
+                                            &lt;CardHeader>&lt;CardTitle>Details&lt/CardTitle>&lt/CardHeader>
+                                            &lt;CardContent>
+                                                &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Chassis No:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.chassisNo}&lt/span>
+                                                    &lt/div>
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Colour:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.colour}&lt/span>
+                                                    &lt/div>
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Fuel Type:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.fuelType}&lt/span>
+                                                    &lt/div>
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Engine No:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.engineNo}&lt/span>
+                                                    &lt/div>
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Engine Rating:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.engineRating}&lt/span>
+                                                    &lt/div>
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Date of Reg:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.dateOfReg?.toDate().toLocaleDateString()}&lt/span>
+                                                    &lt/div>
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Year of Manufacture:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.yearOfManufacture}&lt/span>
+                                                    &lt/div>
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Odometer Readings:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.odometerReadings}&lt/span>
+                                                    &lt/div>
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Country of Origin:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.countryOfOrigin}&lt/span>
+                                                    &lt/div>
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Number of Airbags:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.numberOfAirbags}&lt/span>
+                                                    &lt/div>
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Lights Type:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.lightsType}&lt/span>
+                                                    &lt/div>
+                                                    &lt;div className="flex justify-between items-center py-1 border-b">
+                                                        &lt;span className="text-muted-foreground">Transmission Type:&lt/span>
+                                                        &lt;span className="font-medium">{selectedValuationForAction.transmissionType}&lt/span>
+                                                    &lt/div>
+                                                &lt/div>
+                                            &lt/CardContent>
+                                        &lt/Card>
+                                        &lt;Card>
+                                            &lt;CardHeader>&lt;CardTitle>Logbook Image&lt/CardTitle>&lt/CardHeader>
+                                            &lt;CardContent>
+                                               {selectedValuationForAction.logbookImage ? (
+                                                    &lt;Image
+                                                        src={selectedValuationForAction.logbookImage}
+                                                        alt="Logbook"
+                                                        width={500}
+                                                        height={300}
+                                                        className="object-contain"
+                                                    />
+                                                ) : (
+                                                    &lt;p className="text-muted-foreground">No logbook image available.&lt/p>
+                                                )}
+                                            &lt/CardContent>
+                                        &lt/Card>
+                                    &lt/div>
+                                &lt/CollapsibleContent>
+                            &lt/Collapsible>
+                        ) : (
+                            &lt;p className="text-muted-foreground">Could not load valuation report.&lt/p>
+                        )}
+                    &lt/TabsContent>
+                    &lt;TabsContent value="images">
+                        {loadingValuationDetails ? (
+                            &lt;div className="space-y-2">
+                                &lt;Skeleton className="h-4 w-[200px]" />
+                                &lt;Skeleton className="h-4 w-[250px]" />
+                            &lt/div>
+                        ) : selectedValuationForAction ? (
+                            selectedValuationForAction.valuationImages && selectedValuationForAction.valuationImages.length > 0 ? (
+                                &lt;Carousel className="w-full max-w-4xl">
+                                    &lt;CarouselContent>
+                                        {selectedValuationForAction.valuationImages.map((image, index) => (
+                                            &lt;CarouselItem key={index} className="pl-1 md:pl-0">
+                                                &lt;div className="p-1">
+                                                    &lt;Image
+                                                        src={image}
+                                                        alt={`Valuation Image ${index + 1}`}
+                                                        width={500}
+                                                        height={300}
+                                                        className="object-contain rounded-md"
+                                                    />
+                                                &lt/div>
+                                            &lt/CarouselItem>
+                                        ))}
+                                    &lt/CarouselContent>
+                                    &lt;CarouselPrevious />
+                                    &lt;CarouselNext />
+                                &lt/Carousel>
+                            ) : (
+                                &lt;p className="text-muted-foreground">No valuation images available.&lt/p>
+                            )
+                        ) : (
+                            &lt;p className="text-muted-foreground">Could not load valuation images.&lt/p>
+                        )}
+                    &lt/TabsContent>
+                    &lt;TabsContent value="admin-values">
+                        {loadingValuationDetails ? (
+                            &lt;div className="space-y-2">
+                                &lt;Skeleton className="h-4 w-[200px]" />
+                                &lt;Skeleton className="h-4 w-[250px]" />
+                            &lt/div>
+                        ) : selectedValuationForAction ? (
+                             <Form {...adminValuationForm}>
+                                <form onSubmit={adminValuationForm.handleSubmit(handleCompleteValuation)} className="space-y-4">
+                                  <FormField
+                                    control={adminValuationForm.control}
+                                    name="assessmentValue"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Assessment Value (KES)</FormLabel>
+                                        <FormControl>
+                                          <Input placeholder="Enter assessment value" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
                                     )}
-                                </CollapsibleContent>
-                            </Collapsible>
-                            
-                            <div className="space-y-4">
-                                <ConditionChecklist title="Coach Work Assessment" data={selectedValuationForAction.coachWork} notes={selectedValuationForAction.coachWorkNotes} />
-                                <ConditionChecklist title="Mechanical Condition" data={selectedValuationForAction.mechanicalCondition} notes={selectedValuationForAction.mechanicalNotes} />
-                                <ConditionChecklist title="Electrical Condition" data={selectedValuationForAction.electricalCondition} notes={selectedValuationForAction.electricalNotes} />
-                            </div>
-
-
-                            <Form {...adminValuationForm}>
-                                <form id="admin-valuation-form" onSubmit={adminValuationForm.handleSubmit(handleCompleteValuation)} className="space-y-4">
-                                    <FormField
-                                        control={adminValuationForm.control}
-                                        name="assessmentValue"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Assessment Value (KES)</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} placeholder="e.g., 1,500,000" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={adminValuationForm.control}
-                                        name="forcedValue"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Forced Sale Value (KES)</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} placeholder="e.g., 1,200,000" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={adminValuationForm.control}
-                                        name="wsValue"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Noted Value: WS (KES)</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} placeholder="e.g., 20,000" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={adminValuationForm.control}
-                                        name="rsValue"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Noted Value: RS (KES)</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} placeholder="e.g., 25,000" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                  />
+                                  <FormField
+                                    control={adminValuationForm.control}
+                                    name="forcedValue"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Forced Sale Value (KES)</FormLabel>
+                                        <FormControl>
+                                          <Input placeholder="Enter forced sale value" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={adminValuationForm.control}
+                                    name="wsValue"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>WS Value (KES)</FormLabel>
+                                        <FormControl>
+                                          <Input placeholder="Enter WS value" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={adminValuationForm.control}
+                                    name="rsValue"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>RS Value (KES)</FormLabel>
+                                        <FormControl>
+                                          <Input placeholder="Enter RS value" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <DialogFooter>
+                                    <Button type="submit">Complete Valuation</Button>
+                                  </DialogFooter>
                                 </form>
-                            </Form>
-                        </>
-                    ) : (
-                        <div className="text-center text-muted-foreground py-10">
-                            <p>No valuation data found for this booking.</p>
-                        </div>
-                    )}
-                </div>
-                <DialogFooter className="pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setCompleteValuationOpen(false)}>Cancel</Button>
-                    <Button type="submit" form="admin-valuation-form" disabled={adminValuationForm.formState.isSubmitting || loadingValuationDetails}>
-                        {adminValuationForm.formState.isSubmitting ? "Saving..." : "Save & Complete"}
-                    </Button>
-                </DialogFooter>
+                              </Form>
+                        ) : (
+                            Could not load assessment values.
+                        )}
+                    </TabsContent>
+                </Tabs>
             </DialogContent>
         </Dialog>
 
         <Dialog open={isPromoteAdminOpen} onOpenChange={setPromoteAdminOpen}>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Promote to Admin</DialogTitle>
                     <DialogDescription>
-                        Create admin credentials for {selectedStaffForPromotion?.name}. Their email will be used for login.
+                        Enter a password to promote this staff member to an Admin.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...promoteAdminForm}>
@@ -2398,60 +2350,23 @@ function AdminDashboard() {
                             name="password"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Set Initial Password</FormLabel>
+                                    <FormLabel>Password</FormLabel>
                                     <FormControl>
-                                        <Input type="password" {...field} />
+                                        <Input type="password" placeholder="Password" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
                         <DialogFooter>
-                           <Button type="button" variant="outline" onClick={() => setPromoteAdminOpen(false)}>Cancel</Button>
-                           <Button type="submit" disabled={promoteAdminForm.formState.isSubmitting}>
-                               {promoteAdminForm.formState.isSubmitting ? "Promoting..." : "Confirm & Promote"}
-                           </Button>
+                            <Button type="submit">Promote to Admin</Button>
                         </DialogFooter>
                     </form>
                 </Form>
             </DialogContent>
         </Dialog>
-
-
     </SidebarProvider>
   );
 }
 
-export default function AdminDashboardPage() {
-  return (
-    <AuthGuard>
-      <AdminDashboard />
-    </AuthGuard>
-  );
-}
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-    
-
-    
-
-
-    
-
-  
+export default AuthGuard(AdminDashboard);

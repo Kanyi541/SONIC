@@ -55,7 +55,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                 <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
             </div>
             <div className="text-left">
-            <h1 className="text-4xl font-extrabold text-black">CASA Motor Valuers & Assessors</h1>
+            <h1 className="text-4xl font-extrabold text-black">CASA Motor Assessors Ltd</h1>
             <p className="text-base text-gray-700 mt-1">
                 Highway Mall, Uhuru Highway<br />
                 Nairobi, Kenya
@@ -129,7 +129,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
         </main>
 
         <footer className="text-center text-sm text-gray-500 mt-16 pt-6 border-t border-gray-300">
-            © {new Date().getFullYear()} Casa Motor Valuers & Assessors. This is a computer-generated document and does not require a signature.
+            © {new Date().getFullYear()} CASA Motor Assessors Ltd. This is a computer-generated document and does not require a signature.
         </footer>
       </div>
     );
@@ -184,10 +184,4 @@ const ValuationReportView = ({ bookingId }: { bookingId: string }) => {
     return (
         <div className="bg-gray-100 font-sans">
             <div>
-                <ReportToPrint valuation={valuation} booking={booking} />
-            </div>
-        </div>
-    );
-};
-
-export default ValuationReportView;
+                <ReportToPrint

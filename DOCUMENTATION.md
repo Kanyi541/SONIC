@@ -1,5 +1,5 @@
 ________________________________________
-CASA Motor Valuers & Assessors Dashboard Documentation
+CASA Motor Assessors Ltd Dashboard Documentation
 This document provides a comprehensive overview of the functionalities, workflows, and technical architecture for the Admin, Client, and Valuer dashboards.
 ________________________________________
 1. Admin Dashboard (/admin/dashboard)
@@ -48,7 +48,7 @@ o	Cannot manage users.
 •	User Management (Main Client only):
 o	Customers
 o	Agents
-o	Staff
+	Staff
 •	Booking Views: Pending, Completed, Rejected.
 •	Reports: View/print Booking Report (Assessment Authorization Letter).
 ________________________________________
