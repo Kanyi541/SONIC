@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -47,7 +48,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight, KeyRound, Upload, File as FileIcon, X, File, FileText, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight, KeyRound, Upload, File as FileIcon, X, File, FileText, Calendar as CalendarIcon, FileDown } from "lucide-react";
 import { carData } from "@/lib/car-data";
 import { Form, FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
@@ -841,8 +842,8 @@ export default function ClientDashboardPage() {
                                                 <TableCell className="text-right">
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button variant="outline" size="sm">
-                                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                            <Button variant="default" size="sm">
+                                                                <FileDown className="mr-2 h-4 w-4" />
                                                                 Reports
                                                             </Button>
                                                         </PopoverTrigger>
@@ -881,8 +882,8 @@ export default function ClientDashboardPage() {
                                                 <TableCell className="text-right space-x-2">
                                                      <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button variant="outline" size="sm">
-                                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                            <Button variant="default" size="sm">
+                                                                <FileDown className="mr-2 h-4 w-4" />
                                                                 Reports
                                                             </Button>
                                                         </PopoverTrigger>

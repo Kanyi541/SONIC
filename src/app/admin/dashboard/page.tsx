@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef, useMemo } from 'react';
@@ -1099,8 +1100,8 @@ function AdminDashboard() {
                     <TableCell className="text-right">
                          <Popover>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                <Button variant="default" size="sm">
+                                <FileDown className="mr-2 h-4 w-4" />
                                 <span className="hidden sm:inline">Reports</span>
                                 </Button>
                             </PopoverTrigger>
@@ -1506,8 +1507,8 @@ function AdminDashboard() {
                     <TableCell className="hidden sm:table-cell">{booking?.carMake}</TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-muted-foreground truncate max-w-xs">{booking?.rejectionReason}</TableCell>
                     <TableCell className="text-right space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleOpenReportInNewTab('booking', booking.id)}>
-                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                        <Button variant="default" size="sm" onClick={() => handleOpenReportInNewTab('booking', booking.id)}>
+                            <FileDown className="mr-2 h-4 w-4" />
                             View Report
                         </Button>
                     </TableCell>
@@ -1794,8 +1795,8 @@ function AdminDashboard() {
                                                 <TableCell className="text-right">
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button variant="outline" size="sm">
-                                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                            <Button variant="default" size="sm">
+                                                                <FileDown className="mr-2 h-4 w-4" />
                                                                 Reports
                                                             </Button>
                                                         </PopoverTrigger>
@@ -1967,8 +1968,8 @@ function AdminDashboard() {
                                               <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                           </TableCell>
                                           <TableCell className="text-right">
-                                              <Button variant="outline" size="sm" onClick={() => handleOpenReportInNewTab('booking', booking.id)}>
-                                                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                              <Button variant="default" size="sm" onClick={() => handleOpenReportInNewTab('booking', booking.id)}>
+                                                  <FileDown className="mr-2 h-4 w-4" />
                                                   Report
                                               </Button>
                                           </TableCell>
