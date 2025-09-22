@@ -589,7 +589,7 @@ function VerifyReportWrapper() {
     return <VerificationReportPageContent router={router} searchParams={searchParams} />;
 }
 
-export default function VerifyReportPage() {
+export default function Page() {
   return (
     <Suspense fallback={
         <div className="flex justify-center items-center h-screen bg-gray-100">

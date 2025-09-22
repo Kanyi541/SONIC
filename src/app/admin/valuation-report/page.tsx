@@ -609,7 +609,7 @@ function ValuationReportWrapper() {
 
 const GuardedValuationReportPage = AuthGuard(ValuationReportWrapper, { allowClients: true });
 
-export default function ValuationReportPage() {
+export default function Page() {
   return (
     <Suspense fallback={
         <div className="flex justify-center items-center h-screen bg-gray-100">

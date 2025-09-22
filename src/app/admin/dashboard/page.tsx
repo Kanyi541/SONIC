@@ -5,7 +5,7 @@
 import React, { useState, useEffect, Suspense, useRef, useMemo } from 'react';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AuthGuard, useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown } from 'lucide-react';
 import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -1551,7 +1551,11 @@ function AdminDashboard() {
           b.customerName.toLowerCase().includes(searchTerm)
         )
       })
-      .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+      .sort((a, b) => {
+        if (a.status === 'Completed' && b.status !== 'Completed') return -1;
+        if (a.status !== 'Completed' && b.status === 'Completed') return 1;
+        return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)
+      });
   }, [bookings, allCarsSearchTerm]);
 
   const allBookingsPaginated = allBookings.slice(
@@ -2384,4 +2388,8 @@ function AdminDashboard() {
   );
 }
 
-export default AuthGuard(AdminDashboard);
+const GuardedAdminDashboard = AuthGuard(AdminDashboard);
+
+export default function Page() {
+  return <GuardedAdminDashboard />;
+}
