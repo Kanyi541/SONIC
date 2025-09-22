@@ -854,6 +854,7 @@ export default function ClientDashboardPage() {
                                                                     className="justify-start"
                                                                     onClick={() => handleOpenReportInNewTab('booking', booking.id)}
                                                                 >
+                                                                    <FileDown className="mr-2 h-4 w-4" />
                                                                     Booking Report
                                                                 </Button>
                                                                 {booking.status === 'Completed' && (
@@ -862,6 +863,7 @@ export default function ClientDashboardPage() {
                                                                         className="justify-start"
                                                                         onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
                                                                     >
+                                                                        <FileDown className="mr-2 h-4 w-4" />
                                                                         Valuation Report
                                                                     </Button>
                                                                 )}
@@ -894,6 +896,7 @@ export default function ClientDashboardPage() {
                                                                     className="justify-start"
                                                                     onClick={() => handleOpenReportInNewTab('booking', booking.id)}
                                                                 >
+                                                                    <FileDown className="mr-2 h-4 w-4" />
                                                                     Booking Report
                                                                 </Button>
                                                                 {booking.status === 'Completed' && (
@@ -902,6 +905,7 @@ export default function ClientDashboardPage() {
                                                                         className="justify-start"
                                                                         onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
                                                                     >
+                                                                        <FileDown className="mr-2 h-4 w-4" />
                                                                         Valuation Report
                                                                     </Button>
                                                                 )}
@@ -1800,3 +1804,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    

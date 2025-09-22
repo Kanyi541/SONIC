@@ -1112,6 +1112,7 @@ function AdminDashboard() {
                                     className="justify-start"
                                     onClick={() => handleOpenReportInNewTab('booking', valuation.bookingId)}
                                 >
+                                    <FileDown className="mr-2 h-4 w-4" />
                                     Booking Report
                                 </Button>
                                 {isCompleted && (
@@ -1120,6 +1121,7 @@ function AdminDashboard() {
                                         className="justify-start"
                                         onClick={() => handleOpenReportInNewTab('valuation', valuation.bookingId)}
                                     >
+                                        <FileDown className="mr-2 h-4 w-4" />
                                         Valuation Report
                                     </Button>
                                 )}
@@ -1807,6 +1809,7 @@ function AdminDashboard() {
                                                                     className="justify-start"
                                                                     onClick={() => handleOpenReportInNewTab('booking', booking.id)}
                                                                 >
+                                                                    <FileDown className="mr-2 h-4 w-4" />
                                                                     Booking Report
                                                                 </Button>
                                                                 {booking.status === 'Completed' && (
@@ -1815,6 +1818,7 @@ function AdminDashboard() {
                                                                         className="justify-start"
                                                                         onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
                                                                     >
+                                                                        <FileDown className="mr-2 h-4 w-4" />
                                                                         Valuation Report
                                                                     </Button>
                                                                 )}
@@ -2371,3 +2375,5 @@ function AdminDashboard() {
 }
 
 export default AuthGuard(AdminDashboard);
+
+    
