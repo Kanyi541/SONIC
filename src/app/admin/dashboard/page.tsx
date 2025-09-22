@@ -67,6 +67,7 @@ import { Progress } from "@/components/ui/progress"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import Loading from '@/app/loading';
 
 
 interface Institution {
@@ -277,6 +278,11 @@ function AdminDashboard() {
   const [recentValuationsPage, setRecentValuationsPage] = useState(1);
   const [valuatedBookingsPage, setValuatedBookingsPage] = useState(1);
   const [allCarsPage, setAllCarsPage] = useState(1);
+
+  const handleViewChange = (view: string) => {
+    setLoading(true);
+    setActiveView(view);
+  };
 
   const adminValuationForm = useForm<AdminValuationFormValues>({
     resolver: zodResolver(adminValuationSchema),
@@ -1563,6 +1569,9 @@ function AdminDashboard() {
     return staff.filter(s => !s.clientId);
   }, [staff]);
 
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <SidebarProvider>
@@ -1578,25 +1587,25 @@ function AdminDashboard() {
         <SidebarContent>
           <SidebarMenu>
              <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('dashboard')} isActive={activeView === 'dashboard'} tooltip="Dashboard">
+              <SidebarMenuButton onClick={() => handleViewChange('dashboard')} isActive={activeView === 'dashboard'} tooltip="Dashboard">
                 <LayoutDashboard />
                 Dashboard
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setActiveView('institutions')} isActive={activeView === 'institutions'} tooltip="Institutions">
+              <SidebarMenuButton onClick={() => handleViewChange('institutions')} isActive={activeView === 'institutions'} tooltip="Institutions">
                 <Building />
                 Institutions
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('staff')} isActive={activeView === 'staff'} tooltip="Our Staff">
+                <SidebarMenuButton onClick={() => handleViewChange('staff')} isActive={activeView === 'staff'} tooltip="Our Staff">
                     <Briefcase />
                     Our Staff
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView('valuers')} isActive={activeView === 'valuers'} tooltip="Valuers">
+                <SidebarMenuButton onClick={() => handleViewChange('valuers')} isActive={activeView === 'valuers'} tooltip="Valuers">
                   <UserCog />
                   Valuers
                 </SidebarMenuButton>
@@ -1679,7 +1688,7 @@ function AdminDashboard() {
                         title="Pending Approval" 
                         value={stats.pendingApproval} 
                         icon={<FileSignature className="h-6 w-6 text-yellow-500" />} 
-                        onClick={() => setActiveView('new-bookings')}
+                        onClick={() => handleViewChange('new-bookings')}
                         progress={stats.totalCars > 0 ? (stats.pendingApproval / stats.totalCars) * 100 : 0}
                         colorClass="bg-yellow-500"
                     />
@@ -1687,7 +1696,7 @@ function AdminDashboard() {
                         title="Pending Valuation" 
                         value={stats.pendingValuation} 
                         icon={<FileClock className="h-6 w-6 text-orange-500" />} 
-                        onClick={() => setActiveView('pending-valuation')}
+                        onClick={() => handleViewChange('pending-valuation')}
                         progress={stats.totalCars > 0 ? (stats.pendingValuation / stats.totalCars) * 100 : 0}
                         colorClass="bg-orange-500"
                     />
@@ -1695,7 +1704,7 @@ function AdminDashboard() {
                         title="Valuated" 
                         value={stats.valuated} 
                         icon={<FileCheck className="h-6 w-6 text-blue-500" />}
-                        onClick={() => setActiveView('valuated-bookings')}
+                        onClick={() => handleViewChange('valuated-bookings')}
                         progress={stats.totalCars > 0 ? (stats.valuated / stats.totalCars) * 100 : 0}
                         colorClass="bg-blue-500"
                     />
@@ -1705,7 +1714,7 @@ function AdminDashboard() {
                         title="Approved" 
                         value={stats.approved} 
                         icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
-                        onClick={() => setActiveView('valuations')}
+                        onClick={() => handleViewChange('valuations')}
                         progress={stats.totalCars > 0 ? (stats.approved / stats.totalCars) * 100 : 0}
                         colorClass="bg-green-500"
                     />
@@ -1713,7 +1722,7 @@ function AdminDashboard() {
                         title="Rejected" 
                         value={stats.rejected} 
                         icon={<XCircle className="h-6 w-6 text-red-500" />} 
-                        onClick={() => setActiveView('rejected-bookings')}
+                        onClick={() => handleViewChange('rejected-bookings')}
                         progress={stats.totalCars > 0 ? (stats.rejected / stats.totalCars) * 100 : 0}
                         colorClass="bg-red-500"
                     />
@@ -1721,7 +1730,7 @@ function AdminDashboard() {
                         title="All Cars" 
                         value={stats.totalCars} 
                         icon={<Car className="h-6 w-6 text-purple-500" />} 
-                        onClick={() => setActiveView('all-cars')}
+                        onClick={() => handleViewChange('all-cars')}
                         progress={100}
                         colorClass="bg-purple-500"
                     />

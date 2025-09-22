@@ -35,6 +35,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { carData } from '@/lib/car-data';
+import Loading from '@/app/loading';
 
 
 interface LoggedInUser {
@@ -757,6 +758,10 @@ export default function ValuerDashboardPage() {
     
     const isSubmitDisabled = isSubmitting || valuationImages.length === 0 || (!insuranceLetter && !newInsuranceLetterData) || (!logbookImage && !newLogbookImageData);
 
+    if (loading) {
+      return <Loading />;
+    }
+
     return (
         <UnifiedDashboardLayout
             title="CASA Motor Assessors Ltd"
@@ -1152,4 +1157,5 @@ export default function ValuerDashboardPage() {
                 </>
             )}
         </UnifiedDashboardLayout>
-    
+    );
+}

@@ -60,6 +60,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'da
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
 import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
+import Loading from '@/app/loading';
 
 
 interface LoggedInUser {
@@ -972,6 +973,10 @@ export default function ClientDashboardPage() {
           </div>
       </Card>
   );
+  
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <UnifiedDashboardLayout
