@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef, useMemo } from 'react';
@@ -605,7 +606,7 @@ function AdminDashboard() {
     }
   };
   
-  const handleOpenReportInNewTab = (reportType: 'booking' | 'valuation', bookingId: string) => {
+    const handleOpenReportInNewTab = (reportType: 'booking' | 'valuation', bookingId: string) => {
     const url = reportType === 'booking' 
       ? `/client/booking-report?id=${bookingId}`
       : `/admin/valuation-report?id=${bookingId}`;
@@ -1100,7 +1101,7 @@ function AdminDashboard() {
                          <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" size="sm">
-                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                <FileDown className="mr-2 h-4 w-4" />
                                 <span className="hidden sm:inline">Reports</span>
                                 </Button>
                             </PopoverTrigger>
@@ -1795,7 +1796,7 @@ function AdminDashboard() {
                                                     <Popover>
                                                         <PopoverTrigger asChild>
                                                             <Button variant="outline" size="sm">
-                                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                                <FileDown className="mr-2 h-4 w-4" />
                                                                 Reports
                                                             </Button>
                                                         </PopoverTrigger>
@@ -1968,7 +1969,7 @@ function AdminDashboard() {
                                           </TableCell>
                                           <TableCell className="text-right">
                                               <Button variant="outline" size="sm" onClick={() => handleOpenReportInNewTab('booking', booking.id)}>
-                                                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                  <FileDown className="mr-2 h-4 w-4" />
                                                   Report
                                               </Button>
                                           </TableCell>
@@ -2146,7 +2147,7 @@ function AdminDashboard() {
                                     &lt;Button variant="ghost" className="w-full justify-start">
                                         Vehicle Information &lt;ChevronDown className="ml-auto h-4 w-4 shrink-0 transition-transform peer-data-[state=open]:rotate-180" />
                                     &lt/Button>
-                                &lt/CollapsibleTrigger>
+                                &lt;/CollapsibleTrigger>
                                 &lt;CollapsibleContent className="pl-4">
                                     &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         &lt;Card>
