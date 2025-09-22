@@ -1101,7 +1101,7 @@ function AdminDashboard() {
                          <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="default" size="sm">
-                                <FileDown className="mr-2 h-4 w-4" />
+                                <FileText className="mr-2 h-4 w-4" />
                                 <span className="hidden sm:inline">Reports</span>
                                 </Button>
                             </PopoverTrigger>
@@ -1112,6 +1112,7 @@ function AdminDashboard() {
                                     className="justify-start"
                                     onClick={() => handleOpenReportInNewTab('booking', valuation.bookingId)}
                                 >
+                                    <FileText className="mr-2 h-4 w-4" />
                                     Booking Report
                                 </Button>
                                 {isCompleted && (
@@ -1120,6 +1121,7 @@ function AdminDashboard() {
                                         className="justify-start"
                                         onClick={() => handleOpenReportInNewTab('valuation', valuation.bookingId)}
                                     >
+                                        <FileCheck className="mr-2 h-4 w-4" />
                                         Valuation Report
                                     </Button>
                                 )}
@@ -1796,7 +1798,7 @@ function AdminDashboard() {
                                                     <Popover>
                                                         <PopoverTrigger asChild>
                                                             <Button variant="default" size="sm">
-                                                                <FileDown className="mr-2 h-4 w-4" />
+                                                                <FileText className="mr-2 h-4 w-4" />
                                                                 Reports
                                                             </Button>
                                                         </PopoverTrigger>
@@ -1807,6 +1809,7 @@ function AdminDashboard() {
                                                                     className="justify-start"
                                                                     onClick={() => handleOpenReportInNewTab('booking', booking.id)}
                                                                 >
+                                                                    <FileText className="mr-2 h-4 w-4" />
                                                                     Booking Report
                                                                 </Button>
                                                                 {booking.status === 'Completed' && (
@@ -1815,6 +1818,7 @@ function AdminDashboard() {
                                                                         className="justify-start"
                                                                         onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
                                                                     >
+                                                                        <FileCheck className="mr-2 h-4 w-4" />
                                                                         Valuation Report
                                                                     </Button>
                                                                 )}
@@ -1969,7 +1973,7 @@ function AdminDashboard() {
                                           </TableCell>
                                           <TableCell className="text-right">
                                               <Button variant="default" size="sm" onClick={() => handleOpenReportInNewTab('booking', booking.id)}>
-                                                  <FileDown className="mr-2 h-4 w-4" />
+                                                  <FileText className="mr-2 h-4 w-4" />
                                                   Report
                                               </Button>
                                           </TableCell>
