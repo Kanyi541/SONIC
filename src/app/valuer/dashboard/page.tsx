@@ -35,6 +35,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { carData } from '@/lib/car-data';
+import { AuthGuard } from '@/hooks/use-auth';
 
 
 interface LoggedInUser {
@@ -173,7 +174,7 @@ const valuationSchema = z.object({
 type ValuationFormValues = z.infer<typeof valuationSchema>;
 
 
-export default function ValuerDashboardPage() {
+function ValuerDashboardPage() {
     const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [valuations, setValuations] = useState<Valuation[]>([]);
@@ -1152,4 +1153,8 @@ export default function ValuerDashboardPage() {
                 </>
             )}
         </UnifiedDashboardLayout>
-    
+    );
+}
+
+const GuardedValuerDashboardPage = AuthGuard(ValuerDashboardPage, { allowClients: true });
+export default GuardedValuerDashboardPage;

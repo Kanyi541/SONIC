@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode, ComponentType } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -22,10 +23,14 @@ export function useAuth() {
     return { user, loading };
 }
 
-export function AuthGuard({ children, allowClients = false }: { children: ReactNode, allowClients?: boolean }) {
+export function AuthGuard<P extends {}>(
+  WrappedComponent: ComponentType<P>,
+  options?: { allowClients?: boolean }
+): React.FC<P> {
+  const AuthComponent: React.FC<P> = (props) => {
     const { user, loading } = useAuth();
     const router = useRouter();
-    const [isClientAuthed, setClientAuthed] = useState(false);
+    const [isAuthed, setAuthed] = useState(false);
 
     useEffect(() => {
         if (loading) return;
@@ -36,17 +41,17 @@ export function AuthGuard({ children, allowClients = false }: { children: ReactN
         }
 
         const isFirebaseUser = !!user;
-        const isClientSessionUser = allowClients && !!clientSession;
+        const isClientSessionUser = options?.allowClients && !!clientSession;
         
         if (!isFirebaseUser && !isClientSessionUser) {
             router.push('/');
         } else {
-            setClientAuthed(true);
+            setAuthed(true);
         }
 
-    }, [user, loading, router, allowClients]);
+    }, [user, loading, router]);
 
-    if (loading || !isClientAuthed) {
+    if (loading || !isAuthed) {
         return (
             <div className="flex h-screen items-center justify-center">
                 <p>Loading...</p>
@@ -54,7 +59,8 @@ export function AuthGuard({ children, allowClients = false }: { children: ReactN
         );
     }
 
-    return <>{children}</>;
+    return <WrappedComponent {...props} />;
+  }
+  AuthComponent.displayName = `AuthGuard(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
+  return AuthComponent;
 }
-
-    

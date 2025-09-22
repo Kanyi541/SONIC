@@ -607,6 +607,12 @@ function ValuationReportWrapper() {
     return <ValuationReportPageContent router={router} searchParams={searchParams} />;
 }
 
+const GuardedValuationReportPage = () => (
+    <AuthGuard allowClients={true}>
+        <ValuationReportWrapper />
+    </AuthGuard>
+);
+
 export default function ValuationReportPage() {
   return (
     <Suspense fallback={
@@ -614,9 +620,7 @@ export default function ValuationReportPage() {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
     }>
-        <AuthGuard allowClients={true}>
-            <ValuationReportWrapper />
-        </AuthGuard>
+        <GuardedValuationReportPage />
     </Suspense>
   );
 }

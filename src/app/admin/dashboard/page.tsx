@@ -2374,6 +2374,5 @@ function AdminDashboard() {
   );
 }
 
-export default AuthGuard(AdminDashboard);
-
-    
+const GuardedAdminDashboard = AuthGuard(AdminDashboard);
+export default GuardedAdminDashboard;

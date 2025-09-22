@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -60,6 +61,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'da
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
 import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
+import { AuthGuard } from '@/hooks/use-auth';
 
 
 interface LoggedInUser {
@@ -227,7 +229,7 @@ const PasswordInput = ({ field }: { field: any }) => {
     );
 };
 
-export default function ClientDashboardPage() {
+function ClientDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [valuations, setValuations] = useState<Valuation[]>([]);
   const [combinedData, setCombinedData] = useState<CombinedData[]>([]);
@@ -1805,4 +1807,6 @@ export default function ClientDashboardPage() {
   );
 }
 
+const GuardedClientDashboardPage = AuthGuard(ClientDashboardPage, { allowClients: true });
+export default GuardedClientDashboardPage;
     
