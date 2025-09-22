@@ -36,7 +36,7 @@
     --sidebar-ring: 45 80% 50%; /* Gold */
 
      /* Chart Colors */
-    --chart-1: 45 80% 50%; /* Gold */
+    --chart-1: 45 80% 50%;
   }
 
   .dark {
@@ -157,4 +157,26 @@
     .watermarked-valuation::before {
       position: fixed;
     }
+}
+
+@layer utilities {
+  @keyframes car-rumble {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-1px); }
+    75% { transform: translateX(1px); }
+    100% { transform: translateX(0); }
+  }
+
+  @keyframes scanner {
+    0%, 100% { top: 10%; }
+    50% { top: 90%; }
+  }
+
+  .animate-car-rumble {
+    animation: car-rumble 0.2s linear infinite;
+  }
+
+  .animate-scanner {
+    animation: scanner 1.5s ease-in-out infinite;
+  }
 }
