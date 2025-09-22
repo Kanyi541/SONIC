@@ -62,6 +62,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Progress } from "@/components/ui/progress";
 import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
 import { AuthGuard } from '@/hooks/use-auth';
+import Loading from "@/app/loading";
 
 
 interface LoggedInUser {
@@ -959,6 +960,11 @@ function ClientDashboardPage() {
     const filteredMenuItems = loggedInUser?.agentName 
         ? allMenuItems.filter(item => item.view !== 'agents' && item.view !== 'staff') 
         : allMenuItems;
+    
+    const handleActiveViewChange = (view: string) => {
+        setLoading(true);
+        setActiveView(view);
+    };
 
     const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick: () => void, progress: number, colorClass: string }) => (
       <Card onClick={onClick} className="cursor-pointer hover:bg-muted transition-colors p-4 flex flex-col justify-between">
@@ -974,6 +980,10 @@ function ClientDashboardPage() {
           </div>
       </Card>
   );
+  
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <UnifiedDashboardLayout
@@ -1249,7 +1259,7 @@ function ClientDashboardPage() {
                             title="Staff" 
                             value={stats.totalStaff} 
                             icon={<Briefcase className="h-6 w-6 text-blue-500" />} 
-                            onClick={() => setActiveView('staff')}
+                            onClick={() => handleActiveViewChange('staff')}
                             progress={100}
                             colorClass="bg-blue-500"
                         />
@@ -1257,7 +1267,7 @@ function ClientDashboardPage() {
                             title="Agents" 
                             value={stats.totalAgents} 
                             icon={<UserCog className="h-6 w-6 text-indigo-500" />} 
-                            onClick={() => setActiveView('agents')}
+                            onClick={() => handleActiveViewChange('agents')}
                             progress={100}
                             colorClass="bg-indigo-500"
                         />
@@ -1265,7 +1275,7 @@ function ClientDashboardPage() {
                             title="New Requests" 
                             value={stats.pendingApproval} 
                             icon={<FileSignature className="h-6 w-6 text-orange-500" />} 
-                            onClick={() => setActiveView('pending-bookings')}
+                            onClick={() => handleActiveViewChange('pending-bookings')}
                             progress={(stats.pendingApproval / stats.total) * 100}
                             colorClass="bg-orange-500"
                         />
@@ -1273,7 +1283,7 @@ function ClientDashboardPage() {
                             title="Pending Valuation" 
                             value={stats.pendingValuation} 
                             icon={<FileClock className="h-6 w-6 text-yellow-500" />} 
-                            onClick={() => setActiveView('pending-valuation-bookings')}
+                            onClick={() => handleActiveViewChange('pending-valuation-bookings')}
                             progress={(stats.pendingValuation / stats.total) * 100}
                             colorClass="bg-yellow-500"
                         />
@@ -1281,7 +1291,7 @@ function ClientDashboardPage() {
                             title="Approved" 
                             value={stats.completed} 
                             icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
-                            onClick={() => setActiveView('completed-bookings')}
+                            onClick={() => handleActiveViewChange('completed-bookings')}
                             progress={(stats.completed / stats.total) * 100}
                             colorClass="bg-green-500"
                         />
@@ -1289,7 +1299,7 @@ function ClientDashboardPage() {
                             title="Rejected" 
                             value={stats.rejected} 
                             icon={<XCircle className="h-6 w-6 text-red-500" />} 
-                            onClick={() => setActiveView('rejected-bookings')}
+                            onClick={() => handleActiveViewChange('rejected-bookings')}
                             progress={(stats.rejected / stats.total) * 100}
                             colorClass="bg-red-500"
                         />
@@ -1807,6 +1817,5 @@ function ClientDashboardPage() {
   );
 }
 
-const GuardedClientDashboardPage = AuthGuard(ClientDashboardPage, { allowClients: true });
-export default GuardedClientDashboardPage;
+export default AuthGuard(ClientDashboardPage, { allowClients: true });
     

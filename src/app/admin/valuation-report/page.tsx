@@ -607,11 +607,7 @@ function ValuationReportWrapper() {
     return <ValuationReportPageContent router={router} searchParams={searchParams} />;
 }
 
-const GuardedValuationReportPage = () => (
-    <AuthGuard allowClients={true}>
-        <ValuationReportWrapper />
-    </AuthGuard>
-);
+const GuardedValuationReportPage = AuthGuard(ValuationReportWrapper, { allowClients: true });
 
 export default function ValuationReportPage() {
   return (

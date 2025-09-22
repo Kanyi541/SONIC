@@ -1,11 +1,11 @@
 
-
 "use client";
 
-import { useState, useEffect, type ReactNode, ComponentType } from 'react';
+import { useState, useEffect, ComponentType, FC } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import Loading from '@/app/loading';
 
 export function useAuth() {
     const [user, setUser] = useState<User | null>(null);
@@ -23,14 +23,18 @@ export function useAuth() {
     return { user, loading };
 }
 
-export function AuthGuard<P extends {}>(
+interface AuthGuardOptions {
+  allowClients?: boolean;
+}
+
+export function AuthGuard<P extends object>(
   WrappedComponent: ComponentType<P>,
-  options?: { allowClients?: boolean }
-): React.FC<P> {
-  const AuthComponent: React.FC<P> = (props) => {
+  options: AuthGuardOptions = {}
+): FC<P> {
+  const WithAuth: FC<P> = (props) => {
     const { user, loading } = useAuth();
     const router = useRouter();
-    const [isAuthed, setAuthed] = useState(false);
+    const [isVerified, setIsVerified] = useState(false);
 
     useEffect(() => {
         if (loading) return;
@@ -41,26 +45,24 @@ export function AuthGuard<P extends {}>(
         }
 
         const isFirebaseUser = !!user;
-        const isClientSessionUser = options?.allowClients && !!clientSession;
+        const isClientSessionUser = options.allowClients && !!clientSession;
         
         if (!isFirebaseUser && !isClientSessionUser) {
             router.push('/');
         } else {
-            setAuthed(true);
+            setIsVerified(true);
         }
 
     }, [user, loading, router]);
 
-    if (loading || !isAuthed) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <p>Loading...</p>
-            </div>
-        );
+    if (!isVerified) {
+        return <Loading />;
     }
 
     return <WrappedComponent {...props} />;
   }
-  AuthComponent.displayName = `AuthGuard(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
-  return AuthComponent;
+
+  WithAuth.displayName = `AuthGuard(${(WrappedComponent.displayName || WrappedComponent.name || 'Component')})`;
+
+  return WithAuth;
 }

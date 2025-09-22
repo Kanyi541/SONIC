@@ -36,6 +36,7 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { carData } from '@/lib/car-data';
 import { AuthGuard } from '@/hooks/use-auth';
+import Loading from '@/app/loading';
 
 
 interface LoggedInUser {
@@ -588,6 +589,11 @@ function ValuerDashboardPage() {
         valuated: valuatedBookings.length,
     };
     
+    const handleActiveViewChange = (view: string) => {
+        setLoading(true);
+        setActiveView(view);
+    };
+
     const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
       <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
           <div className="flex items-start justify-between">
@@ -757,6 +763,10 @@ function ValuerDashboardPage() {
     );
     
     const isSubmitDisabled = isSubmitting || valuationImages.length === 0 || (!insuranceLetter && !newInsuranceLetterData) || (!logbookImage && !newLogbookImageData);
+    
+    if (loading) {
+        return <Loading />;
+    }
 
     return (
         <UnifiedDashboardLayout
@@ -787,7 +797,7 @@ function ValuerDashboardPage() {
                                         title="All Cars" 
                                         value={stats.total} 
                                         icon={<Car className="h-6 w-6 text-blue-500" />} 
-                                        onClick={() => setActiveView('all-bookings')}
+                                        onClick={() => handleActiveViewChange('all-bookings')}
                                         progress={100}
                                         colorClass="bg-blue-500"
                                     />
@@ -795,7 +805,7 @@ function ValuerDashboardPage() {
                                         title="Pending Valuation" 
                                         value={stats.pendingValuation} 
                                         icon={<FileSignature className="h-6 w-6 text-orange-500" />} 
-                                        onClick={() => setActiveView('pending-valuation-bookings')}
+                                        onClick={() => handleActiveViewChange('pending-valuation-bookings')}
                                         progress={stats.total > 0 ? (stats.pendingValuation / stats.total) * 100 : 0}
                                         colorClass="bg-orange-500"
                                     />
@@ -803,7 +813,7 @@ function ValuerDashboardPage() {
                                         title="Rejected by Admin" 
                                         value={stats.rejected} 
                                         icon={<XCircle className="h-6 w-6 text-red-500" />} 
-                                        onClick={() => setActiveView('rejected-bookings')}
+                                        onClick={() => handleActiveViewChange('rejected-bookings')}
                                         progress={stats.total > 0 ? (stats.rejected / stats.total) * 100 : 0}
                                         colorClass="bg-red-500"
                                     />
@@ -811,7 +821,7 @@ function ValuerDashboardPage() {
                                         title="Approved" 
                                         value={stats.completed} 
                                         icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
-                                        onClick={() => setActiveView('completed-bookings')}
+                                        onClick={() => handleActiveViewChange('completed-bookings')}
                                         progress={stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}
                                         colorClass="bg-green-500"
                                     />
@@ -1156,5 +1166,4 @@ function ValuerDashboardPage() {
     );
 }
 
-const GuardedValuerDashboardPage = AuthGuard(ValuerDashboardPage, { allowClients: true });
-export default GuardedValuerDashboardPage;
+export default AuthGuard(ValuerDashboardPage, { allowClients: true });
