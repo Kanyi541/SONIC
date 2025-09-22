@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, XCircle, Phone, MapPin, Mail } from 'lucide-react';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AuthGuard } from '@/hooks/use-auth';
 
 
 interface BookingData {
@@ -238,8 +239,17 @@ function BookingReportWrapper() {
     return <BookingReportPageContent router={router} searchParams={searchParams} pathname={pathname} />;
 }
 
+const GuardedBookingReportPage = AuthGuard(BookingReportWrapper, { allowClients: true });
+
+
 export default function BookingReportPage() {
   return (
     <Suspense fallback={
         <div className="flex justify-center items-center h-screen bg-gray-100">
-            <Loader2 className="h-10 w-10 animate-spin
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+    }>
+        <GuardedBookingReportPage />
+    </Suspense>
+  );
+}

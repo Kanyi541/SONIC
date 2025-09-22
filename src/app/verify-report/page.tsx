@@ -10,6 +10,7 @@ import { Loader2, ArrowLeft, Phone, MapPin, Mail, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import QRCode from 'qrcode';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AuthGuard } from '@/hooks/use-auth';
 
 
 interface Valuation {
@@ -589,14 +590,6 @@ function VerifyReportWrapper() {
     return <VerificationReportPageContent router={router} searchParams={searchParams} />;
 }
 
-export default function Page() {
-  return (
-    <Suspense fallback={
-        <div className="flex justify-center items-center h-screen bg-gray-100">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        </div>
-    }>
-      <VerifyReportWrapper />
-    </Suspense>
-  );
-}
+const GuardedVerifyReportPage = AuthGuard(VerifyReportWrapper);
+
+export default GuardedVerifyReportPage;

@@ -1166,4 +1166,6 @@ function ValuerDashboardPage() {
     );
 }
 
-export default AuthGuard(ValuerDashboardPage, { allowClients: true });
+const GuardedValuerDashboardPage = AuthGuard(ValuerDashboardPage, { allowClients: true });
+
+export default GuardedValuerDashboardPage;
