@@ -842,7 +842,7 @@ export default function ClientDashboardPage() {
                                                 <TableCell className="text-right">
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button variant="outline" size="sm">
+                                                            <Button variant="default" size="sm">
                                                                 <FileDown className="mr-2 h-4 w-4" />
                                                                 Reports
                                                             </Button>
@@ -882,7 +882,7 @@ export default function ClientDashboardPage() {
                                                 <TableCell className="text-right space-x-2">
                                                      <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button variant="outline" size="sm">
+                                                            <Button variant="default" size="sm">
                                                                 <FileDown className="mr-2 h-4 w-4" />
                                                                 Reports
                                                             </Button>
@@ -1800,3 +1800,5 @@ export default function ClientDashboardPage() {
     </UnifiedDashboardLayout>
   );
 }
+
+    

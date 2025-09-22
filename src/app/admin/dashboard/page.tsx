@@ -1100,7 +1100,7 @@ function AdminDashboard() {
                     <TableCell className="text-right">
                          <Popover>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" size="sm">
+                                <Button variant="default" size="sm">
                                 <FileDown className="mr-2 h-4 w-4" />
                                 <span className="hidden sm:inline">Reports</span>
                                 </Button>
@@ -1795,7 +1795,7 @@ function AdminDashboard() {
                                                 <TableCell className="text-right">
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button variant="outline" size="sm">
+                                                            <Button variant="default" size="sm">
                                                                 <FileDown className="mr-2 h-4 w-4" />
                                                                 Reports
                                                             </Button>
@@ -1968,7 +1968,7 @@ function AdminDashboard() {
                                               <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                           </TableCell>
                                           <TableCell className="text-right">
-                                              <Button variant="outline" size="sm" onClick={() => handleOpenReportInNewTab('booking', booking.id)}>
+                                              <Button variant="default" size="sm" onClick={() => handleOpenReportInNewTab('booking', booking.id)}>
                                                   <FileDown className="mr-2 h-4 w-4" />
                                                   Report
                                               </Button>
@@ -2044,37 +2044,37 @@ function AdminDashboard() {
                 {selectedBookingForAction && (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      &lt;div>
+                      <div>
                         <Label>Customer Name:</Label>
-                        &lt;p className="font-medium">{selectedBookingForAction.customerName}</p>
-                      &lt;/div>
-                       &lt;div>
+                        <p className="font-medium">{selectedBookingForAction.customerName}</p>
+                      </div>
+                       <div>
                         <Label>Car Make:</Label>
-                        &lt;p className="font-medium">{selectedBookingForAction.carMake} {selectedBookingForAction.carModel}</p>
-                      &lt;/div>
-                      &lt;div>
+                        <p className="font-medium">{selectedBookingForAction.carMake} {selectedBookingForAction.carModel}</p>
+                      </div>
+                      <div>
                         <Label>Booking Number:</Label>
-                        &lt;p className="font-medium">{selectedBookingForAction.bookingNumber}</p>
-                      &lt;/div>
-                      &lt;div>
+                        <p className="font-medium">{selectedBookingForAction.bookingNumber}</p>
+                      </div>
+                      <div>
                         <Label>Plate Number:</Label>
-                        &lt;p className="font-medium">{selectedBookingForAction.plateNumber}</p>
-                      &lt;/div>
-                     &lt;/div>
+                        <p className="font-medium">{selectedBookingForAction.plateNumber}</p>
+                      </div>
+                     </div>
                       <Label htmlFor="valuer">Select Valuer</Label>
                       <Select value={selectedValuerId} onValueChange={setSelectedValuerId}>
-                          &lt;SelectTrigger>
-                              &lt;SelectValue placeholder="Select a valuer" />
-                          &lt;/SelectTrigger>
-                          &lt;SelectContent>
+                          <SelectTrigger>
+                              <SelectValue placeholder="Select a valuer" />
+                          </SelectTrigger>
+                          <SelectContent>
                               {valuers.map(valuer => (
-                                  &lt;SelectItem key={valuer.id} value={valuer.id}>
+                                  <SelectItem key={valuer.id} value={valuer.id}>
                                       {valuer.name}
-                                  &lt;/SelectItem>
+                                  </SelectItem>
                               ))}
-                          &lt;/SelectContent>
+                          </SelectContent>
                       </Select>
-                  &lt/>
+                  </>
                 )}
               </div>
               <DialogFooter>
@@ -2089,127 +2089,127 @@ function AdminDashboard() {
       </Dialog>
       
        <Dialog open={isRejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-            &lt;DialogContent className="sm:max-w-[425px]">
-                &lt;DialogHeader>
-                    &lt;DialogTitle>Reject Booking</DialogTitle>
-                    &lt;DialogDescription>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Reject Booking</DialogTitle>
+                    <DialogDescription>
                         Please provide a reason for rejecting this booking.
                     </DialogDescription>
-                &lt;/DialogHeader>
-                &lt;div className="grid gap-4 py-4">
-                    &lt;Label htmlFor="rejectionReason">Rejection Reason</Label>
-                    &lt;Textarea
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <Label htmlFor="rejectionReason">Rejection Reason</Label>
+                    <Textarea
                         id="rejectionReason"
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
                         placeholder="Enter reason for rejection"
                     />
-                &lt/div>
-                &lt;DialogFooter>
-                    &lt;Button type="button" variant="secondary" onClick={() => {
+                </div>
+                <DialogFooter>
+                    <Button type="button" variant="secondary" onClick={() => {
                         setRejectDialogOpen(false);
                         setAssignDialogOpen(true);
                     }}>
                         Back
-                    &lt/Button>
-                    &lt;Button type="button" variant="destructive" onClick={handleBookingRejection} disabled={!rejectionReason}>
+                    </Button>
+                    <Button type="button" variant="destructive" onClick={handleBookingRejection} disabled={!rejectionReason}>
                         Confirm Rejection
-                    &lt/Button>
-                &lt/DialogFooter>
-            &lt/DialogContent>
-        &lt/Dialog>
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
         
          <Dialog open={isCompleteValuationOpen} onOpenChange={setCompleteValuationOpen}>
-            &lt;DialogContent className="sm:max-w-[800px]">
-                &lt;DialogHeader>
-                    &lt;DialogTitle>Complete Valuation</DialogTitle>
-                    &lt;DialogDescription>
+            <DialogContent className="sm:max-w-[800px]">
+                <DialogHeader>
+                    <DialogTitle>Complete Valuation</DialogTitle>
+                    <DialogDescription>
                         Enter official assessment values to complete the valuation process.
                     </DialogDescription>
-                &lt;/DialogHeader>
-                &lt;Tabs defaultValue="report" className="space-y-4">
-                    &lt;TabsList>
-                        &lt;TabsTrigger value="report">Valuation Report</TabsTrigger>
-                        &lt;TabsTrigger value="images">Images</TabsTrigger>
-                        &lt;TabsTrigger value="admin-values">Assessment Values</TabsTrigger>
-                    &lt/TabsList>
-                    &lt;TabsContent value="report" className="space-y-4">
+                </DialogHeader>
+                <Tabs defaultValue="report" className="space-y-4">
+                    <TabsList>
+                        <TabsTrigger value="report">Valuation Report</TabsTrigger>
+                        <TabsTrigger value="images">Images</TabsTrigger>
+                        <TabsTrigger value="admin-values">Assessment Values</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="report" className="space-y-4">
                          {loadingValuationDetails ? (
-                            &lt;div className="space-y-2">
-                                &lt;Skeleton className="h-4 w-[200px]" />
-                                &lt;Skeleton className="h-4 w-[250px]" />
-                                &lt;Skeleton className="h-4 w-[220px]" />
-                                &lt;Skeleton className="h-4 w-[180px]" />
-                            &lt/div>
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[200px]" />
+                                <Skeleton className="h-4 w-[250px]" />
+                                <Skeleton className="h-4 w-[220px]" />
+                                <Skeleton className="h-4 w-[180px]" />
+                            </div>
                         ) : selectedValuationForAction ? (
-                           &lt;Collapsible>
-                                &lt;CollapsibleTrigger asChild>
-                                    &lt;Button variant="ghost" className="w-full justify-start">
-                                        Vehicle Information &lt;ChevronDown className="ml-auto h-4 w-4 shrink-0 transition-transform peer-data-[state=open]:rotate-180" />
-                                    &lt/Button>
-                                &lt;/CollapsibleTrigger>
-                                &lt;CollapsibleContent className="pl-4">
-                                    &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        &lt;Card>
-                                            &lt;CardHeader>&lt;CardTitle>Details&lt/CardTitle>&lt/CardHeader>
-                                            &lt;CardContent>
-                                                &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Chassis No:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.chassisNo}&lt/span>
-                                                    &lt/div>
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Colour:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.colour}&lt/span>
-                                                    &lt/div>
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Fuel Type:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.fuelType}&lt/span>
-                                                    &lt/div>
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Engine No:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.engineNo}&lt/span>
-                                                    &lt/div>
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Engine Rating:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.engineRating}&lt/span>
-                                                    &lt/div>
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Date of Reg:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.dateOfReg?.toDate().toLocaleDateString()}&lt/span>
-                                                    &lt/div>
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Year of Manufacture:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.yearOfManufacture}&lt/span>
-                                                    &lt/div>
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Odometer Readings:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.odometerReadings}&lt/span>
-                                                    &lt/div>
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Country of Origin:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.countryOfOrigin}&lt/span>
-                                                    &lt/div>
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Number of Airbags:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.numberOfAirbags}&lt/span>
-                                                    &lt/div>
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Lights Type:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.lightsType}&lt/span>
-                                                    &lt/div>
-                                                    &lt;div className="flex justify-between items-center py-1 border-b">
-                                                        &lt;span className="text-muted-foreground">Transmission Type:&lt/span>
-                                                        &lt;span className="font-medium">{selectedValuationForAction.transmissionType}&lt/span>
-                                                    &lt/div>
-                                                &lt/div>
-                                            &lt/CardContent>
-                                        &lt/Card>
-                                        &lt;Card>
-                                            &lt;CardHeader>&lt;CardTitle>Logbook Image&lt/CardTitle>&lt/CardHeader>
-                                            &lt;CardContent>
+                           <Collapsible>
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" className="w-full justify-start">
+                                        Vehicle Information <ChevronDown className="ml-auto h-4 w-4 shrink-0 transition-transform peer-data-[state=open]:rotate-180" />
+                                    </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="pl-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Card>
+                                            <CardHeader><CardTitle>Details</CardTitle></CardHeader>
+                                            <CardContent>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Chassis No:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.chassisNo}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Colour:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.colour}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Fuel Type:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.fuelType}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Engine No:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.engineNo}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Engine Rating:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.engineRating}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Date of Reg:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.dateOfReg?.toDate().toLocaleDateString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Year of Manufacture:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.yearOfManufacture}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Odometer Readings:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.odometerReadings}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Country of Origin:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.countryOfOrigin}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Number of Airbags:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.numberOfAirbags}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Lights Type:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.lightsType}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center py-1 border-b">
+                                                        <span className="text-muted-foreground">Transmission Type:</span>
+                                                        <span className="font-medium">{selectedValuationForAction.transmissionType}</span>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader><CardTitle>Logbook Image</CardTitle></CardHeader>
+                                            <CardContent>
                                                {selectedValuationForAction.logbookImage ? (
-                                                    &lt;Image
+                                                    <Image
                                                         src={selectedValuationForAction.logbookImage}
                                                         alt="Logbook"
                                                         width={500}
@@ -2217,57 +2217,57 @@ function AdminDashboard() {
                                                         className="object-contain"
                                                     />
                                                 ) : (
-                                                    &lt;p className="text-muted-foreground">No logbook image available.&lt/p>
+                                                    <p className="text-muted-foreground">No logbook image available.</p>
                                                 )}
-                                            &lt/CardContent>
-                                        &lt/Card>
-                                    &lt/div>
-                                &lt/CollapsibleContent>
-                            &lt/Collapsible>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                </CollapsibleContent>
+                            </Collapsible>
                         ) : (
-                            &lt;p className="text-muted-foreground">Could not load valuation report.&lt/p>
+                            <p className="text-muted-foreground">Could not load valuation report.</p>
                         )}
-                    &lt/TabsContent>
-                    &lt;TabsContent value="images">
+                    </TabsContent>
+                    <TabsContent value="images">
                         {loadingValuationDetails ? (
-                            &lt;div className="space-y-2">
-                                &lt;Skeleton className="h-4 w-[200px]" />
-                                &lt;Skeleton className="h-4 w-[250px]" />
-                            &lt/div>
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[200px]" />
+                                <Skeleton className="h-4 w-[250px]" />
+                            </div>
                         ) : selectedValuationForAction ? (
                             selectedValuationForAction.valuationImages && selectedValuationForAction.valuationImages.length > 0 ? (
-                                &lt;Carousel className="w-full max-w-4xl">
-                                    &lt;CarouselContent>
+                                <Carousel className="w-full max-w-4xl">
+                                    <CarouselContent>
                                         {selectedValuationForAction.valuationImages.map((image, index) => (
-                                            &lt;CarouselItem key={index} className="pl-1 md:pl-0">
-                                                &lt;div className="p-1">
-                                                    &lt;Image
+                                            <CarouselItem key={index} className="pl-1 md:pl-0">
+                                                <div className="p-1">
+                                                    <Image
                                                         src={image}
                                                         alt={`Valuation Image ${index + 1}`}
                                                         width={500}
                                                         height={300}
                                                         className="object-contain rounded-md"
                                                     />
-                                                &lt/div>
-                                            &lt/CarouselItem>
+                                                </div>
+                                            </CarouselItem>
                                         ))}
-                                    &lt/CarouselContent>
-                                    &lt;CarouselPrevious />
-                                    &lt;CarouselNext />
-                                &lt/Carousel>
+                                    </CarouselContent>
+                                    <CarouselPrevious />
+                                    <CarouselNext />
+                                </Carousel>
                             ) : (
-                                &lt;p className="text-muted-foreground">No valuation images available.&lt/p>
+                                <p className="text-muted-foreground">No valuation images available.</p>
                             )
                         ) : (
-                            &lt;p className="text-muted-foreground">Could not load valuation images.&lt/p>
+                            <p className="text-muted-foreground">Could not load valuation images.</p>
                         )}
-                    &lt/TabsContent>
-                    &lt;TabsContent value="admin-values">
+                    </TabsContent>
+                    <TabsContent value="admin-values">
                         {loadingValuationDetails ? (
-                            &lt;div className="space-y-2">
-                                &lt;Skeleton className="h-4 w-[200px]" />
-                                &lt;Skeleton className="h-4 w-[250px]" />
-                            &lt/div>
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[200px]" />
+                                <Skeleton className="h-4 w-[250px]" />
+                            </div>
                         ) : selectedValuationForAction ? (
                              <Form {...adminValuationForm}>
                                 <form onSubmit={adminValuationForm.handleSubmit(handleCompleteValuation)} className="space-y-4">
@@ -2371,3 +2371,5 @@ function AdminDashboard() {
 }
 
 export default AuthGuard(AdminDashboard);
+
+    
