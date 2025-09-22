@@ -768,6 +768,10 @@ function ValuerDashboardPage() {
         return <Loading />;
     }
 
+    if (loading) {
+      return <Loading />;
+    }
+
     return (
         <UnifiedDashboardLayout
             title="CASA Motor Assessors Ltd"

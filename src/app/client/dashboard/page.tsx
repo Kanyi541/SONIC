@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -1818,4 +1817,3 @@ function ClientDashboardPage() {
 }
 
 export default AuthGuard(ClientDashboardPage, { allowClients: true });
-    

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { Suspense, useEffect, useState } from 'react';
@@ -545,8 +546,7 @@ class ValuationReportPageContent extends React.Component<{ router: any; searchPa
             }
         });
         
-        const printDate = new Date().toLocaleDateString('en-CA');
-        document.title = `${bookingData.bookingNumber} - ${bookingData.customerName} - ${printDate}`;
+        document.title = `${bookingData.plateNumber} - ${bookingData.bookingNumber}`;
         const reportUrl = `${window.location.origin}/verify-report?id=${bookingId}&verify=true`;
         const qrUrl = await QRCode.toDataURL(reportUrl, { width: 128, margin: 1 });
         this.setState({ qrCodeUrl: qrUrl });

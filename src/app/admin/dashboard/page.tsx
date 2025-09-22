@@ -1,11 +1,9 @@
-
-
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef, useMemo } from 'react';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useAuth, AuthGuard } from '@/hooks/use-auth';
+import { AuthGuard } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown } from 'lucide-react';
 import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -278,6 +276,11 @@ function AdminDashboard() {
   const [recentValuationsPage, setRecentValuationsPage] = useState(1);
   const [valuatedBookingsPage, setValuatedBookingsPage] = useState(1);
   const [allCarsPage, setAllCarsPage] = useState(1);
+
+  const handleViewChange = (view: string) => {
+    setLoading(true);
+    setActiveView(view);
+  };
 
   const adminValuationForm = useForm<AdminValuationFormValues>({
     resolver: zodResolver(adminValuationSchema),
@@ -607,7 +610,7 @@ function AdminDashboard() {
     }
   };
   
-  const handleOpenReportInNewTab = (reportType: 'booking' | 'valuation', bookingId: string) => {
+    const handleOpenReportInNewTab = (reportType: 'booking' | 'valuation', bookingId: string) => {
     const url = reportType === 'booking' 
       ? `/client/booking-report?id=${bookingId}`
       : `/admin/valuation-report?id=${bookingId}`;
@@ -1811,8 +1814,8 @@ function AdminDashboard() {
                                                 <TableCell className="text-right">
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button variant="default" size="sm">
-                                                                <FileDown className="mr-2 h-4 w-4" />
+                                                          <Button variant="default" size="sm">
+                                                            <FileDown className="mr-2 h-4 w-4" />
                                                                 Reports
                                                             </Button>
                                                         </PopoverTrigger>

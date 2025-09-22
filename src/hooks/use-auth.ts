@@ -1,1 +1,0 @@
-// This file has been renamed to use-auth.tsx and this file will be deleted.
