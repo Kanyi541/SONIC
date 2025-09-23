@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef, useMemo } from 'react';
@@ -820,7 +821,7 @@ function AdminDashboard() {
           </div>
           <div className="mt-4">
               <p className="text-sm font-medium text-muted-foreground">{title}</p>
-              <Progress value={progress} className={`h-1 mt-1 ${colorClass}`} indicatorClassName={colorClass} />
+              <Progress value={progress} className="h-1 mt-1" indicatorClassName={colorClass} />
           </div>
       </Card>
   );
@@ -2392,8 +2393,7 @@ function AdminDashboard() {
   );
 }
 
-const GuardedAdminDashboard = AuthGuard(AdminDashboard);
-
-export default GuardedAdminDashboard;
+export default AuthGuard(AdminDashboard);
+    
 
     

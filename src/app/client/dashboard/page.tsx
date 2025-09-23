@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -975,7 +976,7 @@ function ClientDashboardPage() {
           </div>
           <div className="mt-4">
               <p className="text-sm font-medium text-muted-foreground">{title}</p>
-              <Progress value={progress} className={`h-1 mt-1 ${colorClass}`} indicatorClassName={colorClass} />
+              <Progress value={progress} className="h-1 mt-1" indicatorClassName={colorClass} />
           </div>
       </Card>
   );
@@ -1275,7 +1276,7 @@ function ClientDashboardPage() {
                             value={stats.pendingApproval} 
                             icon={<FileSignature className="h-6 w-6 text-orange-500" />} 
                             onClick={() => handleActiveViewChange('pending-bookings')}
-                            progress={(stats.pendingApproval / stats.total) * 100}
+                            progress={stats.total > 0 ? (stats.pendingApproval / stats.total) * 100 : 0}
                             colorClass="bg-orange-500"
                         />
                          <StatCard 
@@ -1283,7 +1284,7 @@ function ClientDashboardPage() {
                             value={stats.pendingValuation} 
                             icon={<FileClock className="h-6 w-6 text-yellow-500" />} 
                             onClick={() => handleActiveViewChange('pending-valuation-bookings')}
-                            progress={(stats.pendingValuation / stats.total) * 100}
+                            progress={stats.total > 0 ? (stats.pendingValuation / stats.total) * 100 : 0}
                             colorClass="bg-yellow-500"
                         />
                          <StatCard 
@@ -1291,7 +1292,7 @@ function ClientDashboardPage() {
                             value={stats.completed} 
                             icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
                             onClick={() => handleActiveViewChange('completed-bookings')}
-                            progress={(stats.completed / stats.total) * 100}
+                            progress={stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}
                             colorClass="bg-green-500"
                         />
                          <StatCard 
@@ -1299,7 +1300,7 @@ function ClientDashboardPage() {
                             value={stats.rejected} 
                             icon={<XCircle className="h-6 w-6 text-red-500" />} 
                             onClick={() => handleActiveViewChange('rejected-bookings')}
-                            progress={(stats.rejected / stats.total) * 100}
+                            progress={stats.total > 0 ? (stats.rejected / stats.total) * 100 : 0}
                             colorClass="bg-red-500"
                         />
                     </div>
@@ -1817,3 +1818,5 @@ function ClientDashboardPage() {
 }
 
 export default AuthGuard(ClientDashboardPage, { allowClients: true });
+
+    

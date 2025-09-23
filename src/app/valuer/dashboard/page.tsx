@@ -604,7 +604,7 @@ function ValuerDashboardPage() {
           </div>
           <div className="mt-4">
               <p className="text-sm font-medium text-muted-foreground">{title}</p>
-              <Progress value={progress} className={`h-1 mt-1 ${colorClass}`} indicatorClassName={colorClass} />
+              <Progress value={progress} className="h-1 mt-1" indicatorClassName={colorClass} />
           </div>
       </Card>
     );
@@ -1170,6 +1170,6 @@ function ValuerDashboardPage() {
     );
 }
 
-const GuardedValuerDashboardPage = AuthGuard(ValuerDashboardPage, { allowClients: true });
+export default AuthGuard(ValuerDashboardPage, { allowClients: true });
 
-export default GuardedValuerDashboardPage;
+    
