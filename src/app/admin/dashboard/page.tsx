@@ -1,9 +1,10 @@
+
 "use client"
 
 import React, { useState, useEffect, Suspense, useRef, useMemo } from 'react';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AuthGuard } from '@/hooks/use-auth';
+import { useAuth, AuthGuard } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown } from 'lucide-react';
 import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -1862,8 +1863,8 @@ function AdminDashboard() {
                             </Button>
                             <span className="text-sm">Page {allCarsPage} of {totalAllBookingsPages}</span>
                             <Button variant="outline" size="sm" onClick={() => setAllCarsPage(allCarsPage + 1)} disabled={allCarsPage === totalAllBookingsPages}>
-                                Next
                                 <ChevronRight className="h-4 w-4" />
+                                Next
                             </Button>
                         </div>
                     </CardContent>
@@ -2394,3 +2395,5 @@ function AdminDashboard() {
 const GuardedAdminDashboard = AuthGuard(AdminDashboard);
 
 export default GuardedAdminDashboard;
+
+    
