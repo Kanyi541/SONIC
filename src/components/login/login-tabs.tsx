@@ -43,8 +43,8 @@ const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email to reset your password." }),
 });
 
-const userLoginSchema = z.object({
-  username: z.string().min(1, { message: "Username is required." }),
+const clientLoginSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email." }),
   password: z.string().min(1, { message: "Password is required." }),
 });
 
@@ -56,7 +56,7 @@ const valuerLoginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
-type UserLoginFormValues = z.infer<typeof userLoginSchema>;
+type ClientLoginFormValues = z.infer<typeof clientLoginSchema>;
 type ValuerLoginFormValues = z.infer<typeof valuerLoginSchema>;
 type Role = "Admin" | "Client" | "Valuer";
 
@@ -268,99 +268,61 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
     const router = useRouter();
     const { toast } = useToast();
 
-    const form = useForm<UserLoginFormValues>({
-        resolver: zodResolver(userLoginSchema),
-        defaultValues: { username: "", password: "" },
+    const form = useForm<ClientLoginFormValues>({
+        resolver: zodResolver(clientLoginSchema),
+        defaultValues: { email: "", password: "" },
     });
 
-    const onSubmit = async (data: UserLoginFormValues) => {
+    const onSubmit = async (data: ClientLoginFormValues) => {
         setIsLoading(true);
         try {
+            const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+            const user = userCredential.user;
+
             const insurersRef = collection(db, "insurers");
+            const q = query(insurersRef, where("uid", "==", user.uid));
+            const querySnapshot = await getDocs(q);
 
-            // Check in insurers collection (for main client/institution AND agents)
-            const qInsurers = query(insurersRef, where("username", "==", data.username));
-            const insurerSnapshot = await getDocs(qInsurers);
-
-            if (!insurerSnapshot.empty) {
-                const userDoc = insurerSnapshot.docs[0];
+            if (!querySnapshot.empty) {
+                const userDoc = querySnapshot.docs[0];
                 const userData = userDoc.data();
 
-                if (userData.password === data.password && userData.active) {
-                    if (userData.role === 'Agent') {
-                        // This is an Agent
-                        const clientQuery = query(insurersRef, where("username", "==", userData.clientId));
-                        const clientSnapshot = await getDocs(clientQuery);
-
-                        if (!clientSnapshot.empty) {
-                            const clientData = clientSnapshot.docs[0].data();
-                            sessionStorage.setItem('loggedInUser', JSON.stringify({ 
-                                name: clientData.name,
-                                username: clientData.username, 
-                                email: clientData.email,
-                                role: 'Client',
-                                agentName: userData.name // Agent's own name
-                            }));
-                            router.push('/client/dashboard');
-                            toast({ title: "Agent Login Successful", description: `Welcome back, ${userData.name}!` });
-                        } else {
-                            throw new Error("Could not find parent institution for agent.");
-                        }
-                    } else {
-                        // This is a main Client/Institution
-                        sessionStorage.setItem('loggedInUser', JSON.stringify({ name: userData.name, username: userData.username, email: userData.email, role: 'Client' }));
-                        router.push('/client/dashboard');
-                        toast({ title: "Client Login Successful", description: `Welcome back, ${userData.name}!` });
-                    }
-                    setIsLoading(false);
+                if (userData.active) {
+                    sessionStorage.setItem('loggedInUser', JSON.stringify({ 
+                        name: userData.name, 
+                        username: userData.username, 
+                        email: userData.email, 
+                        role: 'Client' 
+                    }));
+                    router.push('/client/dashboard');
+                    toast({ title: "Client Login Successful", description: `Welcome back, ${userData.name}!` });
                     return;
+                } else {
+                     await signOut(auth);
+                    toast({
+                        variant: "destructive",
+                        title: "Account Inactive",
+                        description: "Your account is currently inactive. Please contact an administrator.",
+                    });
                 }
+            } else {
+                // Also check staff and agent collections if necessary, or decide if this form is only for main institutions.
+                // For now, we assume only main institutions log in this way.
+                 await signOut(auth);
+                toast({
+                    variant: "destructive",
+                    title: "Login Failed",
+                    description: "No client profile found for this account.",
+                });
             }
-
-            // If not found in insurers, check in staff collection
-            const staffRef = collection(db, "staff");
-            const qStaff = query(staffRef, where("username", "==", data.username));
-            const staffSnapshot = await getDocs(qStaff);
-
-            if (!staffSnapshot.empty) {
-                const staffDoc = staffSnapshot.docs[0];
-                const staffData = staffDoc.data();
-
-                if (staffData.password === data.password) {
-                     // Find the client this staff belongs to
-                    const clientQuery = query(insurersRef, where("username", "==", staffData.clientId));
-                    const clientSnapshot = await getDocs(clientQuery);
-
-                    if (!clientSnapshot.empty) {
-                        const clientData = clientSnapshot.docs[0].data();
-                        sessionStorage.setItem('loggedInUser', JSON.stringify({ 
-                            name: clientData.name, // Institution name
-                            username: clientData.username, // Institution username
-                            email: clientData.email, // Institution email
-                            role: 'Client',
-                            agentName: staffData.name // Staff's own name
-                        }));
-                        router.push('/client/dashboard');
-                        toast({ title: "Staff Login Successful", description: `Welcome back, ${staffData.name}!` });
-                        setIsLoading(false);
-                        return;
-                    }
-                }
-            }
-            
-            // If no user is found or password doesn't match
+        } catch (error: any) {
+             const errorMessage = error.code === 'auth/invalid-credential' 
+                ? 'Invalid email or password.'
+                : 'An unexpected error occurred.';
             toast({
                 variant: "destructive",
                 title: "Login Failed",
-                description: "Invalid credentials or account is inactive.",
-            });
-
-        } catch (error) {
-            console.error("Unified client/staff/agent login error:", error);
-            toast({
-                variant: "destructive",
-                title: "Login Failed",
-                description: "An unexpected error occurred. Please try again.",
+                description: errorMessage,
             });
         } finally {
             setIsLoading(false);
@@ -380,12 +342,12 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="username"
+              name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your username" {...field} />
+                    <Input placeholder="Enter your email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

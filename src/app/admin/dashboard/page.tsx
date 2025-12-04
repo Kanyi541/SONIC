@@ -436,62 +436,34 @@ function AdminDashboard() {
         const password = (form.elements.namedItem('password') as HTMLInputElement).value;
 
         try {
-            // Use a generic handler for auth-based user creation
-            if (userType === 'staff' || userType === 'valuer') {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const newUser = userCredential.user;
-                const collectionName = userType === 'staff' ? 'staff' : 'valuers';
-                
-                const data: any = {
-                    name,
-                    username,
-                    email,
-                    phone,
-                    active: isControlActive,
-                    createdAt: serverTimestamp(),
-                    uid: newUser.uid,
-                };
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const newUser = userCredential.user;
+            
+            let collectionName: string;
+            const data: any = {
+                name,
+                username,
+                email,
+                phone,
+                active: isControlActive,
+                createdAt: serverTimestamp(),
+                uid: newUser.uid,
+            };
 
-                if (userType === 'staff') {
-                    data.role = 'Staff';
-                    data.isAdmin = false;
-                }
-
-                await addDoc(collection(db, collectionName), data);
-                
-                const userTypeDisplay = userType.charAt(0).toUpperCase() + userType.slice(1);
-                toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.` });
-
-            } else if (userType === 'institution') {
-                // Non-auth user creation for institutions
-                const usernameQuery = query(collection(db, "insurers"), where("username", "==", username));
-                const emailQuery = query(collection(db, "insurers"), where("email", "==", email));
-                
-                const [usernameSnapshot, emailSnapshot] = await Promise.all([
-                    getDocs(usernameQuery),
-                    getDocs(emailQuery)
-                ]);
-
-                if (!usernameSnapshot.empty) {
-                    toast({ variant: "destructive", title: "Registration Failed", description: `An institution with this username already exists.` });
-                    return;
-                }
-                if (!emailSnapshot.empty) {
-                    toast({ variant: "destructive", title: "Registration Failed", description: `An institution with this email already exists.` });
-                    return;
-                }
-
-                await addDoc(collection(db, "insurers"), {
-                    name,
-                    username,
-                    email,
-                    phone,
-                    password,
-                    active: isControlActive,
-                    createdAt: serverTimestamp(),
-                });
-                toast({ title: "Institution Added", description: `${name} has been successfully added.`});
+            if (userType === 'staff') {
+                collectionName = 'staff';
+                data.role = 'Staff';
+                data.isAdmin = false;
+            } else if (userType === 'valuer') {
+                collectionName = 'valuers';
+            } else {
+                collectionName = 'insurers';
             }
+
+            await addDoc(collection(db, collectionName), data);
+            
+            const userTypeDisplay = userType.charAt(0).toUpperCase() + userType.slice(1);
+            toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.` });
 
             // Common cleanup logic
             if (userType === 'institution') setAddInstitutionOpen(false);
@@ -2367,6 +2339,7 @@ export default GuardedAdminDashboard;
     
 
     
+
 
 
 
