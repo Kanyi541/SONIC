@@ -7,7 +7,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth, AuthGuard } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown, ShieldQuestion } from 'lucide-react';
 import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc, getDoc } from "firebase/firestore";
@@ -101,7 +101,7 @@ interface Staff {
   createdAt?: any;
   isAdmin?: boolean;
   uid?: string;
-  role?: 'Super Admin' | 'Admin';
+  role?: 'Super Admin' | 'Admin' | 'Staff';
   clientId?: string;
 }
 
@@ -190,12 +190,8 @@ const adminValuationSchema = z.object({
   rsValue: z.string().min(1, "RS value is required."),
 });
 
-const promoteAdminSchema = z.object({
-    password: z.string().min(8, "Password must be at least 8 characters long.")
-});
-
 type AdminValuationFormValues = z.infer<typeof adminValuationSchema>;
-type PromoteAdminFormValues = z.infer<typeof promoteAdminSchema>;
+
 
 const ConditionChecklist = ({ title, data, notes }: { title: string, data?: Record<string, 'Yes' | 'No'>, notes?: string }) => {
     if (!data) return null;
@@ -257,10 +253,8 @@ function AdminDashboard() {
   const [isAssignDialogOpen, setAssignDialogOpen] = useState(false);
   const [isRejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [isCompleteValuationOpen, setCompleteValuationOpen] = useState(false);
-  const [isPromoteAdminOpen, setPromoteAdminOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
-  const [selectedStaffForPromotion, setSelectedStaffForPromotion] = useState<Staff | null>(null);
   const [selectedValuationForAction, setSelectedValuationForAction] = useState<PopulatedValuation | null>(null);
   const [loadingValuationDetails, setLoadingValuationDetails] = useState(false);
   const [selectedValuerId, setSelectedValuerId] = useState<string>("");
@@ -289,10 +283,6 @@ function AdminDashboard() {
     defaultValues: { assessmentValue: "", forcedValue: "", wsValue: "", rsValue: "" },
   });
   
-  const promoteAdminForm = useForm<PromoteAdminFormValues>({
-    resolver: zodResolver(promoteAdminSchema),
-    defaultValues: { password: "" },
-  });
 
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -335,7 +325,7 @@ function AdminDashboard() {
 
                 if (!querySnapshot.empty) {
                     const staffData = querySnapshot.docs[0].data() as Staff;
-                    setCurrentUserRole(staffData.role || null);
+                    setCurrentUserRole(staffData.role || 'Admin');
                 } else {
                     // This could be the root user not in the staff list
                     setCurrentUserRole('Super Admin');
@@ -435,80 +425,105 @@ function AdminDashboard() {
     }
   };
   
-  const handleAddUser = async (event: React.FormEvent<HTMLFormElement>, userType: 'institution' | 'valuer' | 'staff') => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const name = (form.elements.namedItem('name') as HTMLInputElement).value;
-    const username = (form.elements.namedItem('username') as HTMLInputElement).value;
-    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
-    const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
-    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
+    const handleAddUser = async (event: React.FormEvent<HTMLFormElement>, userType: 'institution' | 'valuer' | 'staff') => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const name = (form.elements.namedItem('name') as HTMLInputElement).value;
+        const username = (form.elements.namedItem('username') as HTMLInputElement).value;
+        const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+        const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
+        const password = (form.elements.namedItem('password') as HTMLInputElement).value;
 
-    let collectionName = 'insurers';
-    if (userType === 'valuer') collectionName = 'valuers';
-    if (userType === 'staff') collectionName = 'staff';
+        if (userType === 'staff') {
+            try {
+                // Step 1: Create user in Firebase Auth
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const newStaffUser = userCredential.user;
 
-    try {
-      const usernameQuery = query(collection(db, collectionName), where("username", "==", username));
-      const emailQuery = query(collection(db, collectionName), where("email", "==", email));
-      
-      const [usernameSnapshot, emailSnapshot] = await Promise.all([
-          getDocs(usernameQuery),
-          getDocs(emailQuery)
-      ]);
+                // Step 2: Add staff document to Firestore
+                await addDoc(collection(db, "staff"), {
+                    name,
+                    username,
+                    email,
+                    phone,
+                    active: isControlActive,
+                    createdAt: serverTimestamp(),
+                    role: 'Staff',
+                    isAdmin: false,
+                    uid: newStaffUser.uid,
+                });
 
-      if (!usernameSnapshot.empty) {
-          toast({ variant: "destructive", title: "Registration Failed", description: `A user with this username already exists.` });
-          return;
-      }
-      if (!emailSnapshot.empty) {
-          toast({ variant: "destructive", title: "Registration Failed", description: `A user with this email already exists.` });
-          return;
-      }
+                toast({ title: "Staff Added", description: `${name} has been successfully added as Staff.` });
+                setAddStaffOpen(false);
+                form.reset();
+                setControlActive(true);
+                setShowPassword(false);
+            } catch (error: any) {
+                console.error("Error adding staff:", error);
+                const errorMessage = error.code === 'auth/email-already-in-use' 
+                    ? "This email is already registered."
+                    : "An error occurred while adding the staff member.";
+                toast({
+                    variant: "destructive",
+                    title: "Failed to Add Staff",
+                    description: errorMessage,
+                });
+            }
+            return;
+        }
 
-      const docData: any = {
-        name,
-        username,
-        email,
-        phone,
-        password,
-        active: isControlActive,
-        createdAt: serverTimestamp(),
-      };
-      
-      if (userType === 'staff') {
-        docData.isAdmin = false;
-        docData.role = 'Super Admin';
-      }
+        // --- Logic for Institutions and Valuers (no auth user creation) ---
+        let collectionName = userType === 'institution' ? 'insurers' : 'valuers';
 
-      await addDoc(collection(db, collectionName), docData);
+        try {
+            const usernameQuery = query(collection(db, collectionName), where("username", "==", username));
+            const emailQuery = query(collection(db, collectionName), where("email", "==", email));
+            
+            const [usernameSnapshot, emailSnapshot] = await Promise.all([
+                getDocs(usernameQuery),
+                getDocs(emailQuery)
+            ]);
 
-      if (userType === 'institution') setAddInstitutionOpen(false);
-      else if (userType === 'valuer') setAddValuerOpen(false);
-      else if (userType === 'staff') setAddStaffOpen(false);
+            if (!usernameSnapshot.empty) {
+                toast({ variant: "destructive", title: "Registration Failed", description: `A user with this username already exists.` });
+                return;
+            }
+            if (!emailSnapshot.empty) {
+                toast({ variant: "destructive", title: "Registration Failed", description: `A user with this email already exists.` });
+                return;
+            }
 
-      form.reset();
-      setControlActive(true);
-      setShowPassword(false);
-      let userTypeDisplay = 'User';
-      if (userType === 'institution') userTypeDisplay = 'Institution';
-      if (userType === 'valuer') userTypeDisplay = 'Valuer';
-      if (userType === 'staff') userTypeDisplay = 'Staff';
+            await addDoc(collection(db, collectionName), {
+                name,
+                username,
+                email,
+                phone,
+                password,
+                active: isControlActive,
+                createdAt: serverTimestamp(),
+            });
 
-      toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.`});
-    } catch (error: any) {
-       let userTypeDisplay = 'User';
-        if (userType === 'institution') userTypeDisplay = 'Institution';
-        if (userType === 'valuer') userTypeDisplay = 'Valuer';
-        if (userType === 'staff') userTypeDisplay = 'Staff';
-       console.error(`Error adding ${userType}: `, error);
-       toast({
-         variant: "destructive",
-         title: `Failed to Add ${userTypeDisplay}`,
-         description: `An error occurred while adding the ${userType}.`,
-       });
-    }
-  };
+            if (userType === 'institution') setAddInstitutionOpen(false);
+            else setAddValuerOpen(false);
+
+            form.reset();
+            setControlActive(true);
+            setShowPassword(false);
+            
+            const userTypeDisplay = userType === 'institution' ? 'Institution' : 'Valuer';
+            toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.`});
+
+        } catch (error: any) {
+            const userTypeDisplay = userType === 'institution' ? 'Institution' : 'Valuer';
+            console.error(`Error adding ${userType}: `, error);
+            toast({
+                variant: "destructive",
+                title: `Failed to Add ${userTypeDisplay}`,
+                description: `An error occurred while adding the ${userType}.`,
+            });
+        }
+    };
+
 
   const handleAddBranch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -560,6 +575,8 @@ function AdminDashboard() {
   };
 
   const handleDeleteUser = async (id: string, name: string, collectionName: string) => {
+    // Note: This does not delete the user from Firebase Auth, only Firestore.
+    // Deleting from Auth should be a separate, more deliberate action.
     const docRef = doc(db, collectionName, id);
     try {
         await deleteDoc(docRef);
@@ -574,43 +591,30 @@ function AdminDashboard() {
     }
   };
 
-  const handlePromoteToAdmin = async (data: PromoteAdminFormValues) => {
-    if (!selectedStaffForPromotion) return;
-
-    try {
-        // Step 1: Create user in Firebase Auth
-        const userCredential = await createUserWithEmailAndPassword(auth, selectedStaffForPromotion.email, data.password);
-        const newAdminUser = userCredential.user;
-
-        // Step 2: Update staff document in Firestore
-        const staffDocRef = doc(db, "staff", selectedStaffForPromotion.id);
-        await updateDoc(staffDocRef, {
-            isAdmin: true,
-            uid: newAdminUser.uid, // Store the auth UID
-            active: true, // Ensure they are active
-            role: 'Admin', // Assign the limited 'Admin' role
-        });
-
-        toast({
-            title: "Promotion Successful",
-            description: `${selectedStaffForPromotion.name} has been promoted to Admin.`,
-        });
-        setPromoteAdminOpen(false);
-        setSelectedStaffForPromotion(null);
-        promoteAdminForm.reset();
-
-    } catch (error: any) {
-        console.error("Error promoting staff to admin:", error);
-        const errorMessage = error.code === 'auth/email-already-in-use' 
-            ? "This email is already registered as an admin."
-            : "An error occurred during promotion.";
-        toast({
-            variant: "destructive",
-            title: "Promotion Failed",
-            description: errorMessage,
-        });
-    }
-  };
+    const handleRoleChange = async (staffMember: Staff, newRole: 'Admin' | 'Staff') => {
+        if (currentUserRole !== 'Super Admin') {
+            toast({ variant: "destructive", title: "Permission Denied", description: "Only Super Admins can change roles." });
+            return;
+        }
+        const staffDocRef = doc(db, "staff", staffMember.id);
+        try {
+            await updateDoc(staffDocRef, {
+                role: newRole,
+                isAdmin: newRole === 'Admin'
+            });
+            toast({
+                title: "Role Updated",
+                description: `${staffMember.name}'s role has been changed to ${newRole}.`,
+            });
+        } catch (error) {
+            console.error("Error updating role:", error);
+            toast({
+                variant: "destructive",
+                title: "Update Failed",
+                description: "Could not update the user's role.",
+            });
+        }
+    };
   
     const handleOpenReportInNewTab = (reportType: 'booking' | 'valuation', bookingId: string) => {
     const url = reportType === 'booking' 
@@ -774,12 +778,6 @@ function AdminDashboard() {
       }
   };
 
-  const openPromoteAdminDialog = (staff: Staff) => {
-    setSelectedStaffForPromotion(staff);
-    setPromoteAdminOpen(true);
-  }
-
-
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "Pending": return "secondary";
@@ -882,11 +880,9 @@ function AdminDashboard() {
                     <TableCell className="hidden md:table-cell">{item.phone}</TableCell>
                     {userType === 'staff' && (
                         <TableCell className="text-center">
-                            {(item as Staff).isAdmin ? (
-                                <Badge variant="default"><ShieldCheck className="mr-1 h-3 w-3" />{(item as Staff).role || 'Admin'}</Badge>
-                            ) : (
-                                <Badge variant="secondary">Staff</Badge>
-                            )}
+                            <Badge variant={(item as Staff).role === 'Admin' ? 'default' : ((item as Staff).role === 'Super Admin' ? 'destructive' : 'secondary')}>
+                                {(item as Staff).role || 'Staff'}
+                            </Badge>
                         </TableCell>
                     )}
                     <TableCell className="text-center">
@@ -909,11 +905,23 @@ function AdminDashboard() {
                         </div>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
-                        {userType === 'staff' && !(item as Staff).isAdmin && currentUserRole === 'Super Admin' && (
-                            <Button variant="outline" size="sm" onClick={() => openPromoteAdminDialog(item as Staff)}>
-                                <ShieldCheck className="mr-2 h-4 w-4" />
-                                Promote
-                            </Button>
+                       {userType === 'staff' && currentUserRole === 'Super Admin' && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                        <ShieldQuestion className="mr-2 h-4 w-4" />
+                                        Change Role
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuItem onClick={() => handleRoleChange(item as Staff, 'Admin')} disabled={(item as Staff).role === 'Admin'}>
+                                        Promote to Admin
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleRoleChange(item as Staff, 'Staff')} disabled={(item as Staff).role === 'Staff'}>
+                                        Demote to Staff
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         )}
                         {currentUserRole === 'Super Admin' && (
                             <AlertDialog>
@@ -926,7 +934,7 @@ function AdminDashboard() {
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            This action cannot be undone. This will permanently delete the user {item.name}.
+                                            This action cannot be undone. This will permanently delete the user {item.name} from Firestore, but not from Firebase Authentication.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -2359,36 +2367,6 @@ function AdminDashboard() {
             </DialogContent>
         </Dialog>
 
-        <Dialog open={isPromoteAdminOpen} onOpenChange={setPromoteAdminOpen}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>Promote to Admin</DialogTitle>
-                    <DialogDescription>
-                        Enter a password to promote this staff member to an Admin.
-                    </DialogDescription>
-                </DialogHeader>
-                <Form {...promoteAdminForm}>
-                    <form onSubmit={promoteAdminForm.handleSubmit(handlePromoteToAdmin)} className="space-y-4">
-                        <FormField
-                            control={promoteAdminForm.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Password</FormLabel>
-                                    <FormControl>
-                                        <Input type="password" placeholder="Password" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <DialogFooter>
-                            <Button type="submit">Promote to Admin</Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
     </SidebarProvider>
   );
 }
@@ -2398,3 +2376,4 @@ export default GuardedAdminDashboard;
     
 
     
+

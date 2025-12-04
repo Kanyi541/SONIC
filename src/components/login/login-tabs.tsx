@@ -94,39 +94,38 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
   const onLoginSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-        // Step 1: Sign in with Firebase Auth
         const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
         const user = userCredential.user;
 
-        // Step 2: Check Firestore 'staff' collection for admin role and active status
         const staffRef = collection(db, "staff");
         const q = query(staffRef, where("uid", "==", user.uid));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-            // This could be the root admin, not in the staff list. Or an error.
-            // For now, let's assume a root admin can always log in if Auth passes.
-            // A more robust system might check a specific 'admins' collection.
-             router.push('/admin/dashboard');
-             toast({ title: "Admin Login Successful", description: "Welcome back!" });
+            // If no staff doc, assume root super admin if login is successful.
+            // This allows the first-ever admin to log in.
+            sessionStorage.setItem('loggedInUser', JSON.stringify({ name: "Super Admin", username: "superadmin", email: user.email, role: 'Super Admin' }));
+            router.push('/admin/dashboard');
+            toast({ title: "Admin Login Successful", description: "Welcome back!" });
         } else {
             const staffDoc = querySnapshot.docs[0].data();
             if (staffDoc.isAdmin && staffDoc.active) {
+                sessionStorage.setItem('loggedInUser', JSON.stringify({ name: staffDoc.name, username: staffDoc.username, email: staffDoc.email, role: staffDoc.role }));
                 router.push('/admin/dashboard');
-                toast({ title: "Admin Login Successful", description: "Welcome back!" });
+                toast({ title: "Admin Login Successful", description: `Welcome back, ${staffDoc.name}!` });
             } else if (!staffDoc.active) {
-                 await signOut(auth);
-                 toast({
+                await signOut(auth);
+                toast({
                     variant: "destructive",
                     title: "Account Inactive",
-                    description: "Your account is currently inactive. Please contact another administrator for assistance.",
+                    description: "Your account is currently inactive. Please contact an administrator.",
                 });
             } else {
-                 await signOut(auth);
-                 toast({
+                await signOut(auth);
+                toast({
                     variant: "destructive",
-                    title: "Login Failed",
-                    description: "You do not have administrative privileges.",
+                    title: "Permission Denied",
+                    description: "You do not have sufficient privileges to access the admin dashboard.",
                 });
             }
         }
