@@ -581,9 +581,21 @@ function ClientDashboardPage() {
         }
 
         try {
-            const year = new Date().getFullYear();
-            const randomNumber = Math.floor(1000 + Math.random() * 9000);
-            const bookingNumber = `CASA/${year}/${randomNumber}`;
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+
+            const startOfYear = new Date(year, 0, 1);
+            const bookingsThisYearQuery = query(
+                collection(db, "bookings"),
+                where("createdAt", ">=", startOfYear)
+            );
+            const querySnapshot = await getDocs(bookingsThisYearQuery);
+            const newBookingCount = querySnapshot.size + 1;
+            const serialNumber = String(newBookingCount).padStart(3, '0');
+
+            const bookingNumber = `${day}/${month}/${serialNumber}/${year}`;
             
             const newBookingRef = doc(collection(db, "bookings"));
 
