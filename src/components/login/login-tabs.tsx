@@ -110,24 +110,24 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
         if (querySnapshot.empty) {
             // If no staff doc, assume root super admin if login is successful.
             // This allows the first-ever admin to log in.
-            sessionStorage.setItem('loggedInUser', JSON.stringify({ name: "Super Admin", username: "superadmin", email: user.email, role: 'Super Admin' }));
+            sessionStorage.setItem('loggedInUser', JSON.stringify({ name: "Super Admin", username: "superadmin", email: user.email, role: 'Super Admin', uid: user.uid }));
             router.push('/admin/dashboard');
             toast({ title: "Admin Login Successful", description: "Welcome back!" });
         } else {
             const staffDoc = querySnapshot.docs[0].data();
             if (staffDoc.isAdmin && staffDoc.active) {
-                sessionStorage.setItem('loggedInUser', JSON.stringify({ name: staffDoc.name, username: staffDoc.username, email: staffDoc.email, role: staffDoc.role }));
+                sessionStorage.setItem('loggedInUser', JSON.stringify({ name: staffDoc.name, username: staffDoc.username, email: staffDoc.email, role: staffDoc.role, uid: user.uid }));
                 router.push('/admin/dashboard');
                 toast({ title: "Admin Login Successful", description: `Welcome back, ${staffDoc.name}!` });
             } else if (!staffDoc.active) {
-                await signOut(auth);
+                await auth.signOut();
                 toast({
                     variant: "destructive",
                     title: "Account Inactive",
                     description: "Your account is currently inactive. Please contact an administrator.",
                 });
             } else {
-                await signOut(auth);
+                await auth.signOut();
                 toast({
                     variant: "destructive",
                     title: "Permission Denied",
@@ -279,42 +279,86 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
             const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
             const user = userCredential.user;
 
+            // Check if user is an Institution
             const insurersRef = collection(db, "insurers");
-            const q = query(insurersRef, where("uid", "==", user.uid));
-            const querySnapshot = await getDocs(q);
+            const qInsurers = query(insurersRef, where("uid", "==", user.uid));
+            const insurersSnapshot = await getDocs(qInsurers);
 
-            if (!querySnapshot.empty) {
-                const userDoc = querySnapshot.docs[0];
-                const userData = userDoc.data();
-
-                if (userData.active) {
+            if (!insurersSnapshot.empty) {
+                const userDoc = insurersSnapshot.docs[0].data();
+                if (userDoc.active) {
                     sessionStorage.setItem('loggedInUser', JSON.stringify({ 
-                        name: userData.name, 
-                        username: userData.username, 
-                        email: userData.email, 
-                        role: 'Client' 
+                        name: userDoc.name, 
+                        username: userDoc.username, 
+                        email: userDoc.email, 
+                        role: 'Client',
+                        uid: user.uid,
                     }));
                     router.push('/client/dashboard');
-                    toast({ title: "Client Login Successful", description: `Welcome back, ${userData.name}!` });
+                    toast({ title: "Client Login Successful", description: `Welcome back, ${userDoc.name}!` });
                     return;
                 } else {
-                     await signOut(auth);
-                    toast({
-                        variant: "destructive",
-                        title: "Account Inactive",
-                        description: "Your account is currently inactive. Please contact an administrator.",
-                    });
+                    await auth.signOut();
+                    toast({ variant: "destructive", title: "Account Inactive", description: "Your account is inactive." });
+                    return;
                 }
-            } else {
-                // Also check staff and agent collections if necessary, or decide if this form is only for main institutions.
-                // For now, we assume only main institutions log in this way.
-                 await signOut(auth);
-                toast({
-                    variant: "destructive",
-                    title: "Login Failed",
-                    description: "No client profile found for this account.",
-                });
             }
+
+            // Check if user is a Staff member of a client
+            const staffRef = collection(db, "staff");
+            const qStaff = query(staffRef, where("uid", "==", user.uid));
+            const staffSnapshot = await getDocs(qStaff);
+
+            if (!staffSnapshot.empty) {
+                const userDoc = staffSnapshot.docs[0].data();
+                const clientRef = query(collection(db, "insurers"), where("username", "==", userDoc.clientId));
+                const clientSnapshot = await getDocs(clientRef);
+                
+                if (!clientSnapshot.empty) {
+                    const clientDoc = clientSnapshot.docs[0].data();
+                    sessionStorage.setItem('loggedInUser', JSON.stringify({ 
+                        name: userDoc.name, 
+                        username: userDoc.username, 
+                        email: userDoc.email, 
+                        role: 'Staff',
+                        agentName: clientDoc.name, // To show which institution they belong to
+                        uid: user.uid,
+                    }));
+                    router.push('/client/dashboard');
+                    toast({ title: "Staff Login Successful", description: `Welcome, ${userDoc.name}!` });
+                    return;
+                }
+            }
+
+            // Check if user is an Agent of a client
+            const agentsRef = collection(db, "insurers");
+            const qAgents = query(agentsRef, where("uid", "==", user.uid), where("role", "==", "Agent"));
+            const agentsSnapshot = await getDocs(qAgents);
+            
+            if(!agentsSnapshot.empty) {
+                const userDoc = agentsSnapshot.docs[0].data();
+                const clientRef = query(collection(db, "insurers"), where("username", "==", userDoc.clientId));
+                const clientSnapshot = await getDocs(clientRef);
+                 if (!clientSnapshot.empty) {
+                    const clientDoc = clientSnapshot.docs[0].data();
+                     sessionStorage.setItem('loggedInUser', JSON.stringify({ 
+                        name: userDoc.name, 
+                        username: userDoc.username, 
+                        email: userDoc.email, 
+                        role: 'Agent',
+                        agentName: clientDoc.name,
+                        uid: user.uid,
+                    }));
+                    router.push('/client/dashboard');
+                    toast({ title: "Agent Login Successful", description: `Welcome, ${userDoc.name}!` });
+                    return;
+                }
+            }
+            
+            // If user is not found in any of the above roles
+            await auth.signOut();
+            toast({ variant: "destructive", title: "Login Failed", description: "No profile found for this account." });
+
         } catch (error: any) {
              const errorMessage = error.code === 'auth/invalid-credential' 
                 ? 'Invalid email or password.'
@@ -415,7 +459,7 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        await signOut(auth);
+        await auth.signOut();
         toast({
           variant: "destructive",
           title: "Login Failed",
@@ -428,7 +472,7 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
       const valuerData = querySnapshot.docs[0].data();
 
       if (!valuerData.active) {
-        await signOut(auth);
+        await auth.signOut();
         toast({
           variant: "destructive",
           title: "Account Inactive",
@@ -442,7 +486,8 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         name: valuerData.name, 
         username: valuerData.username, 
         email: valuerData.email, 
-        role: 'Valuer' 
+        role: 'Valuer',
+        uid: user.uid,
       }));
       router.push('/valuer/dashboard');
       toast({ title: "Valuer Login Successful", description: `Welcome back, ${valuerData.name}!` });

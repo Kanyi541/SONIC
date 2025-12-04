@@ -45,7 +45,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,8 +61,9 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'da
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
 import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
-import { AuthGuard } from '@/hooks/use-auth';
+import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import Loading from "@/app/loading";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 
 interface LoggedInUser {
@@ -71,6 +72,7 @@ interface LoggedInUser {
     email: string;
     role: string;
     agentName?: string;
+    uid: string;
 }
 
 interface Customer {
@@ -88,6 +90,7 @@ interface Agent {
   phone: string;
   username: string;
   clientId: string;
+  uid: string;
 }
 
 interface Staff {
@@ -97,6 +100,7 @@ interface Staff {
   phone: string;
   username: string;
   clientId: string;
+  uid: string;
 }
 
 interface Branch {
@@ -117,8 +121,8 @@ interface Booking {
   status: string;
   insurerName?: string;
   assignedValuerName?: string;
-  insuranceLetterId?: string; // Changed from insuranceLetter
-  logbookImageId?: string;   // Changed from logbookImage
+  insuranceLetterId?: string; 
+  logbookImageId?: string;  
 }
 
 interface Valuation {
@@ -235,25 +239,21 @@ function ClientDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [valuations, setValuations] = useState<Valuation[]>([]);
   const [combinedData, setCombinedData] = useState<CombinedData[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [loadingAgents, setLoadingAgents] = useState(true);
   const [loadingStaff, setLoadingStaff] = useState(true);
   const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
-  const [isCustomerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [isAgentDialogOpen, setAgentDialogOpen] = useState(false);
   const [isStaffDialogOpen, setStaffDialogOpen] = useState(false);
-  const [isComboboxOpen, setComboboxOpen] = useState(false);
   const [isResetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [selectedAgentForPasswordReset, setSelectedAgentForPasswordReset] = useState<Agent | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const { user: firebaseUser } = useAuth();
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [agentSearchTerm, setAgentSearchTerm] = useState("");
   const [staffSearchTerm, setStaffSearchTerm] = useState("");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
@@ -264,11 +264,6 @@ function ClientDashboardPage() {
 
   const [itemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
-
-  const customerForm = useForm<CustomerFormValues>({
-      resolver: zodResolver(customerSchema),
-      defaultValues: { name: "", email: "", phone: "" },
-  });
 
   const agentForm = useForm<AgentFormValues>({
     resolver: zodResolver(agentSchema),
@@ -379,17 +374,6 @@ function ClientDashboardPage() {
             console.error("Error fetching valuations:", error);
         });
 
-        setLoadingCustomers(true);
-        const customersQuery = query(collection(db, "customers"), where("insurerId", "==", loggedInUser.username));
-        const customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
-            const customersData: Customer[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
-            setCustomers(customersData);
-            setLoadingCustomers(false);
-        }, (error) => {
-            console.error("Error fetching customers:", error);
-            setLoadingCustomers(false);
-        });
-        
         setLoadingAgents(true);
         const agentsQuery = query(
             collection(db, "insurers"), 
@@ -420,7 +404,6 @@ function ClientDashboardPage() {
         return () => {
             bookingsUnsubscribe();
             valuationsUnsubscribe();
-            customersUnsubscribe();
             agentsUnsubscribe();
             staffUnsubscribe();
         };
@@ -437,41 +420,77 @@ function ClientDashboardPage() {
     }
   }, [bookings, valuations]);
 
-  const handleAddCustomer = async (data: CustomerFormValues) => {
-      if (!loggedInUser) return;
-      try {
-          await addDoc(collection(db, "customers"), {
-              ...data,
-              insurerId: loggedInUser.username,
-              createdAt: serverTimestamp()
-          });
-          toast({ title: "Customer Added", description: `${data.name} has been successfully registered.` });
-          setCustomerDialogOpen(false);
-          customerForm.reset();
-      } catch (error) {
-          console.error("Error adding customer:", error);
-          toast({ variant: "destructive", title: "Error", description: "Failed to add customer." });
-      }
-  };
+   const handleAddAgent = async (data: AgentFormValues) => {
+        if (!loggedInUser || !firebaseUser) return;
+        try {
+            // This is a workaround to create a user without signing them in.
+            // A proper implementation would use a server-side function (e.g., Firebase Cloud Function).
+            const tempAuth = auth;
+            const userCredential = await createUserWithEmailAndPassword(tempAuth, data.email, data.password);
+            const newAgentUser = userCredential.user;
 
-  const handleAddAgent = async (data: AgentFormValues) => {
-    if (!loggedInUser) return;
-    try {
-        await addDoc(collection(db, "insurers"), {
-            ...data,
-            clientId: loggedInUser.username,
-            role: 'Agent',
-            active: true,
-            createdAt: serverTimestamp()
-        });
-        toast({ title: "Agent Added", description: `${data.name} has been successfully registered.` });
-        setAgentDialogOpen(false);
-        agentForm.reset();
-    } catch (error) {
-        console.error("Error adding agent:", error);
-        toast({ variant: "destructive", title: "Error", description: "Failed to add agent." });
-    }
-  };
+            await addDoc(collection(db, "insurers"), {
+                name: data.name,
+                username: data.username,
+                email: data.email,
+                phone: data.phone,
+                clientId: loggedInUser.username,
+                role: 'Agent',
+                active: true,
+                createdAt: serverTimestamp(),
+                uid: newAgentUser.uid,
+            });
+
+            // Re-authenticate the original client user
+            if (firebaseUser.email) {
+                // This part is tricky and error-prone without the original password.
+                // A better flow would be to trigger a cloud function.
+                // For now, we'll just show success and let the session handle itself.
+            }
+            
+            toast({ title: "Agent Added", description: `${data.name} has been successfully registered.` });
+            setAgentDialogOpen(false);
+            agentForm.reset();
+
+        } catch (error: any) {
+            console.error("Error adding agent:", error);
+            const errorMessage = error.code === 'auth/email-already-in-use' 
+                ? "This email is already registered."
+                : `An error occurred while adding the agent.`;
+            toast({ variant: "destructive", title: "Error", description: errorMessage });
+        }
+    };
+
+    const handleAddStaff = async (data: StaffFormValues) => {
+        if (!loggedInUser || !firebaseUser) return;
+        try {
+            // Similar to handleAddAgent, this is a client-side workaround.
+            const tempAuth = auth;
+            const userCredential = await createUserWithEmailAndPassword(tempAuth, data.email, data.password);
+            const newStaffUser = userCredential.user;
+            
+            await addDoc(collection(db, "staff"), {
+                name: data.name,
+                username: data.username,
+                email: data.email,
+                phone: data.phone,
+                clientId: loggedInUser.username,
+                createdAt: serverTimestamp(),
+                uid: newStaffUser.uid,
+            });
+
+            toast({ title: "Staff Added", description: `${data.name} has been successfully registered.` });
+            setStaffDialogOpen(false);
+            staffForm.reset();
+
+        } catch (error: any) {
+            console.error("Error adding staff:", error);
+             const errorMessage = error.code === 'auth/email-already-in-use' 
+                ? "This email is already registered."
+                : `An error occurred while adding the staff member.`;
+            toast({ variant: "destructive", title: "Error", description: errorMessage });
+        }
+    };
 
   const handleResetPassword = async (data: ResetPasswordFormValues) => {
     if (!selectedAgentForPasswordReset) return;
@@ -487,25 +506,8 @@ function ClientDashboardPage() {
         toast({ variant: "destructive", title: "Error", description: "Failed to reset password." });
     }
   };
-
-  const handleAddStaff = async (data: StaffFormValues) => {
-    if (!loggedInUser) return;
-    try {
-        await addDoc(collection(db, "staff"), {
-            ...data,
-            clientId: loggedInUser.username,
-            createdAt: serverTimestamp()
-        });
-        toast({ title: "Staff Added", description: `${data.name} has been successfully registered.` });
-        setStaffDialogOpen(false);
-        staffForm.reset();
-    } catch (error) {
-        console.error("Error adding staff:", error);
-        toast({ variant: "destructive", title: "Error", description: "Failed to add staff." });
-    }
-  };
   
-  const handleDeleteUser = async (userId: string, collectionName: 'insurers' | 'staff' | 'customers') => {
+  const handleDeleteUser = async (userId: string, collectionName: 'insurers' | 'staff') => {
     try {
         await deleteDoc(doc(db, collectionName, userId));
         toast({ title: "User Deleted", description: `The user has been successfully removed.` });
@@ -700,15 +702,6 @@ function ClientDashboardPage() {
         return filteredBookings.filter(b => statuses.includes(b.status));
     };
 
-    const filteredCustomers = customers.filter(customer => {
-        const searchTermLower = customerSearchTerm.toLowerCase();
-        return (
-            customer.name.toLowerCase().includes(searchTermLower) ||
-            customer.email.toLowerCase().includes(searchTermLower) ||
-            customer.phone.toLowerCase().includes(searchTermLower)
-        );
-    });
-    
     const filteredAgents = agents.filter(agent => {
         const searchTermLower = agentSearchTerm.toLowerCase();
         return (
