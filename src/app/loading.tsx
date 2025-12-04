@@ -8,7 +8,7 @@ export default function Loading() {
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="relative flex items-center justify-center">
         <Image 
-          src="/logo.png" 
+          src="/logo.jpeg" 
           alt="Sonic Motor Valuers Logo" 
           width={150} 
           height={150} 

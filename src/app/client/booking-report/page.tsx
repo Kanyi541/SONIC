@@ -49,7 +49,7 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
         <div className="bg-white shadow-2xl rounded-lg flex flex-col">
             <header className="relative bg-[#1a1a1a] p-2 flex justify-between items-center">
                 <div className="w-36">
-                    <Image src="/logo.png" alt="Company Logo" width={140} height={50} />
+                    <Image src="/logo.jpeg" alt="Company Logo" width={140} height={50} />
                 </div>
                 <div className="absolute right-0 top-0 h-full w-4 bg-primary" />
             </header>

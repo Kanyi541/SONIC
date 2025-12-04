@@ -175,7 +175,7 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
         <div className="bg-white shadow-2xl rounded-lg flex flex-col font-sans-trebuchet italic">
              <header className="relative bg-[#1a1a1a] p-1 flex justify-between items-center print-header">
                 <div className="relative z-10 w-28">
-                    <Image src="/logo.png" alt="CASA Motor Assessors Ltd" width={112} height={40} />
+                    <Image src="/logo.jpeg" alt="CASA Motor Assessors Ltd" width={112} height={40} />
                 </div>
 
                 <div className="relative z-10 text-center text-white">

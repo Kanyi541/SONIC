@@ -33,7 +33,7 @@ class ReportToPrint extends React.Component<{ booking: BookingData | null }> {
       <div className="bg-white p-14 shadow-lg rounded-lg" id="report">
         <header className="flex justify-between items-center pb-6 border-b-2 border-primary">
           <div>
-            <Image src="/logo.png" alt="Company Logo" width={200} height={80} />
+            <Image src="/logo.jpeg" alt="Company Logo" width={200} height={80} />
           </div>
           <div className="text-left">
             <h1 className="text-4xl font-extrabold text-black">Sonic Motor Valuers</h1>
