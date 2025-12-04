@@ -1,5 +1,5 @@
 
-name: Firestore Cleanup & Usage Log
+name: Firestore Archival & Usage Log
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  cleanup:
+  archive:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -19,10 +19,11 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install firebase-admin @google-cloud/storage
+        run: npm install
 
-      - name: Run Firestore cleanup and log usage
+      - name: Run Firestore archival and log usage
         env:
           FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
           FIREBASE_STORAGE_BUCKET: "casa-f9685.appspot.com"
+          SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
         run: node scripts/cleanup.js

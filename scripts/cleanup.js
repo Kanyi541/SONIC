@@ -1,14 +1,14 @@
 
-// This script is designed to be run in a secure server environment (like a GitHub Action), not in a browser.
-// It uses the Firebase Admin SDK to delete old documents from Firestore.
+// This script archives old Firestore documents to a PostgreSQL database and then deletes them.
+// It is designed to be run in a secure server environment (like a GitHub Action).
 
 const admin = require('firebase-admin');
+const { Pool } = require('pg');
+const zlib = require('zlib');
 
+// Initialize Firebase Admin SDK
 try {
-  // This environment variable will be populated by the GitHub secret.
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-
-  // Initialize the Firebase Admin SDK.
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
@@ -19,15 +19,43 @@ try {
     }
 }
 
+// Initialize PostgreSQL connection pool
+let pool;
+try {
+    if (!process.env.SUPABASE_CONNECTION_STRING) {
+        throw new Error("SUPABASE_CONNECTION_STRING environment variable not set.");
+    }
+    pool = new Pool({
+        connectionString: process.env.SUPABASE_CONNECTION_STRING,
+    });
+} catch (error) {
+    console.error('PostgreSQL initialization error:', error.message);
+    process.exit(1);
+}
+
 
 const db = admin.firestore();
 
 /**
- * Deletes documents from a specified collection that are older than 30 days.
- * @param {string} collectionName The name of the collection to clean up.
+ * Compresses a JSON object using gzip.
+ * @param {object} jsonData The JSON object to compress.
+ * @returns {Promise<Buffer>} A promise that resolves with the compressed data buffer.
+ */
+function compressData(jsonData) {
+    return new Promise((resolve, reject) => {
+        zlib.gzip(JSON.stringify(jsonData), (err, buffer) => {
+            if (err) return reject(err);
+            resolve(buffer);
+        });
+    });
+}
+
+/**
+ * Fetches documents older than 30 days, archives them to PostgreSQL, and then deletes them from Firestore.
+ * @param {string} collectionName The name of the collection to process.
  * @param {string} timestampField The name of the field containing the creation timestamp.
  */
-async function deleteOldDocuments(collectionName, timestampField) {
+async function archiveOldDocuments(collectionName, timestampField) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   
@@ -36,57 +64,55 @@ async function deleteOldDocuments(collectionName, timestampField) {
   try {
     const snapshot = await oldDocsQuery.get();
     if (snapshot.empty) {
-      console.log(`No old documents to delete in '${collectionName}'.`);
+      console.log(`No old documents to archive in '${collectionName}'.`);
       return;
     }
 
-    const batch = db.batch();
-    snapshot.docs.forEach(doc => {
-      batch.delete(doc.ref);
-    });
+    const pgClient = await pool.connect();
+    try {
+        for (const doc of snapshot.docs) {
+            const docData = doc.data();
+            const compressedData = await compressData(docData);
 
-    await batch.commit();
-    console.log(`Successfully deleted ${snapshot.size} old documents from '${collectionName}'.`);
+            // Insert into PostgreSQL
+            await pgClient.query(
+                'INSERT INTO archives (original_id, collection_name, data) VALUES ($1, $2, $3)',
+                [doc.id, collectionName, compressedData]
+            );
+
+            // Delete from Firestore
+            await doc.ref.delete();
+        }
+        console.log(`Successfully archived and deleted ${snapshot.size} old documents from '${collectionName}'.`);
+    } finally {
+        pgClient.release();
+    }
   } catch (error) {
-    console.error(`Error deleting old documents from ${collectionName}:`, error);
+    console.error(`Error processing old documents from ${collectionName}:`, error);
   }
 }
 
-async function runCleanup() {
-    console.log('Starting Firestore cleanup...');
-    // Clean up bookings collection
-    await deleteOldDocuments('bookings', 'createdAt');
-    // Clean up valuations collection
-    await deleteOldDocuments('valuations', 'valuedAt');
-    console.log('Firestore cleanup finished.');
+async function runArchival() {
+    console.log('Starting Firestore archival process...');
+    await archiveOldDocuments('bookings', 'createdAt');
+    await archiveOldDocuments('valuations', 'valuedAt');
+    console.log('Firestore archival process finished.');
+    await pool.end(); // Close all connections in the pool
 }
 
 async function logUsage() {
   console.log("\nChecking usage statistics...");
-
   try {
-    // Count docs in collections
-    const bookingsSnap = await db.collection("bookings").get();
-    console.log(`Firestore - Bookings collection documents count: ${bookingsSnap.size}`);
-
-    const valuationsSnap = await db.collection("valuations").get();
-    console.log(`Firestore - Valuations collection documents count: ${valuationsSnap.size}`);
-
-    const insurersSnap = await db.collection("insurers").get();
-    console.log(`Firestore - Insurers collection documents count: ${insurersSnap.size}`);
-
-    const valuersSnap = await db.collection("valuers").get();
-    console.log(`Firestore - Valuers collection documents count: ${valuersSnap.size}`);
-
-    const staffSnap = await db.collection("staff").get();
-    console.log(`Firestore - Staff collection documents count: ${staffSnap.size}`);
-    
+    const collections = ["bookings", "valuations", "insurers", "valuers", "staff"];
+    for (const col of collections) {
+      const snap = await db.collection(col).get();
+      console.log(`Firestore - ${col} collection documents count: ${snap.size}`);
+    }
   } catch (error) {
     console.error('Error counting Firestore documents:', error);
   }
 
   try {
-    // Check Storage usage
     const { Storage } = require('@google-cloud/storage');
     const storage = new Storage();
     const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
@@ -97,17 +123,11 @@ async function logUsage() {
     }
 
     const [files] = await storage.bucket(bucketName).getFiles();
-
-    let totalSize = 0;
-    files.forEach(file => totalSize += file.metadata.size ? Number(file.metadata.size) : 0);
-
+    let totalSize = files.reduce((acc, file) => acc + (Number(file.metadata.size) || 0), 0);
     console.log(`Firebase Storage - Total usage: ${(totalSize / (1024 * 1024)).toFixed(2)} MB`);
   } catch (error) {
      console.error('Error calculating Firebase Storage usage:', error);
   }
 }
 
-
-runCleanup().then(() => logUsage());
-
-    
+runArchival().then(() => logUsage());
