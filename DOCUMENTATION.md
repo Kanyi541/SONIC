@@ -1,5 +1,5 @@
 ________________________________________
-CASA Motor Assessors Ltd Dashboard Documentation
+Sonic Motor Valuers Dashboard Documentation
 This document provides a comprehensive overview of the functionalities, workflows, and technical architecture for the Admin, Client, and Valuer dashboards.
 ________________________________________
 1. Admin Dashboard (/admin/dashboard)

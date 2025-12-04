@@ -412,7 +412,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Password Recovery</AlertDialogTitle>
                     <AlertDialogDescription>
-                      To reset your password, please contact CASA Motor Assessors Ltd directly for assistance.
+                      To reset your password, please contact Sonic Motor Valuers directly for assistance.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -543,7 +543,7 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Password Recovery</AlertDialogTitle>
                     <AlertDialogDescription>
-                      To reset your password, please contact CASA Motor Assessors Ltd directly for assistance.
+                      To reset your password, please contact Sonic Motor Valuers directly for assistance.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

@@ -987,7 +987,7 @@ function ClientDashboardPage() {
 
   return (
     <UnifiedDashboardLayout
-      title="CASA Motor Assessors Ltd"
+      title="Sonic Motor Valuers"
       userRole={userDisplayRole}
       userEmail={loggedInUser?.email || ""}
       menuItems={filteredMenuItems}
@@ -995,7 +995,7 @@ function ClientDashboardPage() {
       footerContent={(
         <>
             <p className="text-sm text-muted-foreground">
-                &copy; {new Date().getFullYear()} CASA Motor Assessors Ltd. All rights reserved.
+                &copy; {new Date().getFullYear()} Sonic Motor Valuers. All rights reserved.
             </p>
             <p className="text-sm text-muted-foreground">
                 Designed by <a href="https://elvisdev.netlify.app/" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4">Tekivo Technologies</a>
@@ -1817,6 +1817,6 @@ function ClientDashboardPage() {
   );
 }
 
-export default AuthGuard(ClientDashboardPage, { allowClients: true });
-
+const GuardedClientDashboardPage = AuthGuard(ClientDashboardPage, { allowClients: true });
+export default GuardedClientDashboardPage;
     

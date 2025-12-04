@@ -1629,7 +1629,7 @@ function AdminDashboard() {
             <div className="container flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
                     <SidebarTrigger className="text-white hover:text-white/80" />
-                    <h1 className="text-xl font-headline font-bold text-white">CASA Motor Assessors Ltd</h1>
+                    <h1 className="text-xl font-headline font-bold text-white">Sonic Motor Valuers</h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <Popover>
@@ -1691,7 +1691,7 @@ function AdminDashboard() {
               <div className="grid gap-8">
                 <div>
                     <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Welcome, Admin!</h1>
-                    <p className="text-muted-foreground mt-2">This is your secure control panel for CASA Motor Assessors Ltd.</p>
+                    <p className="text-muted-foreground mt-2">This is your secure control panel for Sonic Motor Valuers.</p>
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <StatCard 
@@ -1816,8 +1816,8 @@ function AdminDashboard() {
                                                 <TableCell className="text-right">
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                          <Button variant="default" size="sm">
-                                                            <FileDown className="mr-2 h-4 w-4" />
+                                                            <Button variant="default" size="sm">
+                                                                <FileDown className="mr-2 h-4 w-4" />
                                                                 Reports
                                                             </Button>
                                                         </PopoverTrigger>
@@ -2393,7 +2393,8 @@ function AdminDashboard() {
   );
 }
 
-export default AuthGuard(AdminDashboard);
+const GuardedAdminDashboard = AuthGuard(AdminDashboard);
+export default GuardedAdminDashboard;
     
 
     
