@@ -8,7 +8,7 @@ import Image from 'next/image';
 
 function SplashScreen() {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-500 ease-in-out">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-500 ease-in-out">
       <Image 
         src="/logo.jpeg" 
         alt="Sonic Motor Valuers Logo" 
