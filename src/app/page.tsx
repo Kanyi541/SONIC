@@ -1,3 +1,6 @@
+
+"use client";
+
 import LoginTabs from "@/components/login/login-tabs";
 
 export default function Home() {
