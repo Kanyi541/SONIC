@@ -5,7 +5,7 @@ const cspHeader = `
     script-src 'self' 'unsafe-eval' 'unsafe-inline';
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
-    img-src 'self' https://placehold.co https://firebasestorage.googleapis.com data:;
+    img-src 'self' https://picsum.photos https://firebasestorage.googleapis.com data:;
     connect-src 'self'
       https://*.firebaseio.com
       wss://*.firebaseio.com
@@ -34,7 +34,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'placehold.co',
+        hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
       },

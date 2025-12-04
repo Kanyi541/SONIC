@@ -353,63 +353,66 @@ function AdminDashboard() {
     const subscribeToCollection = (
         collectionName: string, 
         setter: React.Dispatch<React.SetStateAction<any[]>>, 
-        requiredViews: string[]
     ) => {
-        if (requiredViews.includes(activeView) || activeView === 'dashboard' || activeView === 'new-bookings') {
-            const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                let data;
-                if (collectionName === 'insurers') {
-                    data = snapshot.docs
-                        .map(doc => ({ id: doc.id, ...doc.data() }))
-                        .filter(item => (item as any).role !== 'Agent');
-                } else {
-                    data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                }
-                setter(data);
-                if(requiredViews.includes(activeView) || activeView === 'dashboard') {
-                  setLoading(false);
-                }
-            }, (error) => {
-                 console.error(`Error in ${collectionName} listener:`, error);
-            });
-            subscriptions.push(unsubscribe);
-        }
+        const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            let data;
+            if (collectionName === 'insurers') {
+                data = snapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(item => (item as any).role !== 'Agent');
+            } else {
+                data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            }
+            setter(data);
+            setLoading(false);
+        }, (error) => {
+             console.error(`Error in ${collectionName} listener:`, error);
+             setLoading(false);
+        });
+        subscriptions.push(unsubscribe);
     };
     
-    subscribeToCollection("insurers", setInstitutions, ["institutions", "dashboard"]);
-    subscribeToCollection("valuers", setValuers, ["valuers", "dashboard", "new-bookings"]);
-    subscribeToCollection("staff", setStaff, ["staff", "dashboard"]);
-    subscribeToCollection("branches", setBranches, ["branches", "dashboard"]);
-    
-    if (['dashboard', 'valuations', 'pending-valuation', 'valuated-bookings', 'all-cars'].includes(activeView)) {
+    // Only subscribe to data relevant for the current view
+    if (activeView === 'institutions') {
+      subscribeToCollection("insurers", setInstitutions);
+    } else if (activeView === 'valuers') {
+      subscribeToCollection("valuers", setValuers);
+    } else if (activeView === 'staff') {
+      subscribeToCollection("staff", setStaff);
+    } else if (activeView === 'branches') {
+      subscribeToCollection("branches", setBranches);
+    } else if (activeView === 'dashboard' || activeView === 'new-bookings' || activeView === 'pending-valuation' || activeView === 'valuated-bookings' || activeView === 'rejected-bookings' || activeView === 'all-cars' || activeView === 'valuations') {
+      const bookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
+      const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Booking[];
+          setBookings(data.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
+          if (activeView === 'dashboard') {
+            generateChartData(data);
+          }
+          setLoading(false);
+      }, (error) => {
+          console.error("Error in bookings listener:", error);
+      });
+      subscriptions.push(bookingsUnsubscribe);
+
+      if (['dashboard', 'valuations', 'all-cars'].includes(activeView)) {
         const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"));
         const valUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
             setValuations(data);
         });
         subscriptions.push(valUnsubscribe);
-    }
-    
-    const bookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
-    const requiredBookingViews = ['dashboard', 'valuations', 'new-bookings', 'rejected-bookings', 'pending-valuation', 'valuated-bookings', 'all-cars'];
-
-    if (requiredBookingViews.includes(activeView) || activeView === 'dashboard') {
-        const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Booking[];
-            setBookings(data.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
-            if(activeView === 'dashboard') {
-              generateChartData(data);
-            }
-            setLoading(false);
-        }, (error) => {
-            console.error("Error in bookings listener:", error);
+      }
+       if (activeView === 'new-bookings') {
+        const valuerQuery = query(collection(db, "valuers"), orderBy("createdAt", "desc"));
+        const valuerUnsubscribe = onSnapshot(valuerQuery, (snapshot) => {
+            setValuers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuer })));
         });
-        subscriptions.push(unsubscribe);
-    }
-    
-    if (activeView === 'settings') {
-      setLoading(false);
+        subscriptions.push(valuerUnsubscribe);
+      }
+    } else {
+        setLoading(false);
     }
 
     return () => subscriptions.forEach(unsub => unsub());
@@ -2339,6 +2342,7 @@ export default GuardedAdminDashboard;
     
 
     
+
 
 
 

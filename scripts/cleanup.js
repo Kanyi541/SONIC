@@ -70,6 +70,7 @@ async function archiveOldDocuments(collectionName, timestampField) {
 
     const pgClient = await pool.connect();
     try {
+        await pgClient.query('BEGIN');
         for (const doc of snapshot.docs) {
             const docData = doc.data();
             const compressedData = await compressData(docData);
@@ -83,7 +84,11 @@ async function archiveOldDocuments(collectionName, timestampField) {
             // Delete from Firestore
             await doc.ref.delete();
         }
+        await pgClient.query('COMMIT');
         console.log(`Successfully archived and deleted ${snapshot.size} old documents from '${collectionName}'.`);
+    } catch(e) {
+        await pgClient.query('ROLLBACK');
+        throw e;
     } finally {
         pgClient.release();
     }
