@@ -152,7 +152,7 @@ export default function UnifiedDashboardLayout({
                 </SidebarContent>
             </Sidebar>
             <SidebarInset>
-                <header className="sticky top-0 z-40 w-full border-b bg-black shadow-sm">
+                <header className="sticky top-0 z-40 w-full border-b bg-secondary shadow-sm">
                     <div className="container flex h-16 items-center justify-between">
                         <div className="flex items-center gap-4">
                             <SidebarTrigger className="text-white hover:text-white/80" />
