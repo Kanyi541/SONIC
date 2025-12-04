@@ -23,14 +23,13 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 216 84% 26%;
-    --radius: 0.75rem;
 
     /* Sidebar specific theme */
-    --sidebar-background: 216 84% 26%; /* Primary color */
+    --sidebar-background: 212 100% 18%; /* #002B5C */
     --sidebar-foreground: 0 0% 98%; /* White */
     --sidebar-primary: 40 95% 45%; /* Gold */
-    --sidebar-primary-foreground: 216 84% 26%; /* Primary color */
-    --sidebar-accent: 212 100% 18%; /* Secondary color */
+    --sidebar-primary-foreground: 212 100% 18%;
+    --sidebar-accent: 216 84% 26%; 
     --sidebar-accent-foreground: 0 0% 98%; /* White */
     --sidebar-border: 212 100% 23%;
     --sidebar-ring: 40 95% 45%; /* Gold */
@@ -61,11 +60,11 @@
     --ring: 216 84% 26%;
 
     /* Dark Sidebar specific theme */
-    --sidebar-background: 216 84% 26%;
+    --sidebar-background: 212 100% 18%; /* #002B5C */
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 40 95% 45%;
-    --sidebar-primary-foreground: 216 84% 26%;
-    --sidebar-accent: 212 100% 18%;
+    --sidebar-primary-foreground: 212 100% 18%;
+    --sidebar-accent: 216 84% 26%;
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 212 100% 23%;
     --sidebar-ring: 40 95% 45%;
