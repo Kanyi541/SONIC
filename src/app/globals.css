@@ -10,9 +10,9 @@
     --card-foreground: 220 9% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 9% 11%;
-    --primary: 220 83% 23%;
+    --primary: 216 84% 26%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 215 77% 39%;
+    --secondary: 212 100% 18%;
     --secondary-foreground: 0 0% 98%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -22,17 +22,17 @@
     --destructive-foreground: 0 0% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 220 83% 23%;
+    --ring: 216 84% 26%;
     --radius: 0.75rem;
 
     /* Sidebar specific theme */
-    --sidebar-background: 220 83% 23%; /* Primary color */
+    --sidebar-background: 216 84% 26%; /* Primary color */
     --sidebar-foreground: 0 0% 98%; /* White */
     --sidebar-primary: 40 95% 45%; /* Gold */
-    --sidebar-primary-foreground: 220 83% 23%; /* Primary color */
-    --sidebar-accent: 215 77% 39%; /* Secondary color */
+    --sidebar-primary-foreground: 216 84% 26%; /* Primary color */
+    --sidebar-accent: 212 100% 18%; /* Secondary color */
     --sidebar-accent-foreground: 0 0% 98%; /* White */
-    --sidebar-border: 215 77% 30%;
+    --sidebar-border: 212 100% 23%;
     --sidebar-ring: 40 95% 45%; /* Gold */
 
      /* Chart Colors */
@@ -46,9 +46,9 @@
     --card-foreground: 0 0% 98%;
     --popover: 220 9% 11%;
     --popover-foreground: 0 0% 98%;
-    --primary: 220 83% 23%;
+    --primary: 216 84% 26%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 215 77% 39%;
+    --secondary: 212 100% 18%;
     --secondary-foreground: 0 0% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
@@ -58,16 +58,16 @@
     --destructive-foreground: 0 0% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 220 83% 23%;
+    --ring: 216 84% 26%;
 
     /* Dark Sidebar specific theme */
-    --sidebar-background: 220 83% 23%;
+    --sidebar-background: 216 84% 26%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 40 95% 45%;
-    --sidebar-primary-foreground: 220 83% 23%;
-    --sidebar-accent: 215 77% 39%;
+    --sidebar-primary-foreground: 216 84% 26%;
+    --sidebar-accent: 212 100% 18%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 215 77% 30%;
+    --sidebar-border: 212 100% 23%;
     --sidebar-ring: 40 95% 45%;
 
      /* Chart Colors */
