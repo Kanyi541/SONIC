@@ -12,8 +12,8 @@ function SplashScreen() {
       <Image 
         src="/logo.jpeg" 
         alt="Sonic Motor Valuers Logo" 
-        width={200} 
-        height={200} 
+        width={250} 
+        height={250} 
         className="animate-pulse"
         priority
       />
