@@ -198,7 +198,7 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
                 <Button type="button" variant="outline" className="w-full" onClick={() => setForgotPassword(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" className="w-full" disabled={forgotPasswordForm.formState.isSubmitting}>
+                <Button type="submit" variant="accent" className="w-full" disabled={forgotPasswordForm.formState.isSubmitting}>
                   {forgotPasswordForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Send Reset Link
                 </Button>
@@ -247,7 +247,7 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={loginForm.formState.isSubmitting}>
+            <Button type="submit" variant="accent" className="w-full" disabled={loginForm.formState.isSubmitting}>
               {loginForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
@@ -410,7 +410,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            <Button type="submit" variant="accent" className="w-full" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
@@ -543,7 +543,7 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            <Button type="submit" variant="accent" className="w-full" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
@@ -601,7 +601,7 @@ export default function LoginTabs() {
     <Tabs defaultValue="Client" className="w-full">
       <TabsList className="grid w-full grid-cols-3 h-auto sm:h-10 bg-black/20 text-white">
         {roles.map((role) => (
-          <TabsTrigger key={role} value={role} className="data-[state=active]:bg-primary/80 data-[state=active]:text-black">{role}</TabsTrigger>
+          <TabsTrigger key={role} value={role} className="data-[state=active]:bg-primary/80 data-[state=active]:text-white">{role}</TabsTrigger>
         ))}
       </TabsList>
       {roles.map((role) => (
