@@ -89,6 +89,7 @@ interface Valuer {
   phone: string;
   active: boolean;
   createdAt?: any;
+  uid?: string;
 }
 
 interface Staff {
@@ -434,92 +435,82 @@ function AdminDashboard() {
         const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
         const password = (form.elements.namedItem('password') as HTMLInputElement).value;
 
-        if (userType === 'staff') {
-            try {
-                // Step 1: Create user in Firebase Auth
+        try {
+            // Use a generic handler for auth-based user creation
+            if (userType === 'staff' || userType === 'valuer') {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const newStaffUser = userCredential.user;
-
-                // Step 2: Add staff document to Firestore
-                await addDoc(collection(db, "staff"), {
+                const newUser = userCredential.user;
+                const collectionName = userType === 'staff' ? 'staff' : 'valuers';
+                
+                const data: any = {
                     name,
                     username,
                     email,
                     phone,
                     active: isControlActive,
                     createdAt: serverTimestamp(),
-                    role: 'Staff',
-                    isAdmin: false,
-                    uid: newStaffUser.uid,
+                    uid: newUser.uid,
+                };
+
+                if (userType === 'staff') {
+                    data.role = 'Staff';
+                    data.isAdmin = false;
+                }
+
+                await addDoc(collection(db, collectionName), data);
+                
+                const userTypeDisplay = userType.charAt(0).toUpperCase() + userType.slice(1);
+                toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.` });
+
+            } else if (userType === 'institution') {
+                // Non-auth user creation for institutions
+                const usernameQuery = query(collection(db, "insurers"), where("username", "==", username));
+                const emailQuery = query(collection(db, "insurers"), where("email", "==", email));
+                
+                const [usernameSnapshot, emailSnapshot] = await Promise.all([
+                    getDocs(usernameQuery),
+                    getDocs(emailQuery)
+                ]);
+
+                if (!usernameSnapshot.empty) {
+                    toast({ variant: "destructive", title: "Registration Failed", description: `An institution with this username already exists.` });
+                    return;
+                }
+                if (!emailSnapshot.empty) {
+                    toast({ variant: "destructive", title: "Registration Failed", description: `An institution with this email already exists.` });
+                    return;
+                }
+
+                await addDoc(collection(db, "insurers"), {
+                    name,
+                    username,
+                    email,
+                    phone,
+                    password,
+                    active: isControlActive,
+                    createdAt: serverTimestamp(),
                 });
-
-                toast({ title: "Staff Added", description: `${name} has been successfully added as Staff.` });
-                setAddStaffOpen(false);
-                form.reset();
-                setControlActive(true);
-                setShowPassword(false);
-            } catch (error: any) {
-                console.error("Error adding staff:", error);
-                const errorMessage = error.code === 'auth/email-already-in-use' 
-                    ? "This email is already registered."
-                    : "An error occurred while adding the staff member.";
-                toast({
-                    variant: "destructive",
-                    title: "Failed to Add Staff",
-                    description: errorMessage,
-                });
-            }
-            return;
-        }
-
-        // --- Logic for Institutions and Valuers (no auth user creation) ---
-        let collectionName = userType === 'institution' ? 'insurers' : 'valuers';
-
-        try {
-            const usernameQuery = query(collection(db, collectionName), where("username", "==", username));
-            const emailQuery = query(collection(db, collectionName), where("email", "==", email));
-            
-            const [usernameSnapshot, emailSnapshot] = await Promise.all([
-                getDocs(usernameQuery),
-                getDocs(emailQuery)
-            ]);
-
-            if (!usernameSnapshot.empty) {
-                toast({ variant: "destructive", title: "Registration Failed", description: `A user with this username already exists.` });
-                return;
-            }
-            if (!emailSnapshot.empty) {
-                toast({ variant: "destructive", title: "Registration Failed", description: `A user with this email already exists.` });
-                return;
+                toast({ title: "Institution Added", description: `${name} has been successfully added.`});
             }
 
-            await addDoc(collection(db, collectionName), {
-                name,
-                username,
-                email,
-                phone,
-                password,
-                active: isControlActive,
-                createdAt: serverTimestamp(),
-            });
-
+            // Common cleanup logic
             if (userType === 'institution') setAddInstitutionOpen(false);
-            else setAddValuerOpen(false);
-
+            if (userType === 'valuer') setAddValuerOpen(false);
+            if (userType === 'staff') setAddStaffOpen(false);
+            
             form.reset();
             setControlActive(true);
             setShowPassword(false);
-            
-            const userTypeDisplay = userType === 'institution' ? 'Institution' : 'Valuer';
-            toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.`});
 
         } catch (error: any) {
-            const userTypeDisplay = userType === 'institution' ? 'Institution' : 'Valuer';
-            console.error(`Error adding ${userType}: `, error);
+            console.error(`Error adding ${userType}:`, error);
+            const errorMessage = error.code === 'auth/email-already-in-use' 
+                ? "This email is already registered."
+                : `An error occurred while adding the ${userType}.`;
             toast({
                 variant: "destructive",
-                title: `Failed to Add ${userTypeDisplay}`,
-                description: `An error occurred while adding the ${userType}.`,
+                title: `Failed to Add ${userType.charAt(0).toUpperCase() + userType.slice(1)}`,
+                description: errorMessage,
             });
         }
     };
@@ -2376,5 +2367,6 @@ export default GuardedAdminDashboard;
     
 
     
+
 
 

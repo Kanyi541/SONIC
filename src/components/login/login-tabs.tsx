@@ -48,10 +48,16 @@ const userLoginSchema = z.object({
   password: z.string().min(1, { message: "Password is required." }),
 });
 
+const valuerLoginSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email." }),
+  password: z.string().min(1, { message: "Password is required." }),
+});
+
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 type UserLoginFormValues = z.infer<typeof userLoginSchema>;
+type ValuerLoginFormValues = z.infer<typeof valuerLoginSchema>;
 type Role = "Admin" | "Client" | "Valuer";
 
 const PasswordInput = ({ field, ...props }: { field: any, [key: string]: any }) => {
@@ -431,42 +437,36 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<UserLoginFormValues>({
-    resolver: zodResolver(userLoginSchema),
-    defaultValues: { username: "", password: "" },
+  const form = useForm<ValuerLoginFormValues>({
+    resolver: zodResolver(valuerLoginSchema),
+    defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = async (data: UserLoginFormValues) => {
+  const onSubmit = async (data: ValuerLoginFormValues) => {
     setIsLoading(true);
     try {
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const user = userCredential.user;
+
       const valuersRef = collection(db, "valuers");
-      const q = query(valuersRef, where("username", "==", data.username));
+      const q = query(valuersRef, where("uid", "==", user.uid));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
+        await signOut(auth);
         toast({
           variant: "destructive",
           title: "Login Failed",
-          description: "Invalid credentials.",
+          description: "No valuer profile found for this account.",
         });
         setIsLoading(false);
         return;
       }
 
-      const valuerDoc = querySnapshot.docs[0];
-      const valuerData = valuerDoc.data();
-
-      if (valuerData.password !== data.password) {
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: "Invalid credentials.",
-        });
-        setIsLoading(false);
-        return;
-      }
+      const valuerData = querySnapshot.docs[0].data();
 
       if (!valuerData.active) {
+        await signOut(auth);
         toast({
           variant: "destructive",
           title: "Account Inactive",
@@ -476,16 +476,23 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         return;
       }
       
-      sessionStorage.setItem('loggedInUser', JSON.stringify({ name: valuerData.name, username: valuerData.username, email: valuerData.email, role: 'Valuer' }));
+      sessionStorage.setItem('loggedInUser', JSON.stringify({ 
+        name: valuerData.name, 
+        username: valuerData.username, 
+        email: valuerData.email, 
+        role: 'Valuer' 
+      }));
       router.push('/valuer/dashboard');
       toast({ title: "Valuer Login Successful", description: `Welcome back, ${valuerData.name}!` });
 
-    } catch (error) {
-      console.error("Valuer login error:", error);
+    } catch (error: any) {
+      const errorMessage = error.code === 'auth/invalid-credential' 
+          ? 'Invalid email or password.'
+          : 'An unexpected error occurred.';
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -505,12 +512,12 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="username"
+              name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Valuer Username" {...field} />
+                    <Input placeholder="name@example.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
