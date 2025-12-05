@@ -589,11 +589,6 @@ function ValuerDashboardPage() {
         valuated: valuatedBookings.length,
     };
     
-    const handleActiveViewChange = (view: string) => {
-        setLoading(true);
-        setActiveView(view);
-    };
-
     const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
       <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
           <div className="flex items-start justify-between">
@@ -791,7 +786,13 @@ function ValuerDashboardPage() {
                 </>
             )}
         >
-            {(activeView, setActiveView) => (
+            {(activeView, setActiveView) => {
+                const handleActiveViewChange = (view: string) => {
+                    setLoading(true);
+                    setActiveView(view);
+                };
+
+                return (
                 <>
                     <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
                         <TabsContent value="dashboard">
@@ -1166,7 +1167,7 @@ function ValuerDashboardPage() {
                         </DialogContent>
                     </Dialog>
                 </>
-            )}
+            )}}
         </UnifiedDashboardLayout>
     );
 }
