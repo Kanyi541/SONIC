@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import Image from 'next/image';
 
 interface MenuItem {
     name: string;
@@ -156,7 +157,15 @@ export default function UnifiedDashboardLayout({
                     <div className="container flex h-16 items-center justify-between">
                         <div className="flex items-center gap-4">
                             <SidebarTrigger className="text-white hover:text-white/80" />
-                            <h1 className="text-xl font-headline font-bold text-white">{title}</h1>
+                            <div className="h-10 w-40 relative">
+                                <Image
+                                    src="/logo.jpeg"
+                                    alt="Sonic Motor Valuers Logo"
+                                    fill
+                                    className="object-contain"
+                                    priority
+                                />
+                            </div>
                         </div>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>

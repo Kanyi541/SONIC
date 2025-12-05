@@ -1603,7 +1603,15 @@ function AdminDashboard() {
             <div className="container flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
                     <SidebarTrigger className="text-white hover:text-white/80" />
-                    <h1 className="text-xl font-headline font-bold text-white">Sonic Motor Valuers</h1>
+                     <div className="h-10 w-40 relative">
+                        <Image
+                            src="/logo.jpeg"
+                            alt="Sonic Motor Valuers Logo"
+                            fill
+                            className="object-contain"
+                            priority
+                        />
+                    </div>
                 </div>
                 <div className="flex items-center gap-4">
                     <Popover>
@@ -2342,6 +2350,7 @@ export default GuardedAdminDashboard;
     
 
     
+
 
 
 
