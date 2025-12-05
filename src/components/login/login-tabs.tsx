@@ -266,30 +266,25 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
 const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
     const router = useRouter();
     const { toast } = useToast();
+    const [isForgotPassword, setForgotPassword] = useState(false);
     const [isResetSent, setResetSent] = useState(false);
 
     const form = useForm<ClientLoginFormValues>({
         resolver: zodResolver(clientLoginSchema),
         defaultValues: { email: "", password: "" },
     });
+    
+    const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
+        resolver: zodResolver(forgotPasswordSchema),
+        defaultValues: { email: "" },
+    });
 
-    const handleForgotPassword = async () => {
-        const email = form.getValues("email");
-        const emailState = form.getFieldState("email");
-        if (!email || emailState.invalid) {
-            form.trigger("email");
-            toast({
-                variant: "destructive",
-                title: "Email Required",
-                description: "Please enter a valid email address to reset your password.",
-            });
-            return;
-        }
-
+    const onForgotPasswordSubmit = async (data: ForgotPasswordFormValues) => {
         setIsLoading(true);
         try {
-            await sendPasswordResetEmail(auth, email);
+            await sendPasswordResetEmail(auth, data.email);
             setResetSent(true);
+            setForgotPassword(false);
         } catch (error) {
             toast({
                 variant: "destructive",
@@ -400,6 +395,48 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
             setIsLoading(false);
         }
     };
+    
+    if (isForgotPassword) {
+    return (
+    <Card className="bg-black/20 backdrop-blur-lg border-white/20 text-white">
+        <CardHeader>
+          <CardTitle className="font-headline text-white">Reset Password</CardTitle>
+          <CardDescription className="text-gray-300">
+            Enter your email to receive a password reset link.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...forgotPasswordForm}>
+            <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-6">
+              <FormField
+                control={forgotPasswordForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="name@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="button" variant="outline" className="w-full" onClick={() => setForgotPassword(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="accent" className="w-full" disabled={forgotPasswordForm.formState.isSubmitting}>
+                  {forgotPasswordForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Send Reset Link
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    )
+  }
+
 
   return (
     <>
@@ -458,7 +495,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                 Sign In
               </Button>
               <div className="text-center text-sm">
-                <Button type="button" variant="link" onClick={handleForgotPassword} className="text-gray-300">
+                <Button type="button" variant="link" onClick={() => setForgotPassword(true)} className="text-gray-300">
                   Forgot Password?
                 </Button>
               </div>
@@ -473,30 +510,25 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
 const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
   const router = useRouter();
   const { toast } = useToast();
+  const [isForgotPassword, setForgotPassword] = useState(false);
   const [isResetSent, setResetSent] = useState(false);
 
   const form = useForm<ValuerLoginFormValues>({
     resolver: zodResolver(valuerLoginSchema),
     defaultValues: { email: "", password: "" },
   });
+  
+  const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: "" },
+  });
 
-  const handleForgotPassword = async () => {
-    const email = form.getValues("email");
-    const emailState = form.getFieldState("email");
-    if (!email || emailState.invalid) {
-        form.trigger("email");
-        toast({
-            variant: "destructive",
-            title: "Email Required",
-            description: "Please enter a valid email address to reset your password.",
-        });
-        return;
-    }
-
+  const onForgotPasswordSubmit = async (data: ForgotPasswordFormValues) => {
     setIsLoading(true);
     try {
-        await sendPasswordResetEmail(auth, email);
+        await sendPasswordResetEmail(auth, data.email);
         setResetSent(true);
+        setForgotPassword(false);
     } catch (error) {
         toast({
             variant: "destructive",
@@ -566,6 +598,47 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
       setIsLoading(false);
     }
   };
+  
+  if (isForgotPassword) {
+    return (
+    <Card className="bg-black/20 backdrop-blur-lg border-white/20 text-white">
+        <CardHeader>
+          <CardTitle className="font-headline text-white">Reset Valuer Password</CardTitle>
+          <CardDescription className="text-gray-300">
+            Enter your email to receive a password reset link.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...forgotPasswordForm}>
+            <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-6">
+              <FormField
+                control={forgotPasswordForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="name@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="button" variant="outline" className="w-full" onClick={() => setForgotPassword(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="accent" className="w-full" disabled={forgotPasswordForm.formState.isSubmitting}>
+                  {forgotPasswordForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Send Reset Link
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <>
@@ -624,7 +697,7 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                 Sign In
               </Button>
                <div className="text-center text-sm">
-                <Button type="button" variant="link" onClick={handleForgotPassword} className="text-gray-300">
+                <Button type="button" variant="link" onClick={() => setForgotPassword(true)} className="text-gray-300">
                   Forgot Password?
                 </Button>
               </div>
@@ -676,5 +749,3 @@ export default function LoginTabs() {
     </Tabs>
   );
 }
-
-    
