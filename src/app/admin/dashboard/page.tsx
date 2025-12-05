@@ -1552,6 +1552,23 @@ function AdminDashboard() {
     setActiveView(view);
   };
   
+    const sidebarMenuItems = useMemo(() => {
+        const baseItems = [
+            { name: "Dashboard", view: 'dashboard', icon: <LayoutDashboard /> },
+            { name: "Institutions", view: 'institutions', icon: <Building /> }
+        ];
+
+        if (currentUserRole === 'Super Admin') {
+            return [
+                ...baseItems,
+                { name: "Our Staff", view: 'staff', icon: <Briefcase /> },
+                { name: "Valuers", view: 'valuers', icon: <UserCog /> }
+            ];
+        }
+
+        return baseItems;
+    }, [currentUserRole]);
+  
   if (loading) {
     return <Loading />;
   }
@@ -1570,30 +1587,14 @@ function AdminDashboard() {
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => handleActiveViewChange('dashboard')} isActive={activeView === 'dashboard'} tooltip="Dashboard">
-                <LayoutDashboard />
-                Dashboard
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => handleActiveViewChange('institutions')} isActive={activeView === 'institutions'} tooltip="Institutions">
-                <Building />
-                Institutions
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleActiveViewChange('staff')} isActive={activeView === 'staff'} tooltip="Our Staff">
-                    <Briefcase />
-                    Our Staff
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleActiveViewChange('valuers')} isActive={activeView === 'valuers'} tooltip="Valuers">
-                  <UserCog />
-                  Valuers
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+             {sidebarMenuItems.map(item => (
+                <SidebarMenuItem key={item.view}>
+                    <SidebarMenuButton onClick={() => handleActiveViewChange(item.view)} isActive={activeView === item.view} tooltip={item.name}>
+                        {item.icon}
+                        {item.name}
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+             ))}
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -2362,6 +2363,7 @@ export default GuardedAdminDashboard;
     
 
     
+
 
 
 
