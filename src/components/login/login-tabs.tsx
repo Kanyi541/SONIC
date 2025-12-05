@@ -735,10 +735,16 @@ export default function LoginTabs() {
   }
 
   return (
-    <Tabs defaultValue="Client" className="w-full">
+    <Tabs defaultValue="Admin" className="w-full">
       <TabsList className="grid w-full grid-cols-3 h-auto sm:h-10 bg-destructive/80 text-white">
         {roles.map((role) => (
-          <TabsTrigger key={role} value={role} className="data-[state=active]:bg-primary/80 data-[state=active]:text-white">{role}</TabsTrigger>
+          <TabsTrigger 
+            key={role} 
+            value={role} 
+            className="transition-colors duration-300 data-[state=active]:bg-primary/80 data-[state=active]:text-white hover:bg-primary/60"
+          >
+            {role}
+          </TabsTrigger>
         ))}
       </TabsList>
       {roles.map((role) => (
