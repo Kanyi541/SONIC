@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -56,6 +55,7 @@ interface Booking {
   carMake: string;
   carModel: string;
   policyNumber?: string;
+  policyExpiryDate?: any;
   createdAt: any;
   status: string;
   insurerName: string;
@@ -870,6 +870,7 @@ function ValuerDashboardPage() {
                                                 <div className="space-y-1"><Label className="text-muted-foreground">Vehicle</Label><p className="font-medium">{`${selectedBooking?.carMake} ${selectedBooking?.carModel}`}</p></div>
                                                 <div className="space-y-1"><Label className="text-muted-foreground">Plate Number</Label><p className="font-medium">{selectedBooking?.plateNumber}</p></div>
                                                 <div className="space-y-1"><Label className="text-muted-foreground">Policy Number</Label><p className="font-medium">{selectedBooking?.policyNumber}</p></div>
+                                                <div className="space-y-1"><Label className="text-muted-foreground">Policy Expiry Date</Label><p className="font-medium">{selectedBooking?.policyExpiryDate ? new Date(selectedBooking.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'}</p></div>
                                                 <div className="space-y-1"><Label className="text-muted-foreground">Booking Number</Label><p className="font-medium">{selectedBooking?.bookingNumber}</p></div>
                                                 <div className="space-y-1"><Label className="text-muted-foreground">Branch</Label><p className="font-medium">{selectedBooking?.branch}</p></div>
                                                 <div className="space-y-1"><Label className="text-muted-foreground">Authorised By</Label><p className="font-medium">{selectedBooking?.authorisedBy}</p></div>
@@ -1172,4 +1173,6 @@ function ValuerDashboardPage() {
 
 const GuardedValuerDashboardPage = AuthGuard(ValuerDashboardPage, { allowClients: true });
 export default GuardedValuerDashboardPage;
+    
+
     
