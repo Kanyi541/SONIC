@@ -67,6 +67,7 @@ interface Booking {
   carModel: string;
   carType?: string;
   policyNumber?: string;
+  policyExpiryDate?: any;
   authorisedBy?: string;
   createdAt: any;
   branch?: string; 
@@ -260,7 +261,7 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                             <span className="font-medium text-red-700">{booking.policyNumber}</span>
 
                             <span className="font-bold">EXP:</span>
-                            <span className="font-medium text-red-700">{valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'}</span>
+                            <span className="font-medium text-red-700">{booking.policyExpiryDate ? new Date(booking.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'}</span>
                             <span className="font-bold">CLIENT'S EMAIL:</span>
                             <span className="font-medium text-red-700">{booking.customerEmail || 'TBA'}</span>
 
