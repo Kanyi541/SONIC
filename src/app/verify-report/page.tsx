@@ -321,33 +321,37 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                             </div>
                         </section>
 
-                        <section className="my-1 text-xs">
-                            <NoteItem label="COUNTRY OF ORIGIN:" value={valuation.countryOfOrigin} />
-                            <NoteItem label="EXTRAS:" value={valuation.extras} />
-                            <NoteItem label="ANTI THEFT:" value={valuation.antiTheft} />
-                            <NoteItem label="LOG BOOK OWNERSHIP DETAILS:" value={booking.customerName} />
-                            <NoteItem label="REMARKS:" value={valuation.comments} />
-                            <NoteItem label="REMEDY:" value="NONE" />
-                            <NoteItem label="DISCLAIMER:" value="Logbook was not available at the time of inspection, valuation based on importation documents" />
-                            <NoteItem label="NOTE VALUE:" value={`Windscreen Kshs.${valuation.wsValue}/= Estimate, Radio System Kshs.${valuation.rsValue}/= Estimate`} />
-                        </section>
-                        
-                        <div className="grid grid-cols-2 gap-x-8 items-start">
-                            <section className="my-1 space-y-0 text-xs">
+                        <div className="grid grid-cols-2 gap-x-8 items-start my-2">
+                           <section className="text-xs space-y-0.5">
+                                <NoteItem label="COUNTRY OF ORIGIN:" value={valuation.countryOfOrigin} />
+                                <NoteItem label="EXTRAS:" value={valuation.extras} />
+                                <NoteItem label="ANTI THEFT:" value={valuation.antiTheft} />
+                                <NoteItem label="LOG BOOK OWNERSHIP DETAILS:" value={booking.customerName} />
+                                <NoteItem label="REMARKS:" value={valuation.comments} />
+                                <NoteItem label="REMEDY:" value="NONE" />
+                                <NoteItem label="DISCLAIMER:" value="Logbook was not available at the time of inspection, valuation based on importation documents" />
+                                <NoteItem label="NOTE VALUE:" value={`Windscreen Kshs.${valuation.wsValue}/= Estimate, Radio System Kshs.${valuation.rsValue}/= Estimate`} />
+                            </section>
+                            
+                            <section className="text-xs space-y-0.5">
                                 <NoteItem label="EXAMINER:" value={valuation.valuedBy} />
                                 <NoteItem label="LOCATION OF INSPECTION:" value={booking.branch} />
                                 <NoteItem label="DESTINATION:" value={valuation.insurer} />
                                 <NoteItem label="PREPARED BY:" value={valuation.valuedBy} />
                                 <NoteItem label="VALUATION AUTHORISED BY:" value={booking.branch} />
+                            </section>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-x-8 items-end">
+                             <div>
                                 <div className="flex items-start">
                                     <span className="font-bold uppercase text-gray-600 mr-2 text-xs">AUTHORISED SIGNATURE:</span>
                                     <div className="relative h-10 w-28 -mt-2">
                                         <Image src="/signature.png" alt="Signature" layout="fill" objectFit="contain" />
                                     </div>
                                 </div>
-                            </section>
-                            
-                            <div className="relative z-10 justify-self-end text-center mt-2">
+                            </div>
+                            <div className="relative z-10 justify-self-end text-center">
                                 <div className="relative border-2 border-blue-800 p-1 w-40">
                                     <Image src="/stamp.png" alt="Company Stamp" width={150} height={75} className="object-contain" />
                                 </div>
