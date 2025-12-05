@@ -404,7 +404,7 @@ function AdminDashboard() {
         });
         subscriptions.push(valUnsubscribe);
       }
-       if (activeView === 'new-bookings') {
+       if (activeView === 'new-bookings' || activeView === 'dashboard') {
         const valuerQuery = query(collection(db, "valuers"), orderBy("createdAt", "desc"));
         const valuerUnsubscribe = onSnapshot(valuerQuery, (snapshot) => {
             setValuers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuer })));
@@ -1796,36 +1796,48 @@ function AdminDashboard() {
                                                 </TableCell>
                                                 <TableCell>{valuation?.assessmentValue || 'N/A'}</TableCell>
                                                 <TableCell className="text-right">
-                                                    <Popover>
-                                                        <PopoverTrigger asChild>
-                                                            <Button variant="default" size="sm">
-                                                                <FileDown className="mr-2 h-4 w-4" />
-                                                                Reports
-                                                            </Button>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-56 p-2">
-                                                            <div className="grid gap-2">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    className="justify-start"
-                                                                    onClick={() => handleOpenReportInNewTab('booking', booking.id)}
-                                                                >
+                                                    {booking.status === 'Pending Approval' ? (
+                                                        <Button variant="outline" size="sm" onClick={() => openAssignDialog(booking)}>
+                                                            <FileSearch className="mr-2 h-4 w-4" />
+                                                            Assign &amp; Approve
+                                                        </Button>
+                                                    ) : booking.status === 'Valuated' ? (
+                                                        <Button variant="default" size="sm" onClick={() => openCompleteValuationDialog(booking)}>
+                                                            <Edit className="mr-2 h-4 w-4" />
+                                                            Complete
+                                                        </Button>
+                                                    ) : (
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <Button variant="default" size="sm">
                                                                     <FileDown className="mr-2 h-4 w-4" />
-                                                                    Booking Report
+                                                                    Reports
                                                                 </Button>
-                                                                {booking.status === 'Completed' && (
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-56 p-2">
+                                                                <div className="grid gap-2">
                                                                     <Button
                                                                         variant="ghost"
                                                                         className="justify-start"
-                                                                        onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
+                                                                        onClick={() => handleOpenReportInNewTab('booking', booking.id)}
                                                                     >
                                                                         <FileDown className="mr-2 h-4 w-4" />
-                                                                        Valuation Report
+                                                                        Booking Report
                                                                     </Button>
-                                                                )}
-                                                            </div>
-                                                        </PopoverContent>
-                                                    </Popover>
+                                                                    {booking.status === 'Completed' && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            className="justify-start"
+                                                                            onClick={() => handleOpenReportInNewTab('valuation', booking.id)}
+                                                                        >
+                                                                            <FileDown className="mr-2 h-4 w-4" />
+                                                                            Valuation Report
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                    )}
                                                 </TableCell>
                                             </TableRow>
                                         )
@@ -2350,6 +2362,7 @@ export default GuardedAdminDashboard;
     
 
     
+
 
 
 
