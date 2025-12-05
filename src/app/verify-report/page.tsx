@@ -181,17 +181,19 @@ class ReportToPrint extends React.Component<{valuation: Valuation | null, bookin
                             <Image src="/logo.jpeg" alt="Sonic Motor Valuers Logo" width={100} height={100} className="object-contain" />
                         </div>
                         <div className="flex-grow text-center mt-2">
-                            <h2 className="font-bold text-3xl text-red-800">SONIC MOTOR VALUERS AND ASSESSORS LTD</h2>
-                            <p className="text-xs font-bold mt-1">
-                                Dealer in: Valuation and Assessment for Bank Loan Facilities, Motor Vehicles Buying & Selling, Court Bonds,
-                                Inventories, Insurance purposes and Accident Assessment etc.
-                            </p>
-                            <p className="text-xs font-bold">
-                                Location: Plessy Hse, next to Highway Mall & Carrefour Mega, along Uhuru Highway.
-                            </p>
-                            <p className="text-xs font-bold">
-                                P.O. Box 103-90200, Nairobi. Mob: 0798662206/0750677839
-                            </p>
+                            <h2 className="font-georgia font-bold text-3xl text-red-800">SONIC MOTOR VALUERS AND ASSESSORS LTD</h2>
+                            <div className="font-bold text-xs mt-1">
+                                <p>
+                                    Dealer in: Valuation and Assessment for Bank Loan Facilities, Motor Vehicles Buying & Selling, Court Bonds,
+                                    Inventories, Insurance purposes and Accident Assessment etc.
+                                </p>
+                                <p>
+                                    Location: Plessy Hse, next to Highway Mall & Carrefour Mega, along Uhuru Highway.
+                                </p>
+                                <p>
+                                    P.O. Box 103-90200, Nairobi. Mob: 0798662206/0750677839
+                                </p>
+                            </div>
                         </div>
                     </header>
                     <main className="flex-grow px-8 pt-1 pb-2">

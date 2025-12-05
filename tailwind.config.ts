@@ -20,6 +20,7 @@ export default {
         body: ['Poppins', 'sans-serif'],
         headline: ['Poppins', 'sans-serif'],
         'sans-trebuchet': ['"Trebuchet MS"', 'sans-serif'],
+        georgia: ['Georgia', 'serif'],
         code: ['monospace'],
       },
       colors: {
