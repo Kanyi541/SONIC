@@ -26,3 +26,5 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
           FIREBASE_STORAGE_BUCKET: "sonic-motor-valuers-7762-ca361.appspot.com"
         run: node scripts/cleanup.js
+
+    
