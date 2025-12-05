@@ -95,21 +95,21 @@ interface ReportState {
 const DetailItem = ({ label, value, className, labelSize = 'text-xs', valueSize = 'text-xs' }: { label: string; value: React.ReactNode, className?: string, labelSize?: string, valueSize?: string }) => (
     <div className={className}>
         <span className={`font-bold text-gray-700 uppercase mr-2 ${labelSize}`}>{label}</span>
-        <span className={`text-blue-600 font-medium text-right ${valueSize}`}>{value || 'N/A'}</span>
+        <span className={`text-red-700 font-medium text-right ${valueSize}`}>{value || 'N/A'}</span>
     </div>
 );
 
 const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' | 'No' }) => (
     <div className="flex justify-between py-0">
         <span className="text-xs">{question}</span>
-        <span className="font-bold text-blue-600 text-xs">{answer || 'N/A'}</span>
+        <span className={`font-bold text-xs ${answer === 'Yes' ? 'text-red-700' : 'text-green-700'}`}>{answer || 'N/A'}</span>
     </div>
 )
 
 const NoteItem = ({ label, value }: { label: string, value?: string }) => (
      <div className="flex items-start">
         <span className="font-bold uppercase text-gray-600 mr-2 text-xs">{label}</span>
-        <p className={`font-medium text-blue-600 text-xs`}>{value || 'N/A'}</p>
+        <p className={`font-medium text-red-700 text-xs`}>{value || 'N/A'}</p>
     </div>
 )
 
@@ -199,15 +199,21 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
 
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col font-sans-trebuchet italic">
-            <header className="relative p-2 flex items-start gap-4 border-b-4 border-orange-400 print-header">
+            <header className="relative p-2 flex items-start gap-4 border-b border-gray-300 print-header">
                 <div className="flex-shrink-0">
-                    <Image src="/logo.jpeg" alt="Sonic Motor Valuers Logo" width={140} height={140} className="object-contain" />
+                    <Image src="/logo.jpeg" alt="Sonic Motor Valuers Logo" width={100} height={100} className="object-contain" />
                 </div>
-                <div className="flex-grow text-center">
+                <div className="flex-grow text-center mt-2">
                     <h2 className="font-bold text-3xl text-red-800">SONIC MOTOR VALUERS AND ASSESSORS LTD</h2>
-                    <p className="text-sm font-semibold mt-1">
+                    <p className="text-xs font-semibold mt-1">
                         Dealer in: Valuation and Assessment for Bank Loan Facilities, Motor Vehicles Buying & Selling, Court Bonds,
                         Inventories, Insurance purposes and Accident Assessment etc.
+                    </p>
+                     <p className="text-xs font-semibold">
+                        Location: Plessy Hse, next to Highway Mall & Carrefour Mega, along Uhuru Highway.
+                    </p>
+                    <p className="text-xs font-semibold">
+                        P.O. Box 103-90200, Nairobi. Mob: 0798662206/0750677839
                     </p>
                 </div>
             </header>
@@ -231,176 +237,159 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                   </AlertDialogContent>
                 </AlertDialog>
                 
-                <h3 className="font-bold text-base text-center my-1">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
-                
-                <section className="mt-2 mb-1">
-                    <div className="flex justify-between items-center text-xs">
-                        <div>
-                            <span className="font-bold">Serial No.:</span>
-                            <span className="font-medium text-green-700 ml-2">{booking.bookingNumber}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold">PURPOSE:</span>
-                            <span className="font-medium text-green-700 ml-2">{valuation.purpose || 'N/A'}</span>
-                        </div>
+                 <section className="bg-red-100 p-1 my-1 border-y border-red-200">
+                    <div className="text-center text-xs font-bold">
+                        <span>Serial No: {booking.bookingNumber}</span>
+                        <span className="ml-4">{booking.insurerName} ({booking.branch})</span>
                     </div>
-                    <div className="h-px bg-gray-400 mt-1 relative">
-                        <div className="absolute w-full h-px bg-gray-600 -top-px"></div>
-                        <div className="absolute w-full h-px bg-white top-px"></div>
-                    </div>
+                    <p className="text-center font-bold text-xs underline">(FOR INSURANCE USE ONLY)</p>
                 </section>
+
+                <h3 className="font-bold text-base text-center my-1 underline">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
 
                 <section className="mb-1 text-xs">
                     <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-0">
-                       <span className="font-bold">ISSUED BY</span>
-                       <span className="font-medium text-blue-600">Sonic Motor Valuers</span>
-                       
-                       <span className="font-bold">CLIENT NAME</span>
-                       <span className="font-medium text-blue-600">{booking.customerName}</span>
+                       <span className="font-bold">CLIENT'S NAME:</span>
+                       <span className="font-medium text-red-700">{booking.customerName}</span>
+                       <span className="font-bold">CONTACTS:</span>
+                       <span className="font-medium text-red-700">{booking.customerPhone}</span>
 
-                       <span className="font-bold">CONTACTS</span>
-                       <span className="font-medium text-blue-600">{booking.customerPhone}</span>
-                       
-                       <span className="font-bold">INSURER</span>
-                       <span className="font-medium text-blue-600">{valuation.insurer}</span>
-                       
-                       <span className="font-bold">POLICY NO.</span>
-                       <span className="font-medium text-blue-600">{booking.policyNumber}</span>
+                       <span className="font-bold">INSURER:</span>
+                       <span className="font-medium text-red-700">{valuation.insurer}</span>
+                       <span className="font-bold">POLICY NO:</span>
+                       <span className="font-medium text-red-700">{booking.policyNumber}</span>
 
-                       <span className="font-bold">EXPIRY DATE.</span>
-                       <span className="font-medium text-blue-600">{valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'}</span>
+                       <span className="font-bold">EXP:</span>
+                       <span className="font-medium text-red-700">{valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'}</span>
+                       <span className="font-bold">CLIENT'S EMAIL:</span>
+                       <span className="font-medium text-red-700">{booking.customerEmail || 'TBA'}</span>
+
+                       <span className="font-bold">P.O BOX:</span>
+                       <span className="font-medium text-red-700">TBA</span>
                     </div>
                 </section>
 
                 <p className="text-xs my-1 text-center">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
 
                 <section className="mb-1 text-xs">
-                    <div className="grid grid-cols-3 gap-x-4 gap-y-0">
-                        <DetailItem label="REGISTRATION NO" value={booking.plateNumber} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="MAKE" value={booking.carMake} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="TYPE :" value={booking.carType} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="CHASSIS NO" value={valuation.chassisNo} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="COLOUR" value={valuation.colour} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="FUEL TYPE" value={valuation.fuelType} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="ENGINE NO" value={valuation.engineNo} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="ENGINE RATING" value={valuation.engineRating} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="DATE OF REG." value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="YEAR OF MAN." value={valuation.yearOfManufacture} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="ODOMETER READING" value={valuation.odometerReadings} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="COUNTRY OF ORIGIN" value={valuation.countryOfOrigin} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="NO OF AIRBAGS" value={valuation.numberOfAirbags} labelSize="text-xs" valueSize="text-xs" />
-                        <DetailItem label="LIGHTS" value={valuation.lightsType} labelSize="text-xs" valueSize="text-xs" />
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-0">
+                        <DetailItem label="REGISTRATION:" value={booking.plateNumber} />
+                        <DetailItem label="MAKE:" value={`${booking.carMake} ${booking.carModel}`} />
+                        <DetailItem label="TYPE:" value={booking.carType} />
+                        <DetailItem label="FUEL:" value={valuation.fuelType} />
+                        <DetailItem label="COLOUR:" value={valuation.colour} />
+                        <DetailItem label="ENGINE RATING:" value={valuation.engineRating} />
+                        <DetailItem label="YEAR OF MAN:" value={valuation.yearOfManufacture} />
+                        <DetailItem label="DATE OF REG:" value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} />
+                        <DetailItem label="MILEAGE:" value={valuation.odometerReadings} />
+                        <DetailItem label="CHASSIS NO:" value={valuation.chassisNo} />
+                        <DetailItem label="ENGINE NO:" value={valuation.engineNo} />
                     </div>
                 </section>
                 
                 <section className="mb-1">
-                     <h4 className="font-bold text-sm underline mb-0.5">Coachwork</h4>
-                     <div className="grid grid-cols-3 gap-x-4">
+                     <h4 className="font-bold text-sm underline mb-0.5">COACH WORK</h4>
+                     <div className="grid grid-cols-2 gap-x-4">
                         <ConditionItem question="Accident Repairs Noted?" answer={valuation.coachWork?.accidentRepairs} />
                         <ConditionItem question="Accident Damages noted?" answer={valuation.coachWork?.accidentDamagesNoted} />
-                        <ConditionItem question="Are roof linings damaged or repaired?" answer={valuation.coachWork?.roofLiningsDamaged} />
-                        <ConditionItem question="Is Paint work Scratched/ Faded/ Dented?" answer={valuation.coachWork?.paintWorkScratched} />
+                        <ConditionItem question="Is Paint work Scratched/faded?" answer={valuation.coachWork?.paintWorkScratched} />
                         <ConditionItem question="Are inner wings repaired or damaged?" answer={valuation.coachWork?.innerWingsRepaired} />
-                        <ConditionItem question="Are Bumpers/ Outer Wing repaired?" answer={valuation.coachWork?.bumpersOuterWingRepaired} />
-                        <ConditionItem question="Has the body had a complete respray?" answer={valuation.coachWork?.completeRespray} />
-                        <ConditionItem question="Is Upholstery Torn/faded/worn out??" answer={valuation.coachWork?.upholsteryTorn} />
+                        <ConditionItem question="Are roof linings damaged or repaired?" answer={valuation.coachWork?.roofLiningsDamaged} />
+                        <ConditionItem question="Has the body had a complete re-spray?" answer={valuation.coachWork?.completeRespray} />
+                        <ConditionItem question="Is Upholstery Torn/faded/worn out?" answer={valuation.coachWork?.upholsteryTorn} />
+                        <ConditionItem question="Are bumpers/Outer Wing repaired?" answer={valuation.coachWork?.bumpersOuterWingRepaired} />
                         <ConditionItem question="Is the Chassis kinked or damaged?" answer={valuation.coachWork?.chassisKinked} />
                     </div>
                 </section>
 
                 <section className="mb-1">
-                     <h4 className="font-bold text-sm underline mb-0.5">Mechanical Condition</h4>
-                     <div className="grid grid-cols-3 gap-x-4">
+                     <h4 className="font-bold text-sm underline mb-0.5">MECHANICAL CONDITION</h4>
+                     <div className="grid grid-cols-2 gap-x-4">
                         <ConditionItem question="is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
                         <ConditionItem question="is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
-                        <ConditionItem question="Are the drive shafts/cv joints worn out?" answer={valuation.mechanicalCondition?.driveShaftWorn} />
-                        <ConditionItem question="is the automatic/manual gearbox okay?" answer={valuation.mechanicalCondition?.gearboxOk} />
+                        <ConditionItem question="Is the automatic/manual gearbox okay?" answer={valuation.mechanicalCondition?.gearboxOk} />
                         <ConditionItem question="is the steering system okay?" answer={valuation.mechanicalCondition?.steeringSystemOk} />
+                        <ConditionItem question="Are there signs of fluid or oil leakage?" answer={valuation.mechanicalCondition?.fluidLeakage} />
+                        <ConditionItem question="is the cooling system operating well?" answer={valuation.mechanicalCondition?.coolingSystemOk} />
+                        <ConditionItem question="Are the drive shafts/cv joints worn out?" answer={valuation.mechanicalCondition?.driveShaftWorn} />
                         <ConditionItem question="is the suspension system okay?" answer={valuation.mechanicalCondition?.suspensionSystemOk} />
-                        <ConditionItem question="Is cooling system operating well?" answer={valuation.mechanicalCondition?.coolingSystemOk} />
-                        <ConditionItem question="Are There signs of fluid or oil leakage?" answer={valuation.mechanicalCondition?.fluidLeakage} />
-                        <ConditionItem question="Are engine mountings worn out?" answer={valuation.mechanicalCondition?.engineMountingsWorn} />
+                        <ConditionItem question="Are engine mountings lights work well?" answer={valuation.mechanicalCondition?.engineMountingsWorn} />
                     </div>
                 </section>
 
                 <section className="mb-1">
-                     <h4 className="font-bold text-sm underline mb-0.5">Electrical Condition</h4>
-                     <div className="grid grid-cols-3 gap-x-4">
+                     <h4 className="font-bold text-sm underline mb-0.5">ELECTRICAL CONDITION</h4>
+                     <div className="grid grid-cols-2 gap-x-4">
                         <ConditionItem question="Do the indicator lights operate well?" answer={valuation.electricalCondition?.indicatorLightsOk} />
                         <ConditionItem question="Are the wipers operating well?" answer={valuation.electricalCondition?.wipersOk} />
-                        <ConditionItem question="Do the brake lights operate well?" answer={valuation.electricalCondition?.brakeLightsOk} />
                         <ConditionItem question="Are the headlights operating well?" answer={valuation.electricalCondition?.headlightsOk} />
+                        <ConditionItem question="Do the brake lights operate well?" answer={valuation.electricalCondition?.brakeLightsOk} />
                         <ConditionItem question="Do the instrument panel lights work well?" answer={valuation.electricalCondition?.instrumentPanelLightsOk} />
+                        <ConditionItem question="Do the ignition start?" answer={valuation.electricalCondition?.wipersOk} />
                      </div>
                 </section>
                 
-                <div className="grid grid-cols-2 gap-x-8 items-start">
-                    <section className="my-1 space-y-0">
-                        <NoteItem label="COACHWORK NOTES" value={valuation.coachWorkNotes} />
-                        <NoteItem label="ELECTRICAL NOTES" value={valuation.electricalNotes} />
-                        <NoteItem label="MECHANICAL NOTES" value={valuation.mechanicalNotes} />
-                        <NoteItem label="ANTI THEFT" value={valuation.antiTheft} />
-                        <NoteItem label="TYRES" value={`${valuation.tyresType} - ${valuation.tyresCondition}`} />
-                        <NoteItem label="GENERAL CONDITION" value="good" />
-                        <NoteItem label="EXTRAS:" value={valuation.extras} />
-                    </section>
-                    
-                    {qrCodeUrl && (
-                        <div className="relative z-20 text-center justify-self-end">
-                            <Image src={qrCodeUrl} alt="QR Code" width={60} height={60} />
-                            <p className="text-[10px] font-bold text-black mt-1">SCAN TO VERIFY</p>
-                        </div>
-                    )}
-                </div>
-
+                <section className="my-1 space-y-0 text-xs">
+                    <NoteItem label="COACH WORK STATUS:" value={valuation.coachWorkNotes} />
+                    <NoteItem label="MECHANICAL STATUS:" value={valuation.mechanicalNotes} />
+                    <NoteItem label="ELECTRICAL STATUS:" value={valuation.electricalNotes} />
+                    <NoteItem label="TYRES:" value={`${valuation.tyresType} - ${valuation.tyresCondition}`} />
+                    <NoteItem label="GENERAL CONDITION:" value="Good-Working condition" />
+                </section>
+                
                 <section className="my-1">
                     <div className="py-0.5">
-                        <span className="font-bold uppercase text-xs text-gray-600">ASSESSED VALUE : </span>
-                        <span className="font-bold uppercase text-blue-600 text-xs">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
-                    </div>
-                </section>
-                
-                <section className="my-1 text-xs">
-                    <span className="font-bold uppercase text-xs text-gray-600">NOTE VALUE</span>
-                    <div className="grid grid-cols-2 gap-x-12 mt-0">
-                      <div className="flex justify-between items-baseline">
-                          <span className="text-gray-700">Radio Estimate</span>
-                          <span className="text-blue-600 font-medium">{valuation.wsValue}</span>
-                      </div>
-                       <div className="flex justify-between items-baseline">
-                          <span className="text-gray-700">Windscreen Estimate</span>
-                          <span className="text-blue-600 font-medium">{valuation.rsValue}</span>
-                      </div>
+                        <span className="font-bold uppercase text-xs text-gray-600">ASSESSED VALUE: </span>
+                        <span className="font-bold uppercase text-red-700 text-xs">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
                     </div>
                 </section>
 
-                <section className="my-1 space-y-0">
+                <section className="my-1 text-xs">
+                    <NoteItem label="COUNTRY OF ORIGIN:" value={valuation.countryOfOrigin} />
+                    <NoteItem label="EXTRAS:" value={valuation.extras} />
+                    <NoteItem label="ANTI THEFT:" value={valuation.antiTheft} />
+                    <NoteItem label="LOG BOOK OWNERSHIP DETAILS:" value={booking.customerName} />
                     <NoteItem label="REMARKS:" value={valuation.comments} />
-                    <NoteItem label="REMEDY :" value="N/A" />
-                    <NoteItem label="DISCLAIMER :" value="none" />
+                    <NoteItem label="REMEDY:" value="NONE" />
+                    <NoteItem label="DISCLAIMER:" value="Logbook was not available at the time of inspection, valuation based on importation documents" />
+                    <NoteItem label="NOTE VALUE:" value={`Windscreen Kshs.${valuation.wsValue}/= Estimate, Radio System Kshs.${valuation.rsValue}/= Estimate`} />
                 </section>
                 
-                <section className="mt-1 grid grid-cols-2 gap-x-8 text-xs">
-                    <DetailItem label="DATE OF INSPECTION" value={valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'} labelSize="text-xs" valueSize="text-xs" />
-                    <DetailItem label="DESTINATION" value={`${valuation.insurer} prompt insurance agency`} labelSize="text-xs" valueSize="text-xs" />
-                    <DetailItem label="EXAMINER" value={valuation.valuedBy} labelSize="text-xs" valueSize="text-xs" />
-                    <div/>
-                    <DetailItem label="LOCATION OF INSPECTION" value={booking.branch} labelSize="text-xs" valueSize="text-xs" />
-                </section>
-                
-                <section className="mt-1 grid grid-cols-2 gap-x-8 text-xs">
-                    <div>
-                        <span className="font-bold uppercase">Signed</span>
-                        <div className="relative h-10 w-28 mt-1">
-                             <Image src="/signature.png" alt="Signature" layout="fill" objectFit="contain" />
+                 <div className="grid grid-cols-2 gap-x-8 items-start">
+                    <section className="my-1 space-y-0 text-xs">
+                        <NoteItem label="EXAMINER:" value={valuation.valuedBy} />
+                        <NoteItem label="LOCATION OF INSPECTION:" value={booking.branch} />
+                        <NoteItem label="DESTINATION:" value={valuation.insurer} />
+                        <NoteItem label="PREPARED BY:" value={valuation.valuedBy} />
+                        <NoteItem label="VALUATION AUTHORISED BY:" value={booking.branch} />
+                        <div className="flex items-start">
+                            <span className="font-bold uppercase text-gray-600 mr-2 text-xs">AUTHORISED SIGNATURE:</span>
+                            <div className="relative h-10 w-28 -mt-2">
+                                <Image src="/signature.png" alt="Signature" layout="fill" objectFit="contain" />
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <div className="relative z-10 justify-self-end text-center mt-2">
+                        <div className="relative border-2 border-blue-800 p-1 w-40">
+                             <Image src="/stamp.png" alt="Company Stamp" width={150} height={75} className="object-contain" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-2 mt-2 text-xs">
+                            <span className="font-bold text-gray-600">BROKER/AGENT:</span>
+                            <span className="font-medium text-red-700">{booking.authorisedBy}</span>
+                            <span className="font-bold text-gray-600">DATE:</span>
+                            <span className="font-medium text-red-700">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</span>
                         </div>
                     </div>
-                    <div>
-                        <span className="font-bold uppercase mr-2">Date</span>
-                        <span className="text-blue-600">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</span>
-                    </div>
-                </section>
-                <p className="text-center font-bold text-xs mt-1">For and on Behalf of Sonic Motor Valuers Ltd</p>
+                </div>
+
+                <p className="text-center font-bold text-xs mt-2">FOR AND ON BEHALF OF SONICMOTOR VALUERS & ASSESSORS LTD</p>
+                <p className="text-center text-xs mt-1">
+                    The report reflects the estimated Market value of the subjected vehicle in its present condition, at the time of valuation. Any future
+                    assessment will take into account any changes in the meantime, due to usage etc. This report is based on information on the logbook/
+                    Importation documents.
+                </p>
+                <p className="text-center text-xs font-bold mt-2">Email: soniemotorvaluers@gmail.com</p>
 
                 {chunkedImages.map((imageChunk, pageIndex) => (
                     <div key={pageIndex} className="break-before-page">
@@ -444,12 +433,6 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                 </div>
             </div>
             </main>
-            <footer className="bg-white p-1 text-black text-[10px] mt-auto print-footer border-t-4 border-orange-400">
-                <div className="max-w-5xl mx-auto text-center">
-                    <p className="font-bold text-blue-800">Location: Plessy Hse, next to Highway Mall & Carrefour Mega, along Uhuru Highway.</p>
-                    <p className="font-bold text-green-700">P.O. Box 103-90200, Nairobi. Mob: 0798662206/0750677839</p>
-                </div>
-            </footer>
         </div>
     );
   }
