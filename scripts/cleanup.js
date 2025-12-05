@@ -22,11 +22,11 @@ try {
 // Initialize PostgreSQL connection pool
 let pool;
 try {
-    if (!process.env.SUPABASE_CONNECTION_STRING) {
-        throw new Error("SUPABASE_CONNECTION_STRING environment variable not set.");
+    if (!process.env.POSTGRES_CONNECTION_STRING) {
+        throw new Error("POSTGRES_CONNECTION_STRING environment variable not set.");
     }
     pool = new Pool({
-        connectionString: process.env.SUPABASE_CONNECTION_STRING,
+        connectionString: process.env.POSTGRES_CONNECTION_STRING,
     });
 } catch (error) {
     console.error('PostgreSQL initialization error:', error.message);
