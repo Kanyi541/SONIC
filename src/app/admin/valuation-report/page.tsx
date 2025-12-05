@@ -386,8 +386,8 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                             </div>
                         </div>
 
-                        <div className='break-inside-avoid'>
-                            <p className="text-center font-bold text-xs mt-2">FOR AND ON BEHALF OF SONICMOTOR VALUERS & ASSESSORS LTD</p>
+                        <div className='break-inside-avoid mt-2'>
+                            <p className="text-center font-bold text-xs">FOR AND ON BEHALF OF SONICMOTOR VALUERS & ASSESSORS LTD</p>
                             <p className="text-center text-xs mt-1">
                                 The report reflects the estimated Market value of the subjected vehicle in its present condition, at the time of valuation. Any future
                                 assessment will take into account any changes in the meantime, due to usage etc. This report is based on information on the logbook/
