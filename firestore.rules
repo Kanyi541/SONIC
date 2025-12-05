@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -66,6 +67,14 @@ service cloud.firestore {
     // Allow any user to create (upload) and read images.
     match /uploads/{uploadId} {
       allow read, create: if true;
+    }
+
+    // Archives collection:
+    // Only backend processes (like our GitHub action) should write here.
+    // Only admins should be able to read for analytics.
+    match /archives/{archiveId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Prevent client-side writes
     }
   }
 }

@@ -1,9 +1,8 @@
 
-// This script archives old Firestore documents to a PostgreSQL database and then deletes them.
+// This script archives old Firestore documents to a new 'archives' collection within Firestore and then deletes them.
 // It is designed to be run in a secure server environment (like a GitHub Action).
 
 const admin = require('firebase-admin');
-const { Pool } = require('pg');
 const zlib = require('zlib');
 
 // Initialize Firebase Admin SDK
@@ -18,21 +17,6 @@ try {
         process.exit(1);
     }
 }
-
-// Initialize PostgreSQL connection pool
-let pool;
-try {
-    if (!process.env.POSTGRES_CONNECTION_STRING) {
-        throw new Error("POSTGRES_CONNECTION_STRING environment variable not set.");
-    }
-    pool = new Pool({
-        connectionString: process.env.POSTGRES_CONNECTION_STRING,
-    });
-} catch (error) {
-    console.error('PostgreSQL initialization error:', error.message);
-    process.exit(1);
-}
-
 
 const db = admin.firestore();
 
@@ -51,7 +35,7 @@ function compressData(jsonData) {
 }
 
 /**
- * Fetches documents older than 30 days, archives them to PostgreSQL, and then deletes them from Firestore.
+ * Fetches documents older than 30 days, archives them to the 'archives' collection, and then deletes them from the source collection.
  * @param {string} collectionName The name of the collection to process.
  * @param {string} timestampField The name of the field containing the creation timestamp.
  */
@@ -68,30 +52,29 @@ async function archiveOldDocuments(collectionName, timestampField) {
       return;
     }
 
-    const pgClient = await pool.connect();
-    try {
-        await pgClient.query('BEGIN');
-        for (const doc of snapshot.docs) {
-            const docData = doc.data();
-            const compressedData = await compressData(docData);
+    const batch = db.batch();
+    const archiveCollection = db.collection('archives');
 
-            // Insert into PostgreSQL
-            await pgClient.query(
-                'INSERT INTO archives (original_id, collection_name, data) VALUES ($1, $2, $3)',
-                [doc.id, collectionName, compressedData]
-            );
+    for (const doc of snapshot.docs) {
+        const docData = doc.data();
+        const compressedData = await compressData(docData);
+        
+        // Create a new document in the 'archives' collection
+        const archiveDocRef = archiveCollection.doc();
+        batch.set(archiveDocRef, {
+            originalId: doc.id,
+            collectionName: collectionName,
+            data: compressedData,
+            archivedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
 
-            // Delete from Firestore
-            await doc.ref.delete();
-        }
-        await pgClient.query('COMMIT');
-        console.log(`Successfully archived and deleted ${snapshot.size} old documents from '${collectionName}'.`);
-    } catch(e) {
-        await pgClient.query('ROLLBACK');
-        throw e;
-    } finally {
-        pgClient.release();
+        // Delete the original document
+        batch.delete(doc.ref);
     }
+    
+    await batch.commit();
+    console.log(`Successfully archived and deleted ${snapshot.size} old documents from '${collectionName}'.`);
+
   } catch (error) {
     console.error(`Error processing old documents from ${collectionName}:`, error);
   }
@@ -102,13 +85,12 @@ async function runArchival() {
     await archiveOldDocuments('bookings', 'createdAt');
     await archiveOldDocuments('valuations', 'valuedAt');
     console.log('Firestore archival process finished.');
-    await pool.end(); // Close all connections in the pool
 }
 
 async function logUsage() {
   console.log("\nChecking usage statistics...");
   try {
-    const collections = ["bookings", "valuations", "insurers", "valuers", "staff"];
+    const collections = ["bookings", "valuations", "insurers", "valuers", "staff", "archives"];
     for (const col of collections) {
       const snap = await db.collection(col).get();
       console.log(`Firestore - ${col} collection documents count: ${snap.size}`);
