@@ -53,14 +53,14 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
                 </div>
                 <div className="flex-grow text-center mt-2">
                     <h2 className="font-bold text-3xl text-red-800">SONIC MOTOR VALUERS AND ASSESSORS LTD</h2>
-                    <p className="text-xs font-semibold mt-1">
+                    <p className="text-xs font-bold mt-1">
                         Dealer in: Valuation and Assessment for Bank Loan Facilities, Motor Vehicles Buying & Selling, Court Bonds,
                         Inventories, Insurance purposes and Accident Assessment etc.
                     </p>
-                     <p className="text-xs font-semibold">
+                     <p className="text-xs font-bold">
                         Location: Plessy Hse, next to Highway Mall & Carrefour Mega, along Uhuru Highway.
                     </p>
-                    <p className="text-xs font-semibold">
+                    <p className="text-xs font-bold">
                         P.O. Box 103-90200, Nairobi. Mob: 0798662206/0750677839
                     </p>
                 </div>
