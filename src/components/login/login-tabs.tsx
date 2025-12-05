@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState } from "react";
@@ -267,11 +266,40 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
 const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
     const router = useRouter();
     const { toast } = useToast();
+    const [isResetSent, setResetSent] = useState(false);
 
     const form = useForm<ClientLoginFormValues>({
         resolver: zodResolver(clientLoginSchema),
         defaultValues: { email: "", password: "" },
     });
+
+    const handleForgotPassword = async () => {
+        const email = form.getValues("email");
+        const emailState = form.getFieldState("email");
+        if (!email || emailState.invalid) {
+            form.trigger("email");
+            toast({
+                variant: "destructive",
+                title: "Email Required",
+                description: "Please enter a valid email address to reset your password.",
+            });
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await sendPasswordResetEmail(auth, email);
+            setResetSent(true);
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Reset Failed",
+                description: "Could not send password reset email. Please check the email address.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const onSubmit = async (data: ClientLoginFormValues) => {
         setIsLoading(true);
@@ -374,79 +402,112 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
     };
 
   return (
-    <Card className="bg-black/20 backdrop-blur-lg border-white/20 text-white">
-      <CardHeader>
-        <CardTitle className="font-headline text-white">Client/Staff/Agent Login</CardTitle>
-        <CardDescription className="text-gray-300">
-          Enter your credentials to access the client dashboard.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <PasswordInput field={field} placeholder="••••••••" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" variant="accent" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign In
-            </Button>
-            <div className="text-center text-sm">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="link" className="text-gray-300">Forgot Password?</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Password Recovery</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      To reset your password, please contact Sonic Motor Valuers directly for assistance.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogAction>OK</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+    <>
+      <AlertDialog open={isResetSent} onOpenChange={setResetSent}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Password Reset Email Sent</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Your password reset link has been sent. Please check your email inbox (and spam/junk folder) to continue resetting your password.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogAction onClick={() => setResetSent(false)}>OK</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+
+      <Card className="bg-black/20 backdrop-blur-lg border-white/20 text-white">
+        <CardHeader>
+          <CardTitle className="font-headline text-white">Client/Staff/Agent Login</CardTitle>
+          <CardDescription className="text-gray-300">
+            Enter your credentials to access the client dashboard.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <PasswordInput field={field} placeholder="••••••••" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" variant="accent" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign In
+              </Button>
+              <div className="text-center text-sm">
+                <Button type="button" variant="link" onClick={handleForgotPassword} className="text-gray-300">
+                  Forgot Password?
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </>
   );
 };
 
 const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => void }) => {
   const router = useRouter();
   const { toast } = useToast();
+  const [isResetSent, setResetSent] = useState(false);
 
   const form = useForm<ValuerLoginFormValues>({
     resolver: zodResolver(valuerLoginSchema),
     defaultValues: { email: "", password: "" },
   });
+
+  const handleForgotPassword = async () => {
+    const email = form.getValues("email");
+    const emailState = form.getFieldState("email");
+    if (!email || emailState.invalid) {
+        form.trigger("email");
+        toast({
+            variant: "destructive",
+            title: "Email Required",
+            description: "Please enter a valid email address to reset your password.",
+        });
+        return;
+    }
+
+    setIsLoading(true);
+    try {
+        await sendPasswordResetEmail(auth, email);
+        setResetSent(true);
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Reset Failed",
+            description: "Could not send password reset email. Please check the email address.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
 
   const onSubmit = async (data: ValuerLoginFormValues) => {
     setIsLoading(true);
@@ -507,68 +568,71 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   };
 
   return (
-    <Card className="bg-black/20 backdrop-blur-lg border-white/20 text-white">
-      <CardHeader>
-        <CardTitle className="font-headline text-white">Valuer Login</CardTitle>
-        <CardDescription className="text-gray-300">
-          Enter your credentials to access the valuer dashboard.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="name@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <PasswordInput field={field} placeholder="••••••••" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" variant="accent" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign In
-            </Button>
-             <div className="text-center text-sm">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="link" className="text-gray-300">Forgot Password?</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Password Recovery</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      To reset your password, please contact Sonic Motor Valuers directly for assistance.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogAction>OK</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+    <>
+      <AlertDialog open={isResetSent} onOpenChange={setResetSent}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Password Reset Email Sent</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Your password reset link has been sent. Please check your email inbox (and spam/junk folder) to continue resetting your password.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogAction onClick={() => setResetSent(false)}>OK</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+
+      <Card className="bg-black/20 backdrop-blur-lg border-white/20 text-white">
+        <CardHeader>
+          <CardTitle className="font-headline text-white">Valuer Login</CardTitle>
+          <CardDescription className="text-gray-300">
+            Enter your credentials to access the valuer dashboard.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="name@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <PasswordInput field={field} placeholder="••••••••" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" variant="accent" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign In
+              </Button>
+               <div className="text-center text-sm">
+                <Button type="button" variant="link" onClick={handleForgotPassword} className="text-gray-300">
+                  Forgot Password?
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </>
   );
 };
 
@@ -612,3 +676,5 @@ export default function LoginTabs() {
     </Tabs>
   );
 }
+
+    
