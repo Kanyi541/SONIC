@@ -97,7 +97,7 @@ const DetailItem = ({ label, value, className, labelSize = 'text-xs', valueSize 
 
 const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' | 'No' }) => (
     <div className="flex justify-between py-0">
-        <span className="text-xs">{question}</span>
+        <span className="text-xs font-bold">{question}</span>
         <span className={`font-bold text-xs ${answer === 'Yes' ? 'text-red-700' : 'text-green-700'}`}>{answer || 'N/A'}</span>
     </div>
 )
