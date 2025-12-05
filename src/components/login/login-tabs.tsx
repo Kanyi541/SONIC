@@ -171,10 +171,10 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
 
   if (isForgotPassword) {
     return (
-    <Card className="bg-white/90 backdrop-blur-sm">
+    <Card className="bg-black/20 backdrop-blur-lg border-white/20 text-white">
         <CardHeader>
-          <CardTitle className="font-headline text-primary">Reset Admin Password</CardTitle>
-          <CardDescription>
+          <CardTitle className="font-headline text-white">Reset Admin Password</CardTitle>
+          <CardDescription className="text-gray-300">
             Enter your email to receive a password reset link.
           </CardDescription>
         </CardHeader>
@@ -211,10 +211,10 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
   }
 
   return (
-    <Card className="bg-white/90 backdrop-blur-sm">
+    <Card className="bg-black/20 backdrop-blur-lg border-white/20 text-white">
       <CardHeader>
-        <CardTitle className="font-headline text-primary">Admin Login</CardTitle>
-        <CardDescription>
+        <CardTitle className="font-headline text-white">Admin Login</CardTitle>
+        <CardDescription className="text-gray-300">
           Enter your credentials to access the admin dashboard.
         </CardDescription>
       </CardHeader>
@@ -252,7 +252,7 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
               Sign In
             </Button>
              <div className="text-center text-sm">
-              <Button variant="link" type="button" onClick={() => setForgotPassword(true)}>
+              <Button variant="link" type="button" onClick={() => setForgotPassword(true)} className="text-gray-300">
                 Forgot Password?
               </Button>
             </div>
@@ -374,10 +374,10 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
     };
 
   return (
-    <Card className="bg-white/90 backdrop-blur-sm">
+    <Card className="bg-black/20 backdrop-blur-lg border-white/20 text-white">
       <CardHeader>
-        <CardTitle className="font-headline text-primary">Client/Staff/Agent Login</CardTitle>
-        <CardDescription>
+        <CardTitle className="font-headline text-white">Client/Staff/Agent Login</CardTitle>
+        <CardDescription className="text-gray-300">
           Enter your credentials to access the client dashboard.
         </CardDescription>
       </CardHeader>
@@ -417,7 +417,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
             <div className="text-center text-sm">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="link">Forgot Password?</Button>
+                  <Button variant="link" className="text-gray-300">Forgot Password?</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -507,10 +507,10 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   };
 
   return (
-    <Card className="bg-white/90 backdrop-blur-sm">
+    <Card className="bg-black/20 backdrop-blur-lg border-white/20 text-white">
       <CardHeader>
-        <CardTitle className="font-headline text-primary">Valuer Login</CardTitle>
-        <CardDescription>
+        <CardTitle className="font-headline text-white">Valuer Login</CardTitle>
+        <CardDescription className="text-gray-300">
           Enter your credentials to access the valuer dashboard.
         </CardDescription>
       </CardHeader>
@@ -550,7 +550,7 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
              <div className="text-center text-sm">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="link">Forgot Password?</Button>
+                  <Button variant="link" className="text-gray-300">Forgot Password?</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
