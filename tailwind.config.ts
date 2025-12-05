@@ -21,6 +21,7 @@ export default {
         headline: ['Poppins', 'sans-serif'],
         'sans-trebuchet': ['"Trebuchet MS"', 'sans-serif'],
         georgia: ['Georgia', 'serif'],
+        'sans-times': ['"Times New Roman"', 'serif'],
         code: ['monospace'],
       },
       colors: {

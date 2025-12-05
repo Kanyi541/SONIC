@@ -53,7 +53,7 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
                 </div>
                 <div className="flex-grow text-center mt-2">
                     <h2 className="font-georgia font-bold text-3xl text-red-800">SONIC MOTOR VALUERS AND ASSESSORS LTD</h2>
-                     <div className="font-bold text-xs mt-1">
+                    <div className="font-sans-times font-bold text-xs mt-1 text-blue-800 text-center">
                         <p>
                             Dealer in: Valuation and Assessment for Bank Loan Facilities, Motor Vehicles Buying & Selling, Court Bonds,
                             Inventories, Insurance purposes and Accident Assessment etc.
