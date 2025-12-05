@@ -43,12 +43,12 @@ const forgotPasswordSchema = z.object({
 });
 
 const clientLoginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email." }),
+  identifier: z.string().min(1, "Email or Username is required."),
   password: z.string().min(1, { message: "Password is required." }),
 });
 
 const valuerLoginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email." }),
+  identifier: z.string().min(1, "Email or Username is required."),
   password: z.string().min(1, { message: "Password is required." }),
 });
 
@@ -271,7 +271,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
 
     const form = useForm<ClientLoginFormValues>({
         resolver: zodResolver(clientLoginSchema),
-        defaultValues: { email: "", password: "" },
+        defaultValues: { identifier: "", password: "" },
     });
     
     const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
@@ -296,10 +296,39 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
         }
     };
 
+    const getEmailFromIdentifier = async (identifier: string): Promise<string | null> => {
+        if (identifier.includes('@')) {
+            return identifier;
+        }
+
+        // Check in insurers collection for main clients and agents
+        const insurersQuery = query(collection(db, "insurers"), where("username", "==", identifier));
+        const insurersSnapshot = await getDocs(insurersQuery);
+        if (!insurersSnapshot.empty) {
+            return insurersSnapshot.docs[0].data().email;
+        }
+
+        // Check in staff collection
+        const staffQuery = query(collection(db, "staff"), where("username", "==", identifier));
+        const staffSnapshot = await getDocs(staffQuery);
+        if (!staffSnapshot.empty) {
+            return staffSnapshot.docs[0].data().email;
+        }
+
+        return null;
+    };
+
     const onSubmit = async (data: ClientLoginFormValues) => {
         setIsLoading(true);
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+            const email = await getEmailFromIdentifier(data.identifier);
+            if (!email) {
+                toast({ variant: "destructive", title: "Login Failed", description: "Invalid username or email." });
+                setIsLoading(false);
+                return;
+            }
+
+            const userCredential = await signInWithEmailAndPassword(auth, email, data.password);
             const user = userCredential.user;
 
             // Check if user is an Institution
@@ -384,7 +413,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
 
         } catch (error: any) {
              const errorMessage = error.code === 'auth/invalid-credential' 
-                ? 'Invalid email or password.'
+                ? 'Invalid credentials.'
                 : 'An unexpected error occurred.';
             toast({
                 variant: "destructive",
@@ -466,12 +495,12 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="email"
+                name="identifier"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email or Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your email" {...field} />
+                      <Input placeholder="Enter your email or username" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -515,7 +544,7 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
 
   const form = useForm<ValuerLoginFormValues>({
     resolver: zodResolver(valuerLoginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { identifier: "", password: "" },
   });
   
   const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
@@ -541,10 +570,30 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
   };
 
 
+  const getEmailFromIdentifier = async (identifier: string): Promise<string | null> => {
+      if (identifier.includes('@')) {
+          return identifier;
+      }
+      const q = query(collection(db, "valuers"), where("username", "==", identifier));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+          return querySnapshot.docs[0].data().email;
+      }
+      return null;
+  };
+
   const onSubmit = async (data: ValuerLoginFormValues) => {
     setIsLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const email = await getEmailFromIdentifier(data.identifier);
+
+      if (!email) {
+          toast({ variant: "destructive", title: "Login Failed", description: "Invalid username or email." });
+          setIsLoading(false);
+          return;
+      }
+
+      const userCredential = await signInWithEmailAndPassword(auth, email, data.password);
       const user = userCredential.user;
 
       const valuersRef = collection(db, "valuers");
@@ -587,7 +636,7 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
 
     } catch (error: any) {
       const errorMessage = error.code === 'auth/invalid-credential' 
-          ? 'Invalid email or password.'
+          ? 'Invalid credentials.'
           : 'An unexpected error occurred.';
       toast({
         variant: "destructive",
@@ -668,12 +717,12 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="email"
+                name="identifier"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email or Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
+                      <Input placeholder="Enter your email or username" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
