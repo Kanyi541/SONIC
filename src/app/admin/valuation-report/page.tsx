@@ -102,7 +102,7 @@ const DetailItem = ({ label, value, className, labelSize = 'text-xs', valueSize 
 
 const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' | 'No' }) => (
     <div className="flex justify-between py-0">
-        <span className="text-xs font-bold">{question}</span>
+        <span className="font-bold text-xs">{question}</span>
         <span className={`font-bold text-xs ${answer === 'Yes' ? 'text-red-700' : 'text-green-700'}`}>{answer || 'N/A'}</span>
     </div>
 )
@@ -354,8 +354,6 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                                 <NoteItem label="ANTI THEFT:" value={valuation.antiTheft} />
                                 <NoteItem label="LOG BOOK OWNERSHIP DETAILS:" value={booking.customerName} />
                                 <NoteItem label="REMARKS:" value={valuation.comments} />
-                                <NoteItem label="REMEDY:" value="NONE" />
-                                <NoteItem label="DISCLAIMER:" value="Logbook was not available at the time of inspection, valuation based on importation documents" />
                                 <NoteItem label="NOTE VALUE:" value={`Windscreen Kshs.${valuation.wsValue}/= Estimate, Radio System Kshs.${valuation.rsValue}/= Estimate`} />
                             </section>
                             
