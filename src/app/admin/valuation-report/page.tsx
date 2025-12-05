@@ -378,9 +378,6 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                                 </div>
                             </div>
                             <div className="relative z-10 justify-self-end text-center">
-                                <div className="relative border-2 border-blue-800 p-1 w-40">
-                                    <Image src="/stamp.png" alt="Company Stamp" width={150} height={75} className="object-contain" />
-                                </div>
                                 <div className="grid grid-cols-2 gap-x-2 mt-2 text-xs">
                                     <span className="font-bold text-gray-600">BROKER/AGENT:</span>
                                     <span className="font-medium text-red-700">{booking.authorisedBy}</span>
@@ -595,3 +592,5 @@ function ValuationReportWrapper() {
 const GuardedValuationReportPage = AuthGuard(ValuationReportWrapper, { allowClients: true });
 
 export default GuardedValuationReportPage;
+
+    
