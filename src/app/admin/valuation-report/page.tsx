@@ -200,7 +200,7 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
 
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col font-sans-trebuchet italic">
-            <div className="watermarked-valuation">
+            <div className="watermarked-valuation break-after-page">
                 <div className="report-content">
                     <header className="relative p-2 flex items-start gap-4 border-b border-gray-300 print-header">
                         <div className="flex-shrink-0">
@@ -386,15 +386,6 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                             </div>
                         </div>
 
-                        <div className='break-inside-avoid mt-2'>
-                            <p className="text-center font-bold text-xs">FOR AND ON BEHALF OF SONICMOTOR VALUERS & ASSESSORS LTD</p>
-                            <p className="text-center text-xs mt-1">
-                                The report reflects the estimated Market value of the subjected vehicle in its present condition, at the time of valuation. Any future
-                                assessment will take into account any changes in the meantime, due to usage etc. This report is based on information on the logbook/
-                                Importation documents.
-                            </p>
-                            <p className="text-center text-xs font-bold mt-2">Email: soniemotorvaluers@gmail.com</p>
-                        </div>
                     </main>
                 </div>
             </div>
@@ -437,6 +428,18 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                     ) : (
                         <p className="text-gray-500 italic text-sm">No logbook provided.</p>
                     )}
+                </div>
+            </div>
+            
+             <div className="break-before-page watermarked-valuation">
+                <div className="report-content my-2 break-inside-avoid px-8 pt-10">
+                    <p className="text-center font-bold text-xs">FOR AND ON BEHALF OF SONICMOTOR VALUERS & ASSESSORS LTD</p>
+                    <p className="text-center text-xs mt-1">
+                        The report reflects the estimated Market value of the subjected vehicle in its present condition, at the time of valuation. Any future
+                        assessment will take into account any changes in the meantime, due to usage etc. This report is based on information on the logbook/
+                        Importation documents.
+                    </p>
+                    <p className="text-center text-xs font-bold mt-2">Email: soniemotorvaluers@gmail.com</p>
                 </div>
             </div>
         </div>
