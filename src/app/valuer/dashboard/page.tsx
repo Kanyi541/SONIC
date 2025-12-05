@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -120,7 +119,6 @@ const valuationSchema = z.object({
   comments: z.string().optional(),
   insurer: z.string().min(1, "Insurer is required."),
   carType: z.string().optional(),
-  policyExpiryDate: z.date().optional(),
   chassisNo: z.string().optional(),
   colour: z.string().optional(),
   fuelType: z.string().optional(),
@@ -208,7 +206,6 @@ function ValuerDashboardPage() {
             insurer: "",
             purpose: "",
             carType: "",
-            policyExpiryDate: undefined,
             chassisNo: "",
             colour: "",
             fuelType: "",
@@ -763,10 +760,6 @@ function ValuerDashboardPage() {
         return <Loading />;
     }
 
-    if (loading) {
-      return <Loading />;
-    }
-
     return (
         <UnifiedDashboardLayout
             title="Sonic Motor Valuers"
@@ -787,11 +780,7 @@ function ValuerDashboardPage() {
             )}
         >
             {(activeView, setActiveView) => {
-                const handleActiveViewChange = (view: string) => {
-                    setLoading(true);
-                    setActiveView(view);
-                };
-
+                
                 return (
                 <>
                     <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
@@ -802,7 +791,7 @@ function ValuerDashboardPage() {
                                         title="All Cars" 
                                         value={stats.total} 
                                         icon={<Car className="h-6 w-6 text-blue-500" />} 
-                                        onClick={() => handleActiveViewChange('all-bookings')}
+                                        onClick={() => setActiveView('all-bookings')}
                                         progress={100}
                                         colorClass="bg-blue-500"
                                     />
@@ -810,7 +799,7 @@ function ValuerDashboardPage() {
                                         title="Pending Valuation" 
                                         value={stats.pendingValuation} 
                                         icon={<FileSignature className="h-6 w-6 text-orange-500" />} 
-                                        onClick={() => handleActiveViewChange('pending-valuation-bookings')}
+                                        onClick={() => setActiveView('pending-valuation-bookings')}
                                         progress={stats.total > 0 ? (stats.pendingValuation / stats.total) * 100 : 0}
                                         colorClass="bg-orange-500"
                                     />
@@ -818,7 +807,7 @@ function ValuerDashboardPage() {
                                         title="Rejected by Admin" 
                                         value={stats.rejected} 
                                         icon={<XCircle className="h-6 w-6 text-red-500" />} 
-                                        onClick={() => handleActiveViewChange('rejected-bookings')}
+                                        onClick={() => setActiveView('rejected-bookings')}
                                         progress={stats.total > 0 ? (stats.rejected / stats.total) * 100 : 0}
                                         colorClass="bg-red-500"
                                     />
@@ -826,7 +815,7 @@ function ValuerDashboardPage() {
                                         title="Approved" 
                                         value={stats.completed} 
                                         icon={<CheckCircle className="h-6 w-6 text-green-500" />} 
-                                        onClick={() => handleActiveViewChange('completed-bookings')}
+                                        onClick={() => setActiveView('completed-bookings')}
                                         progress={stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}
                                         colorClass="bg-green-500"
                                     />
@@ -977,11 +966,6 @@ function ValuerDashboardPage() {
                                                     </FormItem>
                                                 )}
                                             />
-                                            <FormField control={form.control} name="policyExpiryDate" render={({ field }) => (
-                                                <FormItem className="flex flex-col"><FormLabel>Policy Expiry Date</FormLabel><Popover><PopoverTrigger asChild><FormControl>
-                                                    <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button>
-                                                </FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
-                                            )}/>
                                             <FormField control={form.control} name="chassisNo" render={({ field }) => (<FormItem><FormLabel>Chassis No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                                             <FormField control={form.control} name="colour" render={({ field }) => (<FormItem><FormLabel>Colour</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                                             <FormField control={form.control} name="fuelType" render={({ field }) => (<FormItem><FormLabel>Fuel Type</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
