@@ -47,11 +47,17 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
 
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col">
-            <header className="relative bg-[#1a1a1a] p-2 flex justify-between items-center">
-                <div className="w-36">
-                    <Image src="/logo.jpeg" alt="Company Logo" width={140} height={50} />
+            <header className="relative p-2 flex items-start gap-4 border-b-4 border-orange-400">
+                <div className="flex-shrink-0">
+                    <Image src="/logo.jpeg" alt="Sonic Motor Valuers Logo" width={140} height={140} className="object-contain" />
                 </div>
-                <div className="absolute right-0 top-0 h-full w-4 bg-primary" />
+                <div className="flex-grow text-center">
+                    <h2 className="font-bold text-3xl text-red-800">SONIC MOTOR VALUERS AND ASSESSORS LTD</h2>
+                    <p className="text-sm font-semibold mt-1">
+                        Dealer in: Valuation and Assessment for Bank Loan Facilities, Motor Vehicles Buying & Selling, Court Bonds,
+                        Inventories, Insurance purposes and Accident Assessment etc.
+                    </p>
+                </div>
             </header>
 
             <main className="flex-grow p-14 watermarked">
@@ -143,20 +149,10 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
               </div>
             </div>
             </main>
-             <footer className="bg-[#1a1a1a] p-2 text-white text-sm mt-auto">
-                <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                        <Phone size={16} className="text-primary"/>
-                        <span>0722924854 / 0737924854</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                        <MapPin size={16} className="text-primary"/>
-                        <span>Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                        <Mail size={16} className="text-primary"/>
-                        <span>casamotorvaluer@gmail.com</span>
-                    </div>
+             <footer className="bg-white p-1 text-black text-xs mt-auto border-t-4 border-orange-400">
+                <div className="max-w-5xl mx-auto text-center">
+                    <p className="font-bold text-blue-800">Location: Plessy Hse, next to Highway Mall & Carrefour Mega, along Uhuru Highway.</p>
+                    <p className="font-bold text-green-700">P.O. Box 103-90200, Nairobi. Mob: 0798662206/0750677839</p>
                 </div>
             </footer>
         </div>

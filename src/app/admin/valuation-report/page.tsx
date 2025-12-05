@@ -199,17 +199,16 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
 
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col font-sans-trebuchet italic">
-             <header className="relative bg-[#1a1a1a] p-1 flex justify-between items-center print-header">
-                <div className="relative z-10 w-28">
-                    <Image src="/logo.jpeg" alt="CASA Motor Assessors Ltd" width={112} height={40} />
+            <header className="relative p-2 flex items-start gap-4 border-b-4 border-orange-400 print-header">
+                <div className="flex-shrink-0">
+                    <Image src="/logo.jpeg" alt="Sonic Motor Valuers Logo" width={140} height={140} className="object-contain" />
                 </div>
-
-                <div className="relative z-10 text-center text-white">
-                    <h2 className="font-bold text-base">CASA MOTOR ASSESSORS LTD</h2>
-                </div>
-                
-                <div className="relative z-10 flex items-center gap-4">
-                    <div className="h-12 w-4 bg-primary"></div>
+                <div className="flex-grow text-center">
+                    <h2 className="font-bold text-3xl text-red-800">SONIC MOTOR VALUERS AND ASSESSORS LTD</h2>
+                    <p className="text-sm font-semibold mt-1">
+                        Dealer in: Valuation and Assessment for Bank Loan Facilities, Motor Vehicles Buying & Selling, Court Bonds,
+                        Inventories, Insurance purposes and Accident Assessment etc.
+                    </p>
                 </div>
             </header>
             <main className="flex-grow px-8 pt-1 pb-2 watermarked-valuation">
@@ -220,7 +219,7 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                     <AlertDialogHeader>
                       <AlertDialogTitle>Verified Authentic Report</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This is a Verified Authentic Report from CASA. Click the button below to download.
+                        This is a Verified Authentic Report from SONIC. Click the button below to download.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -254,7 +253,7 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                 <section className="mb-1 text-xs">
                     <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-0">
                        <span className="font-bold">ISSUED BY</span>
-                       <span className="font-medium text-blue-600">CASA Motor Assessors</span>
+                       <span className="font-medium text-blue-600">Sonic Motor Valuers</span>
                        
                        <span className="font-bold">CLIENT NAME</span>
                        <span className="font-medium text-blue-600">{booking.customerName}</span>
@@ -401,7 +400,7 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                         <span className="text-blue-600">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</span>
                     </div>
                 </section>
-                <p className="text-center font-bold text-xs mt-1">For and on Behalf of CASA Motor Assessors Ltd</p>
+                <p className="text-center font-bold text-xs mt-1">For and on Behalf of Sonic Motor Valuers Ltd</p>
 
                 {chunkedImages.map((imageChunk, pageIndex) => (
                     <div key={pageIndex} className="break-before-page">
@@ -445,20 +444,10 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
                 </div>
             </div>
             </main>
-            <footer className="bg-[#1a1a1a] p-1 text-white text-[10px] mt-auto print-footer">
-                <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                        <Phone size={10} className="text-primary"/>
-                        <span>0722924854 / 0737924854</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-1">
-                        <MapPin size={10} className="text-primary"/>
-                        <span className="text-[10px]">Plessy Hse, next to Nissan Kenya & Carrefour Mega, Uhuru Highway, Nairobi</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-1">
-                        <Mail size={10} className="text-primary"/>
-                        <span>casamotorvaluers@gmail.com</span>
-                    </div>
+            <footer className="bg-white p-1 text-black text-[10px] mt-auto print-footer border-t-4 border-orange-400">
+                <div className="max-w-5xl mx-auto text-center">
+                    <p className="font-bold text-blue-800">Location: Plessy Hse, next to Highway Mall & Carrefour Mega, along Uhuru Highway.</p>
+                    <p className="font-bold text-green-700">P.O. Box 103-90200, Nairobi. Mob: 0798662206/0750677839</p>
                 </div>
             </footer>
         </div>
