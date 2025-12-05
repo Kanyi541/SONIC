@@ -199,240 +199,243 @@ class ReportToPrint extends React.Component<{reportData: PopulatedReportData | n
 
     return (
         <div className="bg-white shadow-2xl rounded-lg flex flex-col font-sans-trebuchet italic">
-            <header className="relative p-2 flex items-start gap-4 border-b border-gray-300 print-header">
-                <div className="flex-shrink-0">
-                    <Image src="/logo.jpeg" alt="Sonic Motor Valuers Logo" width={100} height={100} className="object-contain" />
-                </div>
-                <div className="flex-grow text-center mt-2">
-                    <h2 className="font-bold text-3xl text-red-800">SONIC MOTOR VALUERS AND ASSESSORS LTD</h2>
-                    <p className="text-xs font-semibold mt-1">
-                        Dealer in: Valuation and Assessment for Bank Loan Facilities, Motor Vehicles Buying & Selling, Court Bonds,
-                        Inventories, Insurance purposes and Accident Assessment etc.
-                    </p>
-                     <p className="text-xs font-semibold">
-                        Location: Plessy Hse, next to Highway Mall & Carrefour Mega, along Uhuru Highway.
-                    </p>
-                    <p className="text-xs font-semibold">
-                        P.O. Box 103-90200, Nairobi. Mob: 0798662206/0750677839
-                    </p>
-                </div>
-            </header>
-            <main className="flex-grow px-8 pt-1 pb-2 watermarked-valuation">
-             <div className="report-content">
-                
-                <AlertDialog open={this.state.isVerificationDialogOpen} onOpenChange={(open) => this.setState({ isVerificationDialogOpen: open })}>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Verified Authentic Report</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This is a Verified Authentic Report from SONIC. Click the button below to download.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Close</AlertDialogCancel>
-                        <AlertDialogAction onClick={this.handleDownload}>
-                            Download Report
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                
-                 <section className="bg-red-100 p-1 my-1 border-y border-red-200">
-                    <div className="text-center text-xs font-bold">
-                        <span>Serial No: {booking.bookingNumber}</span>
-                        <span className="ml-4">{booking.insurerName} ({booking.branch})</span>
-                    </div>
-                    <p className="text-center font-bold text-xs underline">(FOR INSURANCE USE ONLY)</p>
-                </section>
-
-                <h3 className="font-bold text-base text-center my-1 underline">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
-
-                <section className="mb-1 text-xs">
-                    <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-0">
-                       <span className="font-bold">CLIENT'S NAME:</span>
-                       <span className="font-medium text-red-700">{booking.customerName}</span>
-                       <span className="font-bold">CONTACTS:</span>
-                       <span className="font-medium text-red-700">{booking.customerPhone}</span>
-
-                       <span className="font-bold">INSURER:</span>
-                       <span className="font-medium text-red-700">{valuation.insurer}</span>
-                       <span className="font-bold">POLICY NO:</span>
-                       <span className="font-medium text-red-700">{booking.policyNumber}</span>
-
-                       <span className="font-bold">EXP:</span>
-                       <span className="font-medium text-red-700">{valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'}</span>
-                       <span className="font-bold">CLIENT'S EMAIL:</span>
-                       <span className="font-medium text-red-700">{booking.customerEmail || 'TBA'}</span>
-
-                       <span className="font-bold">P.O BOX:</span>
-                       <span className="font-medium text-red-700">TBA</span>
-                    </div>
-                </section>
-
-                <p className="text-xs my-1 text-center">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
-
-                <section className="mb-1 text-xs">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-0">
-                        <DetailItem label="REGISTRATION:" value={booking.plateNumber} />
-                        <DetailItem label="MAKE:" value={`${booking.carMake} ${booking.carModel}`} />
-                        <DetailItem label="TYPE:" value={booking.carType} />
-                        <DetailItem label="FUEL:" value={valuation.fuelType} />
-                        <DetailItem label="COLOUR:" value={valuation.colour} />
-                        <DetailItem label="ENGINE RATING:" value={valuation.engineRating} />
-                        <DetailItem label="YEAR OF MAN:" value={valuation.yearOfManufacture} />
-                        <DetailItem label="DATE OF REG:" value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} />
-                        <DetailItem label="MILEAGE:" value={valuation.odometerReadings} />
-                        <DetailItem label="CHASSIS NO:" value={valuation.chassisNo} />
-                        <DetailItem label="ENGINE NO:" value={valuation.engineNo} />
-                    </div>
-                </section>
-                
-                <section className="mb-1">
-                     <h4 className="font-bold text-sm underline mb-0.5">COACH WORK</h4>
-                     <div className="grid grid-cols-2 gap-x-4">
-                        <ConditionItem question="Accident Repairs Noted?" answer={valuation.coachWork?.accidentRepairs} />
-                        <ConditionItem question="Accident Damages noted?" answer={valuation.coachWork?.accidentDamagesNoted} />
-                        <ConditionItem question="Is Paint work Scratched/faded?" answer={valuation.coachWork?.paintWorkScratched} />
-                        <ConditionItem question="Are inner wings repaired or damaged?" answer={valuation.coachWork?.innerWingsRepaired} />
-                        <ConditionItem question="Are roof linings damaged or repaired?" answer={valuation.coachWork?.roofLiningsDamaged} />
-                        <ConditionItem question="Has the body had a complete re-spray?" answer={valuation.coachWork?.completeRespray} />
-                        <ConditionItem question="Is Upholstery Torn/faded/worn out?" answer={valuation.coachWork?.upholsteryTorn} />
-                        <ConditionItem question="Are bumpers/Outer Wing repaired?" answer={valuation.coachWork?.bumpersOuterWingRepaired} />
-                        <ConditionItem question="Is the Chassis kinked or damaged?" answer={valuation.coachWork?.chassisKinked} />
-                    </div>
-                </section>
-
-                <section className="mb-1">
-                     <h4 className="font-bold text-sm underline mb-0.5">MECHANICAL CONDITION</h4>
-                     <div className="grid grid-cols-2 gap-x-4">
-                        <ConditionItem question="is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
-                        <ConditionItem question="is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
-                        <ConditionItem question="Is the automatic/manual gearbox okay?" answer={valuation.mechanicalCondition?.gearboxOk} />
-                        <ConditionItem question="is the steering system okay?" answer={valuation.mechanicalCondition?.steeringSystemOk} />
-                        <ConditionItem question="Are there signs of fluid or oil leakage?" answer={valuation.mechanicalCondition?.fluidLeakage} />
-                        <ConditionItem question="is the cooling system operating well?" answer={valuation.mechanicalCondition?.coolingSystemOk} />
-                        <ConditionItem question="Are the drive shafts/cv joints worn out?" answer={valuation.mechanicalCondition?.driveShaftWorn} />
-                        <ConditionItem question="is the suspension system okay?" answer={valuation.mechanicalCondition?.suspensionSystemOk} />
-                        <ConditionItem question="Are engine mountings lights work well?" answer={valuation.mechanicalCondition?.engineMountingsWorn} />
-                    </div>
-                </section>
-
-                <section className="mb-1">
-                     <h4 className="font-bold text-sm underline mb-0.5">ELECTRICAL CONDITION</h4>
-                     <div className="grid grid-cols-2 gap-x-4">
-                        <ConditionItem question="Do the indicator lights operate well?" answer={valuation.electricalCondition?.indicatorLightsOk} />
-                        <ConditionItem question="Are the wipers operating well?" answer={valuation.electricalCondition?.wipersOk} />
-                        <ConditionItem question="Are the headlights operating well?" answer={valuation.electricalCondition?.headlightsOk} />
-                        <ConditionItem question="Do the brake lights operate well?" answer={valuation.electricalCondition?.brakeLightsOk} />
-                        <ConditionItem question="Do the instrument panel lights work well?" answer={valuation.electricalCondition?.instrumentPanelLightsOk} />
-                        <ConditionItem question="Do the ignition start?" answer={valuation.electricalCondition?.wipersOk} />
-                     </div>
-                </section>
-                
-                <section className="my-1 space-y-0 text-xs">
-                    <NoteItem label="COACH WORK STATUS:" value={valuation.coachWorkNotes} />
-                    <NoteItem label="MECHANICAL STATUS:" value={valuation.mechanicalNotes} />
-                    <NoteItem label="ELECTRICAL STATUS:" value={valuation.electricalNotes} />
-                    <NoteItem label="TYRES:" value={`${valuation.tyresType} - ${valuation.tyresCondition}`} />
-                    <NoteItem label="GENERAL CONDITION:" value="Good-Working condition" />
-                </section>
-                
-                <section className="my-1">
-                    <div className="py-0.5">
-                        <span className="font-bold uppercase text-xs text-gray-600">ASSESSED VALUE: </span>
-                        <span className="font-bold uppercase text-red-700 text-xs">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
-                    </div>
-                </section>
-
-                <section className="my-1 text-xs">
-                    <NoteItem label="COUNTRY OF ORIGIN:" value={valuation.countryOfOrigin} />
-                    <NoteItem label="EXTRAS:" value={valuation.extras} />
-                    <NoteItem label="ANTI THEFT:" value={valuation.antiTheft} />
-                    <NoteItem label="LOG BOOK OWNERSHIP DETAILS:" value={booking.customerName} />
-                    <NoteItem label="REMARKS:" value={valuation.comments} />
-                    <NoteItem label="REMEDY:" value="NONE" />
-                    <NoteItem label="DISCLAIMER:" value="Logbook was not available at the time of inspection, valuation based on importation documents" />
-                    <NoteItem label="NOTE VALUE:" value={`Windscreen Kshs.${valuation.wsValue}/= Estimate, Radio System Kshs.${valuation.rsValue}/= Estimate`} />
-                </section>
-                
-                 <div className="grid grid-cols-2 gap-x-8 items-start">
-                    <section className="my-1 space-y-0 text-xs">
-                        <NoteItem label="EXAMINER:" value={valuation.valuedBy} />
-                        <NoteItem label="LOCATION OF INSPECTION:" value={booking.branch} />
-                        <NoteItem label="DESTINATION:" value={valuation.insurer} />
-                        <NoteItem label="PREPARED BY:" value={valuation.valuedBy} />
-                        <NoteItem label="VALUATION AUTHORISED BY:" value={booking.branch} />
-                        <div className="flex items-start">
-                            <span className="font-bold uppercase text-gray-600 mr-2 text-xs">AUTHORISED SIGNATURE:</span>
-                            <div className="relative h-10 w-28 -mt-2">
-                                <Image src="/signature.png" alt="Signature" layout="fill" objectFit="contain" />
+            <div className="watermarked-valuation">
+                <div className="report-content">
+                    <header className="relative p-2 flex items-start gap-4 border-b border-gray-300 print-header">
+                        <div className="flex-shrink-0">
+                            <Image src="/logo.jpeg" alt="Sonic Motor Valuers Logo" width={100} height={100} className="object-contain" />
+                        </div>
+                        <div className="flex-grow text-center mt-2">
+                            <h2 className="font-bold text-3xl text-red-800">SONIC MOTOR VALUERS AND ASSESSORS LTD</h2>
+                            <p className="text-xs font-semibold mt-1">
+                                Dealer in: Valuation and Assessment for Bank Loan Facilities, Motor Vehicles Buying & Selling, Court Bonds,
+                                Inventories, Insurance purposes and Accident Assessment etc.
+                            </p>
+                            <p className="text-xs font-semibold">
+                                Location: Plessy Hse, next to Highway Mall & Carrefour Mega, along Uhuru Highway.
+                            </p>
+                            <p className="text-xs font-semibold">
+                                P.O. Box 103-90200, Nairobi. Mob: 0798662206/0750677839
+                            </p>
+                        </div>
+                    </header>
+                    <main className="flex-grow px-8 pt-1 pb-2">
+                        <AlertDialog open={this.state.isVerificationDialogOpen} onOpenChange={(open) => this.setState({ isVerificationDialogOpen: open })}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Verified Authentic Report</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This is a Verified Authentic Report from SONIC. Click the button below to download.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Close</AlertDialogCancel>
+                                <AlertDialogAction onClick={this.handleDownload}>
+                                    Download Report
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                        </AlertDialog>
+                        
+                        <section className="bg-red-100 p-1 my-1 border-y border-red-200">
+                            <div className="text-center text-xs font-bold">
+                                <span>Serial No: {booking.bookingNumber}</span>
+                                <span className="ml-4">{booking.insurerName} ({booking.branch})</span>
                             </div>
-                        </div>
-                    </section>
-                    
-                    <div className="relative z-10 justify-self-end text-center mt-2">
-                        <div className="relative border-2 border-blue-800 p-1 w-40">
-                             <Image src="/stamp.png" alt="Company Stamp" width={150} height={75} className="object-contain" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-x-2 mt-2 text-xs">
-                            <span className="font-bold text-gray-600">BROKER/AGENT:</span>
-                            <span className="font-medium text-red-700">{booking.authorisedBy}</span>
-                            <span className="font-bold text-gray-600">DATE:</span>
-                            <span className="font-medium text-red-700">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</span>
-                        </div>
-                    </div>
-                </div>
+                            <p className="text-center font-bold text-xs underline">(FOR INSURANCE USE ONLY)</p>
+                        </section>
 
-                <p className="text-center font-bold text-xs mt-2">FOR AND ON BEHALF OF SONICMOTOR VALUERS & ASSESSORS LTD</p>
-                <p className="text-center text-xs mt-1">
-                    The report reflects the estimated Market value of the subjected vehicle in its present condition, at the time of valuation. Any future
-                    assessment will take into account any changes in the meantime, due to usage etc. This report is based on information on the logbook/
-                    Importation documents.
-                </p>
-                <p className="text-center text-xs font-bold mt-2">Email: soniemotorvaluers@gmail.com</p>
+                        <h3 className="font-bold text-base text-center my-1 underline">MOTOR VEHICLE VALUATION & INSPECTION CERTIFICATE</h3>
 
-                {chunkedImages.map((imageChunk, pageIndex) => (
-                    <div key={pageIndex} className="break-before-page">
-                        <div className="my-2 break-inside-avoid">
-                            <h3 className="font-bold text-base underline mb-1">Valuation Photos (Page {pageIndex + 1})</h3>
-                            <div className="grid grid-cols-3 gap-2">
-                                {imageChunk.map((url, index) => (
-                                    <div key={index} className="border p-1 rounded-md bg-gray-100 break-inside-avoid">
-                                        <Image src={url} alt={`Valuation Photo ${index + 1}`} width={250} height={180} className="object-contain w-full h-auto" />
+                        <section className="mb-1 text-xs">
+                            <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-0">
+                            <span className="font-bold">CLIENT'S NAME:</span>
+                            <span className="font-medium text-red-700">{booking.customerName}</span>
+                            <span className="font-bold">CONTACTS:</span>
+                            <span className="font-medium text-red-700">{booking.customerPhone}</span>
+
+                            <span className="font-bold">INSURER:</span>
+                            <span className="font-medium text-red-700">{valuation.insurer}</span>
+                            <span className="font-bold">POLICY NO:</span>
+                            <span className="font-medium text-red-700">{booking.policyNumber}</span>
+
+                            <span className="font-bold">EXP:</span>
+                            <span className="font-medium text-red-700">{valuation.policyExpiryDate ? new Date(valuation.policyExpiryDate.toDate()).toLocaleDateString() : 'N/A'}</span>
+                            <span className="font-bold">CLIENT'S EMAIL:</span>
+                            <span className="font-medium text-red-700">{booking.customerEmail || 'TBA'}</span>
+
+                            <span className="font-bold">P.O BOX:</span>
+                            <span className="font-medium text-red-700">TBA</span>
+                            </div>
+                        </section>
+
+                        <p className="text-xs my-1 text-center">A brief, integrity examination and road test has been carried out on the vehicle described below and the findings are as follows.</p>
+
+                        <section className="mb-1 text-xs">
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-0">
+                                <DetailItem label="REGISTRATION:" value={booking.plateNumber} />
+                                <DetailItem label="MAKE:" value={`${booking.carMake} ${booking.carModel}`} />
+                                <DetailItem label="TYPE:" value={booking.carType} />
+                                <DetailItem label="FUEL:" value={valuation.fuelType} />
+                                <DetailItem label="COLOUR:" value={valuation.colour} />
+                                <DetailItem label="ENGINE RATING:" value={valuation.engineRating} />
+                                <DetailItem label="YEAR OF MAN:" value={valuation.yearOfManufacture} />
+                                <DetailItem label="DATE OF REG:" value={valuation.dateOfReg ? new Date(valuation.dateOfReg.toDate()).toLocaleDateString() : 'N/A'} />
+                                <DetailItem label="MILEAGE:" value={valuation.odometerReadings} />
+                                <DetailItem label="CHASSIS NO:" value={valuation.chassisNo} />
+                                <DetailItem label="ENGINE NO:" value={valuation.engineNo} />
+                            </div>
+                        </section>
+                        
+                        <section className="mb-1">
+                            <h4 className="font-bold text-sm underline mb-0.5">COACH WORK</h4>
+                            <div className="grid grid-cols-2 gap-x-4">
+                                <ConditionItem question="Accident Repairs Noted?" answer={valuation.coachWork?.accidentRepairs} />
+                                <ConditionItem question="Accident Damages noted?" answer={valuation.coachWork?.accidentDamagesNoted} />
+                                <ConditionItem question="Is Paint work Scratched/faded?" answer={valuation.coachWork?.paintWorkScratched} />
+                                <ConditionItem question="Are inner wings repaired or damaged?" answer={valuation.coachWork?.innerWingsRepaired} />
+                                <ConditionItem question="Are roof linings damaged or repaired?" answer={valuation.coachWork?.roofLiningsDamaged} />
+                                <ConditionItem question="Has the body had a complete re-spray?" answer={valuation.coachWork?.completeRespray} />
+                                <ConditionItem question="Is Upholstery Torn/faded/worn out?" answer={valuation.coachWork?.upholsteryTorn} />
+                                <ConditionItem question="Are bumpers/Outer Wing repaired?" answer={valuation.coachWork?.bumpersOuterWingRepaired} />
+                                <ConditionItem question="Is the Chassis kinked or damaged?" answer={valuation.coachWork?.chassisKinked} />
+                            </div>
+                        </section>
+
+                        <section className="mb-1">
+                            <h4 className="font-bold text-sm underline mb-0.5">MECHANICAL CONDITION</h4>
+                            <div className="grid grid-cols-2 gap-x-4">
+                                <ConditionItem question="is the parking brake effective?" answer={valuation.mechanicalCondition?.parkingBrakeEffective} />
+                                <ConditionItem question="is the braking system okay?" answer={valuation.mechanicalCondition?.brakingSystemOk} />
+                                <ConditionItem question="Is the automatic/manual gearbox okay?" answer={valuation.mechanicalCondition?.gearboxOk} />
+                                <ConditionItem question="is the steering system okay?" answer={valuation.mechanicalCondition?.steeringSystemOk} />
+                                <ConditionItem question="Are there signs of fluid or oil leakage?" answer={valuation.mechanicalCondition?.fluidLeakage} />
+                                <ConditionItem question="is the cooling system operating well?" answer={valuation.mechanicalCondition?.coolingSystemOk} />
+                                <ConditionItem question="Are the drive shafts/cv joints worn out?" answer={valuation.mechanicalCondition?.driveShaftWorn} />
+                                <ConditionItem question="is the suspension system okay?" answer={valuation.mechanicalCondition?.suspensionSystemOk} />
+                                <ConditionItem question="Are engine mountings lights work well?" answer={valuation.mechanicalCondition?.engineMountingsWorn} />
+                            </div>
+                        </section>
+
+                        <section className="mb-1">
+                            <h4 className="font-bold text-sm underline mb-0.5">ELECTRICAL CONDITION</h4>
+                            <div className="grid grid-cols-2 gap-x-4">
+                                <ConditionItem question="Do the indicator lights operate well?" answer={valuation.electricalCondition?.indicatorLightsOk} />
+                                <ConditionItem question="Are the wipers operating well?" answer={valuation.electricalCondition?.wipersOk} />
+                                <ConditionItem question="Are the headlights operating well?" answer={valuation.electricalCondition?.headlightsOk} />
+                                <ConditionItem question="Do the brake lights operate well?" answer={valuation.electricalCondition?.brakeLightsOk} />
+                                <ConditionItem question="Do the instrument panel lights work well?" answer={valuation.electricalCondition?.instrumentPanelLightsOk} />
+                                <ConditionItem question="Do the ignition start?" answer={valuation.electricalCondition?.wipersOk} />
+                            </div>
+                        </section>
+                        
+                        <section className="my-1 space-y-0 text-xs">
+                            <NoteItem label="COACH WORK STATUS:" value={valuation.coachWorkNotes} />
+                            <NoteItem label="MECHANICAL STATUS:" value={valuation.mechanicalNotes} />
+                            <NoteItem label="ELECTRICAL STATUS:" value={valuation.electricalNotes} />
+                            <NoteItem label="TYRES:" value={`${valuation.tyresType} - ${valuation.tyresCondition}`} />
+                            <NoteItem label="GENERAL CONDITION:" value="Good-Working condition" />
+                        </section>
+                        
+                        <section className="my-1">
+                            <div className="py-0.5">
+                                <span className="font-bold uppercase text-xs text-gray-600">ASSESSED VALUE: </span>
+                                <span className="font-bold uppercase text-red-700 text-xs">{`${assessmentValueInWords} (Kshs. ${valuation.assessmentValue})`}</span>
+                            </div>
+                        </section>
+
+                        <section className="my-1 text-xs">
+                            <NoteItem label="COUNTRY OF ORIGIN:" value={valuation.countryOfOrigin} />
+                            <NoteItem label="EXTRAS:" value={valuation.extras} />
+                            <NoteItem label="ANTI THEFT:" value={valuation.antiTheft} />
+                            <NoteItem label="LOG BOOK OWNERSHIP DETAILS:" value={booking.customerName} />
+                            <NoteItem label="REMARKS:" value={valuation.comments} />
+                            <NoteItem label="REMEDY:" value="NONE" />
+                            <NoteItem label="DISCLAIMER:" value="Logbook was not available at the time of inspection, valuation based on importation documents" />
+                            <NoteItem label="NOTE VALUE:" value={`Windscreen Kshs.${valuation.wsValue}/= Estimate, Radio System Kshs.${valuation.rsValue}/= Estimate`} />
+                        </section>
+                        
+                        <div className="grid grid-cols-2 gap-x-8 items-start">
+                            <section className="my-1 space-y-0 text-xs">
+                                <NoteItem label="EXAMINER:" value={valuation.valuedBy} />
+                                <NoteItem label="LOCATION OF INSPECTION:" value={booking.branch} />
+                                <NoteItem label="DESTINATION:" value={valuation.insurer} />
+                                <NoteItem label="PREPARED BY:" value={valuation.valuedBy} />
+                                <NoteItem label="VALUATION AUTHORISED BY:" value={booking.branch} />
+                                <div className="flex items-start">
+                                    <span className="font-bold uppercase text-gray-600 mr-2 text-xs">AUTHORISED SIGNATURE:</span>
+                                    <div className="relative h-10 w-28 -mt-2">
+                                        <Image src="/signature.png" alt="Signature" layout="fill" objectFit="contain" />
                                     </div>
-                                ))}
+                                </div>
+                            </section>
+                            
+                            <div className="relative z-10 justify-self-end text-center mt-2">
+                                <div className="relative border-2 border-blue-800 p-1 w-40">
+                                    <Image src="/stamp.png" alt="Company Stamp" width={150} height={75} className="object-contain" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-x-2 mt-2 text-xs">
+                                    <span className="font-bold text-gray-600">BROKER/AGENT:</span>
+                                    <span className="font-medium text-red-700">{booking.authorisedBy}</span>
+                                    <span className="font-bold text-gray-600">DATE:</span>
+                                    <span className="font-medium text-red-700">{valuation.assessmentDate ? new Date(valuation.assessmentDate.toDate()).toLocaleDateString() : 'N/A'}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
 
-                <div className="break-before-page">
-                    <div className="my-2 break-inside-avoid">
-                        <h3 className="font-bold text-base underline mb-1">Insurance Letter</h3>
-                        {insuranceLetterImage ? (
-                            <div className="border p-1 rounded-md max-w-full bg-gray-100">
-                                <Image src={insuranceLetterImage} alt="Insurance Letter" width={800} height={1000} className="object-contain w-full h-auto" />
-                            </div>
-                        ) : (
-                            <p className="text-gray-500 italic text-sm">No insurance letter provided.</p>
-                        )}
-                    </div>
-                </div>
-                
-                <div className="break-before-page">
-                    <div className="my-2 break-inside-avoid">
-                        <h3 className="font-bold text-base underline mb-1">Logbook</h3>
-                        {logbookImage ? (
-                            <div className="border p-1 rounded-md max-w-full bg-gray-100">
-                                <Image src={logbookImage} alt="Logbook" width={800} height={1000} className="object-contain w-full h-auto" />
-                            </div>
-                        ) : (
-                            <p className="text-gray-500 italic text-sm">No logbook provided.</p>
-                        )}
-                    </div>
+                        <div className='break-inside-avoid'>
+                            <p className="text-center font-bold text-xs mt-2">FOR AND ON BEHALF OF SONICMOTOR VALUERS & ASSESSORS LTD</p>
+                            <p className="text-center text-xs mt-1">
+                                The report reflects the estimated Market value of the subjected vehicle in its present condition, at the time of valuation. Any future
+                                assessment will take into account any changes in the meantime, due to usage etc. This report is based on information on the logbook/
+                                Importation documents.
+                            </p>
+                            <p className="text-center text-xs font-bold mt-2">Email: soniemotorvaluers@gmail.com</p>
+                        </div>
+                    </main>
                 </div>
             </div>
-            </main>
+
+            {chunkedImages.map((imageChunk, pageIndex) => (
+                <div key={pageIndex} className="break-before-page watermarked-valuation">
+                     <div className="report-content my-2 break-inside-avoid px-8">
+                        <h3 className="font-bold text-base underline mb-1">Valuation Photos (Page {pageIndex + 1})</h3>
+                        <div className="grid grid-cols-3 gap-2">
+                            {imageChunk.map((url, index) => (
+                                <div key={index} className="border p-1 rounded-md bg-gray-100 break-inside-avoid">
+                                    <Image src={url} alt={`Valuation Photo ${index + 1}`} width={250} height={180} className="object-contain w-full h-auto" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            ))}
+
+            <div className="break-before-page watermarked-valuation">
+                <div className="report-content my-2 break-inside-avoid px-8">
+                    <h3 className="font-bold text-base underline mb-1">Insurance Letter</h3>
+                    {insuranceLetterImage ? (
+                        <div className="border p-1 rounded-md max-w-full bg-gray-100">
+                            <Image src={insuranceLetterImage} alt="Insurance Letter" width={800} height={1000} className="object-contain w-full h-auto" />
+                        </div>
+                    ) : (
+                        <p className="text-gray-500 italic text-sm">No insurance letter provided.</p>
+                    )}
+                </div>
+            </div>
+            
+            <div className="break-before-page watermarked-valuation">
+                <div className="report-content my-2 break-inside-avoid px-8">
+                    <h3 className="font-bold text-base underline mb-1">Logbook</h3>
+                    {logbookImage ? (
+                        <div className="border p-1 rounded-md max-w-full bg-gray-100">
+                            <Image src={logbookImage} alt="Logbook" width={800} height={1000} className="object-contain w-full h-auto" />
+                        </div>
+                    ) : (
+                        <p className="text-gray-500 italic text-sm">No logbook provided.</p>
+                    )}
+                </div>
+            </div>
         </div>
     );
   }

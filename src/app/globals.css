@@ -97,7 +97,7 @@
     background-image: url('/logo.jpeg');
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 50%;
+    background-size: 80%;
     opacity: 0.1;
     z-index: 0;
   }
@@ -119,7 +119,7 @@
     background-image: url('/logo.jpeg');
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 50%;
+    background-size: 80%;
     opacity: 0.1;
     z-index: 0;
   }
@@ -150,11 +150,9 @@
         right: 0;
         width: 100%;
     }
-    .watermarked::before {
+    .watermarked::before, .watermarked-valuation::before {
       position: fixed;
-    }
-    .watermarked-valuation::before {
-      position: fixed;
+      background-size: cover;
     }
 }
 
