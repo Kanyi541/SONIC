@@ -1966,7 +1966,7 @@ function AdminDashboard() {
                         <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Analytics Dashboard</h1>
                         <p className="text-muted-foreground mt-2">Insights into your valuation operations.</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                         <StatCard 
                             title="Total Valuations" 
                             value={valuations.length} 
@@ -2013,17 +2013,18 @@ function AdminDashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Top Performing Branches</CardTitle>
+                                <CardTitle>Most Valued Vehicle Brands</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader><TableRow><TableHead>Branch</TableHead><TableHead className="text-right">Total Valuations</TableHead></TableRow></TableHeader>
-                                    <TableBody>
-                                        {analyticsData.branchData.map(b => (
-                                            <TableRow key={b.name}><TableCell>{b.name}</TableCell><TableCell className="text-right font-mono">{b.count}</TableCell></TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                            <CardContent className="h-[400px]">
+                                <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+                                    <BarChart data={analyticsData.popularMakes}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="name" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
+                                        <YAxis />
+                                        <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
+                                        <Bar dataKey="count" name="Valuations" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ChartContainer>
                             </CardContent>
                         </Card>
                         <Card>
@@ -2042,22 +2043,6 @@ function AdminDashboard() {
                             </CardContent>
                         </Card>
                     </div>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Most Valued Vehicle Brands</CardTitle>
-                        </CardHeader>
-                        <CardContent className="h-[400px]">
-                            <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-                                <BarChart data={analyticsData.popularMakes}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
-                                    <YAxis />
-                                    <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
-                                    <Bar dataKey="count" name="Valuations" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
                 </div>
               )}
               {activeView === 'institutions' && renderUserTable(
