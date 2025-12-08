@@ -68,6 +68,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Loading from '@/app/loading';
+import pako from 'pako';
 
 
 interface Institution {
@@ -1621,6 +1622,8 @@ function AdminDashboard() {
         return [...baseItems, analyticsItem];
     }, [currentUserRole]);
   
+    const PIE_CHART_COLORS = ['#0A2A66', '#002B5C', '#E6A400', '#C32828', '#8A9A5B', '#5A4FCF'];
+
   if (loading) {
     return <Loading />;
   }
@@ -1925,21 +1928,26 @@ function AdminDashboard() {
                         <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Analytics Dashboard</h1>
                         <p className="text-muted-foreground mt-2">Insights into your valuation operations.</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <StatCard 
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                         <StatCard 
                             title="Total Valuations" 
-                            value={valuations.length} 
+                            value={stats.totalValuations} 
                             icon={<TrendingUp className="h-6 w-6 text-blue-500" />} 
                         />
                         <StatCard 
                             title="Total Institutions" 
-                            value={institutions.length} 
+                            value={stats.totalInstitutions} 
                             icon={<Building2 className="h-6 w-6 text-green-500" />} 
                         />
                          <StatCard 
                             title="Total Valuers" 
-                            value={valuers.length} 
+                            value={stats.totalValuers} 
                             icon={<UserCog className="h-6 w-6 text-indigo-500" />} 
+                        />
+                         <StatCard 
+                            title="Total Staff" 
+                            value={stats.totalStaff} 
+                            icon={<Users className="h-6 w-6 text-purple-500" />} 
                         />
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1947,15 +1955,17 @@ function AdminDashboard() {
                             <CardHeader>
                                 <CardTitle>Valuations by Valuer</CardTitle>
                             </CardHeader>
-                            <CardContent className="h-[400px]">
+                            <CardContent className="h-[300px] flex items-center justify-center">
                                 <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-                                    <BarChart data={analyticsData.topValuers}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60}/>
-                                        <YAxis />
-                                        <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
-                                        <Bar dataKey="count" name="Valuations" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
+                                    <PieChart>
+                                        <Pie data={analyticsData.topValuers} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
+                                            {analyticsData.topValuers.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip content={<ChartTooltipContent />} />
+                                        <Legend />
+                                    </PieChart>
                                 </ChartContainer>
                             </CardContent>
                         </Card>
@@ -1963,7 +1973,7 @@ function AdminDashboard() {
                             <CardHeader>
                                 <CardTitle>Most Valued Vehicle Brands</CardTitle>
                             </CardHeader>
-                            <CardContent className="h-[400px]">
+                            <CardContent className="h-[300px]">
                                 <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
                                     <BarChart data={analyticsData.popularMakes}>
                                         <CartesianGrid strokeDasharray="3 3" />
@@ -2491,5 +2501,6 @@ export default GuardedAdminDashboard;
 
 
     
+
 
 
