@@ -2048,12 +2048,12 @@ function AdminDashboard() {
                         </CardHeader>
                         <CardContent className="h-[400px]">
                             <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-                                <BarChart data={analyticsData.popularMakes} layout="vertical">
+                                <BarChart data={analyticsData.popularMakes}>
                                     <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis type="number" />
-                                    <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
+                                    <XAxis dataKey="name" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
+                                    <YAxis />
                                     <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
-                                    <Bar dataKey="count" name="Valuations" fill="var(--color-count)" radius={[0, 4, 4, 0]} />
+                                    <Bar dataKey="count" name="Valuations" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ChartContainer>
                         </CardContent>
@@ -2567,6 +2567,9 @@ export default GuardedAdminDashboard;
 
 
 
+
+
+    
 
 
     
