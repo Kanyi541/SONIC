@@ -60,7 +60,6 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
 import { AuthGuard, useAuth } from '@/hooks/use-auth';
 import Loading from "@/app/loading";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -202,7 +201,7 @@ const bookingSchema = z.object({
   customerPhone: z.string().min(1, "Customer phone is required."),
   plateNumber: z.string().min(1, "Plate number is required"),
   policyNumber: z.string().min(1, "Policy number is required"),
-  policyExpiryDate: z.string({ required_error: "Policy expiry date is required." }).min(1, "Policy expiry date is required."),
+  policyExpiryDate: z.string().min(1, "Policy expiry date is required."),
   carMake: z.string().min(1, "Car make is required"),
   carModel: z.string().min(1, "Car model is required"),
   branch: z.string().min(1, "Branch is required"),
@@ -277,20 +276,6 @@ function ClientDashboardPage() {
 
   const bookingForm = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
-    defaultValues: {
-        customerName: "",
-        customerEmail: "",
-        customerPhone: "",
-        plateNumber: "",
-        policyNumber: "",
-        policyExpiryDate: "",
-        carMake: "",
-        carModel: "",
-        branch: "",
-        maxValuationDays: "",
-        authorisedBy: "",
-        comments: "",
-    }
   });
 
   const resetPasswordForm = useForm<ResetPasswordFormValues>({
@@ -484,7 +469,7 @@ function ClientDashboardPage() {
             setStaffDialogOpen(false);
             staffForm.reset();
 
-        } catch (error: any) => {
+        } catch (error: any) {
             console.error("Error adding staff:", error);
              const errorMessage = error.code === 'auth/email-already-in-use' 
                 ? "This email is already registered."
@@ -1112,7 +1097,7 @@ function ClientDashboardPage() {
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Policy Expiry Date</FormLabel>
-                                        <FormControl>
+                                         <FormControl>
                                             <Input type="date" {...field} />
                                         </FormControl>
                                         <FormMessage />
@@ -1689,4 +1674,6 @@ function ClientDashboardPage() {
 
 const GuardedClientDashboardPage = AuthGuard(ClientDashboardPage, { allowClients: true });
 export default GuardedClientDashboardPage;
+    
+
     
