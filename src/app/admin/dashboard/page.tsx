@@ -7,7 +7,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth, AuthGuard } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown, ShieldQuestion } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown, ShieldQuestion, TrendingUp, DollarSign, Timer } from 'lucide-react';
 import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc, getDoc } from "firebase/firestore";
@@ -58,9 +58,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
-import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid, PieChart, Pie, Cell } from "recharts"
+import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate, isToday } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate, isToday, differenceInHours, subDays } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress"
@@ -111,6 +111,7 @@ interface Branch {
   name: string;
   manager: string;
   location: string;
+  createdAt?: any;
 }
 
 interface Booking {
@@ -131,6 +132,7 @@ interface Booking {
   assignedValuerName?: string;
   assignmentDate?: any;
   logbookImageId?: string;
+  branch?: string;
 }
 
 interface Valuation {
@@ -373,8 +375,26 @@ function AdminDashboard() {
         subscriptions.push(unsubscribe);
     };
     
-    // Only subscribe to data relevant for the current view
-    if (activeView === 'institutions') {
+    // Subscribe to all necessary collections for analytics upfront if that view is active
+    if (activeView === 'analytics') {
+        const allCollections = [
+            { name: "insurers", setter: setInstitutions },
+            { name: "valuers", setter: setValuers },
+            { name: "staff", setter: setStaff },
+            { name: "branches", setter: setBranches },
+            { name: "bookings", setter: setBookings },
+            { name: "valuations", setter: setValuations },
+        ];
+        allCollections.forEach(col => {
+            const q = query(collection(db, col.name), orderBy("createdAt", "desc"));
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                col.setter(data);
+            }, (error) => console.error(`Error in ${col.name} listener:`, error));
+            subscriptions.push(unsubscribe);
+        });
+        setLoading(false);
+    } else if (activeView === 'institutions') {
       subscribeToCollection("insurers", setInstitutions);
     } else if (activeView === 'valuers') {
       subscribeToCollection("valuers", setValuers);
@@ -396,7 +416,7 @@ function AdminDashboard() {
       });
       subscriptions.push(bookingsUnsubscribe);
 
-      if (['dashboard', 'valuations', 'all-cars'].includes(activeView)) {
+      if (['dashboard', 'valuations', 'all-cars', 'analytics'].includes(activeView)) {
         const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"));
         const valUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
@@ -774,8 +794,66 @@ function AdminDashboard() {
       ...v,
       booking: bookings.find(b => b.id === v.bookingId),
   })).filter(v => v.booking?.status === 'Completed');
+
+  const analyticsData = useMemo(() => {
+    const completedBookings = bookings.filter(b => b.status === 'Completed');
+    const valuationsForCompleted = valuations.filter(v => completedBookings.some(b => b.id === v.bookingId));
     
-  const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number, icon: React.ReactNode, onClick?: () => void, progress: number, colorClass: string }) => (
+    // Total Revenue (Estimated) - Assuming a fixed fee per valuation
+    const estimatedFeePerValuation = 1500; // Example fee
+    const totalRevenue = valuationsForCompleted.length * estimatedFeePerValuation;
+
+    // Average Turnaround Time
+    let totalTurnaroundHours = 0;
+    let turnaroundCount = 0;
+    valuationsForCompleted.forEach(v => {
+      const booking = completedBookings.find(b => b.id === v.bookingId);
+      if (booking?.createdAt && v.valuedAt) {
+        const turnaround = differenceInHours(v.valuedAt.toDate(), booking.createdAt.toDate());
+        totalTurnaroundHours += turnaround;
+        turnaroundCount++;
+      }
+    });
+    const avgTurnaroundTime = turnaroundCount > 0 ? (totalTurnaroundHours / turnaroundCount).toFixed(1) : '0';
+    
+    // Valuations by Branch
+    const valuationsByBranch = bookings.reduce((acc, booking) => {
+        if (booking.branch) {
+            acc[booking.branch] = (acc[booking.branch] || 0) + 1;
+        }
+        return acc;
+    }, {} as Record<string, number>);
+    const branchData = Object.entries(valuationsByBranch).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count);
+
+    // Valuations by Valuer
+    const valuationsByValuer = bookings.reduce((acc, booking) => {
+        if (booking.assignedValuerName) {
+            acc[booking.assignedValuerName] = (acc[booking.assignedValuerName] || 0) + 1;
+        }
+        return acc;
+    }, {} as Record<string, number>);
+    const valuerData = Object.entries(valuationsByValuer).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count);
+
+    // Valuation Volume (Last 30 days)
+    const thirtyDaysAgo = subDays(new Date(), 30);
+    const last30DaysBookings = bookings.filter(b => b.createdAt && b.createdAt.toDate() > thirtyDaysAgo);
+    const volumeData = eachDayOfInterval({ start: thirtyDaysAgo, end: new Date() }).map(day => {
+        const dayStr = format(day, 'MMM d');
+        const count = last30DaysBookings.filter(b => format(b.createdAt.toDate(), 'MMM d') === dayStr).length;
+        return { date: dayStr, valuations: count };
+    });
+
+    // Popular Vehicle Makes
+    const makeCounts = bookings.reduce((acc, booking) => {
+      acc[booking.carMake] = (acc[booking.carMake] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const popularMakes = Object.entries(makeCounts).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count).slice(0, 10);
+    
+    return { totalRevenue, avgTurnaroundTime, branchData, valuerData, volumeData, popularMakes };
+}, [bookings, valuations]);
+    
+  const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number | string, icon: React.ReactNode, onClick?: () => void, progress?: number, colorClass?: string }) => (
       <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
           <div className="flex items-start justify-between">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-muted`}>
@@ -785,7 +863,9 @@ function AdminDashboard() {
           </div>
           <div className="mt-4">
               <p className="text-sm font-medium text-muted-foreground">{title}</p>
-              <Progress value={progress} className="h-1 mt-1" indicatorClassName={colorClass} />
+              {progress !== undefined && colorClass && (
+                <Progress value={progress} className="h-1 mt-1" indicatorClassName={colorClass} />
+              )}
           </div>
       </Card>
   );
@@ -1558,15 +1638,18 @@ function AdminDashboard() {
             { name: "Institutions", view: 'institutions', icon: <Building /> }
         ];
 
+        const analyticsItem = { name: "Analytics", view: 'analytics', icon: <TrendingUp /> };
+
         if (currentUserRole === 'Super Admin') {
             return [
                 ...baseItems,
+                analyticsItem,
                 { name: "Our Staff", view: 'staff', icon: <Briefcase /> },
                 { name: "Valuers", view: 'valuers', icon: <UserCog /> }
             ];
         }
 
-        return baseItems;
+        return [...baseItems, analyticsItem];
     }, [currentUserRole]);
   
   if (loading) {
@@ -1867,6 +1950,96 @@ function AdminDashboard() {
                 </Card>
               </div>
             )}
+              {activeView === 'analytics' && (
+                <div className="grid gap-8">
+                    <div>
+                        <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Analytics Dashboard</h1>
+                        <p className="text-muted-foreground mt-2">Insights into your valuation operations.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <StatCard 
+                            title="Total Valuations" 
+                            value={valuations.length} 
+                            icon={<TrendingUp className="h-6 w-6 text-blue-500" />} 
+                        />
+                         <StatCard 
+                            title="Estimated Revenue" 
+                            value={`KES ${analyticsData.totalRevenue.toLocaleString()}`} 
+                            icon={<DollarSign className="h-6 w-6 text-green-500" />} 
+                        />
+                         <StatCard 
+                            title="Avg. Turnaround Time" 
+                            value={`${analyticsData.avgTurnaroundTime} hrs`}
+                            icon={<Timer className="h-6 w-6 text-orange-500" />} 
+                        />
+                    </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Valuation Volume (Last 30 Days)</CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[350px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={analyticsData.volumeData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="date" />
+                                    <YAxis />
+                                    <Tooltip content={<ChartTooltipContent />} />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="valuations" stroke="hsl(var(--primary))" activeDot={{ r: 8 }} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Valuations by Branch</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader><TableRow><TableHead>Branch</TableHead><TableHead className="text-right">Valuations</TableHead></TableRow></TableHeader>
+                                    <TableBody>
+                                        {analyticsData.branchData.map(b => (
+                                            <TableRow key={b.name}><TableCell>{b.name}</TableCell><TableCell className="text-right font-mono">{b.count}</TableCell></TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Valuations by Valuer</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                               <Table>
+                                    <TableHeader><TableRow><TableHead>Valuer</TableHead><TableHead className="text-right">Valuations</TableHead></TableRow></TableHeader>
+                                    <TableBody>
+                                        {analyticsData.valuerData.map(v => (
+                                            <TableRow key={v.name}><TableCell>{v.name}</TableCell><TableCell className="text-right font-mono">{v.count}</TableCell></TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Popular Vehicle Makes</CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[400px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={analyticsData.popularMakes} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis type="number" />
+                                    <YAxis type="category" dataKey="name" width={80} />
+                                    <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
+                                    <Bar dataKey="count" name="Valuations" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+              )}
               {activeView === 'institutions' && renderUserTable(
                 institutions,
                 "Client Institutions",
@@ -2363,6 +2536,7 @@ export default GuardedAdminDashboard;
     
 
     
+
 
 
 
