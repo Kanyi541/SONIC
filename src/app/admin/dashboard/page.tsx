@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useAuth, AuthGuard } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown, ShieldQuestion, TrendingUp, DollarSign, Timer, Repeat, Activity } from 'lucide-react';
-import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signOut, createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc, getDoc } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
@@ -462,12 +462,30 @@ function AdminDashboard() {
         const email = (form.elements.namedItem('email') as HTMLInputElement).value;
         const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
         const password = (form.elements.namedItem('password') as HTMLInputElement).value;
+        
+        const userTypeDisplay = userType.charAt(0).toUpperCase() + userType.slice(1);
+        const collectionName = userType === 'institution' ? 'insurers' : (userType === 'valuer' ? 'valuers' : 'staff');
 
         try {
+            const signInMethods = await fetchSignInMethodsForEmail(auth, email);
+
+            if (signInMethods.length > 0) {
+                // Email already exists in Firebase Auth.
+                // We need to find the user's UID without creating a new account.
+                // This is a limitation on the client-side. The best approach is to inform the admin.
+                // A more advanced solution involves a Cloud Function to manage users.
+                toast({
+                    variant: "destructive",
+                    title: `Email Already in Use`,
+                    description: `The email ${email} is already registered. Please use a different email or manage the existing user.`,
+                });
+                return;
+            }
+
+            // Email does not exist, proceed with creating a new user
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const newUser = userCredential.user;
-            
-            let collectionName: string;
+
             const data: any = {
                 name,
                 username,
@@ -479,21 +497,15 @@ function AdminDashboard() {
             };
 
             if (userType === 'staff') {
-                collectionName = 'staff';
                 data.role = 'Staff';
                 data.isAdmin = false;
-            } else if (userType === 'valuer') {
-                collectionName = 'valuers';
-            } else {
-                collectionName = 'insurers';
             }
 
             await addDoc(collection(db, collectionName), data);
             
-            const userTypeDisplay = userType.charAt(0).toUpperCase() + userType.slice(1);
             toast({ title: `${userTypeDisplay} Added`, description: `${name} has been successfully added.` });
-
-            // Common cleanup logic
+            
+            // Close the correct dialog
             if (userType === 'institution') setAddInstitutionOpen(false);
             if (userType === 'valuer') setAddValuerOpen(false);
             if (userType === 'staff') setAddStaffOpen(false);
@@ -509,7 +521,7 @@ function AdminDashboard() {
                 : `An error occurred while adding the ${userType}.`;
             toast({
                 variant: "destructive",
-                title: `Failed to Add ${userType.charAt(0).toUpperCase() + userType.slice(1)}`,
+                title: `Failed to Add ${userTypeDisplay}`,
                 description: errorMessage,
             });
         }
@@ -1963,7 +1975,7 @@ function AdminDashboard() {
                                                 <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
                                             ))}
                                         </Pie>
-                                        <Tooltip content={<ChartTooltipContent />} />
+                                        <ChartTooltip content={<ChartTooltipContent />} />
                                         <Legend />
                                     </PieChart>
                                 </ChartContainer>
@@ -2501,6 +2513,7 @@ export default GuardedAdminDashboard;
 
 
     
+
 
 
 
