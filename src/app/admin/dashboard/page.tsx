@@ -286,6 +286,10 @@ function AdminDashboard() {
     defaultValues: { assessmentValue: "", forcedValue: "", wsValue: "", rsValue: "" },
   });
   
+  const chartConfig = {
+      valuations: { label: "Valuations", color: "hsl(var(--primary))" },
+      count: { label: "Count", color: "hsl(var(--primary))" },
+  } as const;
 
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -1989,16 +1993,16 @@ function AdminDashboard() {
                             <CardTitle>Valuation Volume (Last 30 Days)</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[350px]">
-                            <ResponsiveContainer width="100%" height="100%">
+                           <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
                                 <LineChart data={analyticsData.volumeData}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="date" />
                                     <YAxis />
                                     <Tooltip content={<ChartTooltipContent />} />
                                     <Legend />
-                                    <Line type="monotone" dataKey="valuations" stroke="hsl(var(--primary))" activeDot={{ r: 8 }} />
+                                    <Line type="monotone" dataKey="valuations" stroke="var(--color-valuations)" activeDot={{ r: 8 }} />
                                 </LineChart>
-                            </ResponsiveContainer>
+                            </ChartContainer>
                         </CardContent>
                     </Card>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -2038,15 +2042,15 @@ function AdminDashboard() {
                             <CardTitle>Most Valued Vehicle Brands</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[400px]">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
                                 <BarChart data={analyticsData.popularMakes} layout="vertical">
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis type="number" />
                                     <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
                                     <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
-                                    <Bar dataKey="count" name="Valuations" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                    <Bar dataKey="count" name="Valuations" fill="var(--color-count)" radius={[0, 4, 4, 0]} />
                                 </BarChart>
-                            </ResponsiveContainer>
+                            </ChartContainer>
                         </CardContent>
                     </Card>
                 </div>
@@ -2558,3 +2562,6 @@ export default GuardedAdminDashboard;
 
 
 
+
+
+    
