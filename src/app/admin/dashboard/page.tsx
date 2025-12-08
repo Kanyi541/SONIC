@@ -1585,6 +1585,9 @@ function AdminDashboard() {
   const allBookings = useMemo(() => {
     return bookings
       .filter(b => {
+        if (b.status === 'Rejected') {
+            return false;
+        }
         const searchTerm = allCarsSearchTerm.toLowerCase();
         return (
           b.plateNumber.toLowerCase().includes(searchTerm) ||
@@ -2513,6 +2516,7 @@ export default GuardedAdminDashboard;
 
 
     
+
 
 
 

@@ -35,20 +35,15 @@ function compressData(jsonData) {
 }
 
 /**
- * Fetches documents older than 30 days, archives them to the 'archives' collection, and then deletes them from the source collection.
- * @param {string} collectionName The name of the collection to process.
- * @param {string} timestampField The name of the field containing the creation timestamp.
+ * Archives and deletes documents based on a provided query.
+ * @param {FirebaseFirestore.Query} query The Firestore query for documents to archive.
+ * @param {string} collectionName The original collection name for logging purposes.
  */
-async function archiveOldDocuments(collectionName, timestampField) {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
-  const oldDocsQuery = db.collection(collectionName).where(timestampField, '<', thirtyDaysAgo);
-
+async function archiveDocuments(query, collectionName) {
   try {
-    const snapshot = await oldDocsQuery.get();
+    const snapshot = await query.get();
     if (snapshot.empty) {
-      console.log(`No old documents to archive in '${collectionName}'.`);
+      console.log(`No documents to archive in '${collectionName}' based on the provided query.`);
       return;
     }
 
@@ -73,17 +68,42 @@ async function archiveOldDocuments(collectionName, timestampField) {
     }
     
     await batch.commit();
-    console.log(`Successfully archived and deleted ${snapshot.size} old documents from '${collectionName}'.`);
+    console.log(`Successfully archived and deleted ${snapshot.size} documents from '${collectionName}'.`);
 
   } catch (error) {
-    console.error(`Error processing old documents from ${collectionName}:`, error);
+    console.error(`Error processing documents from ${collectionName}:`, error);
   }
+}
+
+
+/**
+ * Fetches documents older than 30 days, archives them to the 'archives' collection, and then deletes them from the source collection.
+ * @param {string} collectionName The name of the collection to process.
+ * @param {string} timestampField The name of the field containing the creation timestamp.
+ */
+async function archiveOldDocuments(collectionName, timestampField) {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const oldDocsQuery = db.collection(collectionName).where(timestampField, '<', thirtyDaysAgo);
+  console.log(`Archiving documents in '${collectionName}' older than ${thirtyDaysAgo.toISOString()}.`);
+  await archiveDocuments(oldDocsQuery, collectionName);
+}
+
+/**
+ * Fetches rejected bookings, archives them, and then deletes them.
+ */
+async function archiveRejectedBookings() {
+    const rejectedQuery = db.collection('bookings').where('status', '==', 'Rejected');
+    console.log("Archiving rejected bookings...");
+    await archiveDocuments(rejectedQuery, 'bookings');
 }
 
 async function runArchival() {
     console.log('Starting Firestore archival process...');
     await archiveOldDocuments('bookings', 'createdAt');
     await archiveOldDocuments('valuations', 'valuedAt');
+    await archiveRejectedBookings(); // Run the new archival function
     console.log('Firestore archival process finished.');
 }
 
