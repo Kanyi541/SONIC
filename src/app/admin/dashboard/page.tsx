@@ -800,42 +800,9 @@ function AdminDashboard() {
   })).filter(v => v.booking?.status === 'Completed');
 
   const analyticsData = useMemo(() => {
-    const completedBookings = bookings.filter(b => b.status === 'Completed');
-    const valuationsForCompleted = valuations.filter(v => completedBookings.some(b => b.id === v.bookingId));
-    
-    const estimatedFeePerValuation = 1500;
-    const totalRevenue = valuationsForCompleted.length * estimatedFeePerValuation;
-
-    let totalTurnaroundHours = 0;
-    let turnaroundCount = 0;
-    valuationsForCompleted.forEach(v => {
-      const booking = completedBookings.find(b => b.id === v.bookingId);
-      if (booking?.createdAt && v.valuedAt) {
-        const turnaround = differenceInHours(v.valuedAt.toDate(), booking.createdAt.toDate());
-        totalTurnaroundHours += turnaround;
-        turnaroundCount++;
-      }
-    });
-    const avgTurnaroundTime = turnaroundCount > 0 ? (totalTurnaroundHours / turnaroundCount).toFixed(1) : '0';
-    
-    const valuationsByBranch = bookings.reduce((acc, booking) => {
-        if (booking.branch) {
-            acc[booking.branch] = (acc[booking.branch] || 0) + 1;
-        }
-        return acc;
-    }, {} as Record<string, number>);
-    const branchData = Object.entries(valuationsByBranch).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count);
-
-    const valuationsByValuer = bookings.reduce((acc, booking) => {
-        if (booking.assignedValuerName) {
-            acc[booking.assignedValuerName] = (acc[booking.assignedValuerName] || 0) + 1;
-        }
-        return acc;
-    }, {} as Record<string, number>);
-    const valuerData = Object.entries(valuationsByValuer).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count);
-
     const thirtyDaysAgo = subDays(new Date(), 30);
     const last30DaysBookings = bookings.filter(b => b.createdAt && b.createdAt.toDate() > thirtyDaysAgo);
+    
     const volumeData = eachDayOfInterval({ start: thirtyDaysAgo, end: new Date() }).map(day => {
         const dayStr = format(day, 'MMM d');
         const count = last30DaysBookings.filter(b => format(b.createdAt.toDate(), 'MMM d') === dayStr).length;
@@ -846,22 +813,17 @@ function AdminDashboard() {
       acc[booking.carMake] = (acc[booking.carMake] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    const popularMakes = Object.entries(makeCounts).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count).slice(0, 10);
+    const popularMakes = Object.entries(makeCounts).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count).slice(0, 5);
     
-    const customerBookings = bookings.reduce((acc, booking) => {
-      const customerIdentifier = booking.customerPhone || booking.customerEmail;
-      if (customerIdentifier) {
-        acc[customerIdentifier] = (acc[customerIdentifier] || 0) + 1;
-      }
-      return acc;
+    const valuerData = bookings.reduce((acc, booking) => {
+        if (booking.assignedValuerName) {
+            acc[booking.assignedValuerName] = (acc[booking.assignedValuerName] || 0) + 1;
+        }
+        return acc;
     }, {} as Record<string, number>);
 
-    const totalCustomers = Object.keys(customerBookings).length;
-    const repeatCustomers = Object.values(customerBookings).filter(count => count > 1).length;
-    const repeatCustomerRate = totalCustomers > 0 ? (repeatCustomers / totalCustomers) * 100 : 0;
-
-    return { totalRevenue, avgTurnaroundTime, branchData, valuerData, volumeData, popularMakes, repeatCustomerRate, last30DaysVolume: last30DaysBookings.length };
-}, [bookings, valuations]);
+    return { volumeData, popularMakes, valuerData, last30DaysVolume: last30DaysBookings.length };
+}, [bookings]);
     
   const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number | string, icon: React.ReactNode, onClick?: () => void, progress?: number, colorClass?: string }) => (
       <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
@@ -1972,21 +1934,6 @@ function AdminDashboard() {
                             value={valuations.length} 
                             icon={<TrendingUp className="h-6 w-6 text-blue-500" />} 
                         />
-                         <StatCard 
-                            title="Estimated Revenue" 
-                            value={`KES ${analyticsData.totalRevenue.toLocaleString()}`} 
-                            icon={<DollarSign className="h-6 w-6 text-green-500" />} 
-                        />
-                         <StatCard 
-                            title="Avg. Turnaround Time" 
-                            value={`${analyticsData.avgTurnaroundTime} hrs`}
-                            icon={<Timer className="h-6 w-6 text-orange-500" />} 
-                        />
-                        <StatCard 
-                            title="Repeat Customer Rate" 
-                            value={`${analyticsData.repeatCustomerRate.toFixed(1)}%`}
-                            icon={<Repeat className="h-6 w-6 text-purple-500" />} 
-                        />
                         <StatCard 
                             title="Volume (Last 30d)" 
                             value={analyticsData.last30DaysVolume}
@@ -2013,6 +1960,21 @@ function AdminDashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <Card>
                             <CardHeader>
+                                <CardTitle>Valuations by Valuer</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                               <Table>
+                                    <TableHeader><TableRow><TableHead>Valuer</TableHead><TableHead className="text-right">Total Valuations</TableHead></TableRow></TableHeader>
+                                    <TableBody>
+                                        {Object.entries(analyticsData.valuerData).map(([name, count]) => (
+                                            <TableRow key={name}><TableCell>{name}</TableCell><TableCell className="text-right font-mono">{count}</TableCell></TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
                                 <CardTitle>Most Valued Vehicle Brands</CardTitle>
                             </CardHeader>
                             <CardContent className="h-[400px]">
@@ -2025,21 +1987,6 @@ function AdminDashboard() {
                                         <Bar dataKey="count" name="Valuations" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
                                     </BarChart>
                                 </ChartContainer>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Valuations by Valuer</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                               <Table>
-                                    <TableHeader><TableRow><TableHead>Valuer</TableHead><TableHead className="text-right">Total Valuations</TableHead></TableRow></TableHeader>
-                                    <TableBody>
-                                        {analyticsData.valuerData.map(v => (
-                                            <TableRow key={v.name}><TableCell>{v.name}</TableCell><TableCell className="text-right font-mono">{v.count}</TableCell></TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
                             </CardContent>
                         </Card>
                     </div>
