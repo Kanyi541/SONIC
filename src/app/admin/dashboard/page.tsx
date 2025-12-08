@@ -800,15 +800,8 @@ function AdminDashboard() {
   })).filter(v => v.booking?.status === 'Completed');
 
   const analyticsData = useMemo(() => {
-    const thirtyDaysAgo = subDays(new Date(), 30);
-    const last30DaysBookings = bookings.filter(b => b.createdAt && b.createdAt.toDate() > thirtyDaysAgo);
+    const last30DaysBookings = bookings.filter(b => b.createdAt && b.createdAt.toDate() > subDays(new Date(), 30));
     
-    const volumeData = eachDayOfInterval({ start: thirtyDaysAgo, end: new Date() }).map(day => {
-        const dayStr = format(day, 'MMM d');
-        const count = last30DaysBookings.filter(b => format(b.createdAt.toDate(), 'MMM d') === dayStr).length;
-        return { date: dayStr, valuations: count };
-    });
-
     const makeCounts = bookings.reduce((acc, booking) => {
       acc[booking.carMake] = (acc[booking.carMake] || 0) + 1;
       return acc;
@@ -822,7 +815,7 @@ function AdminDashboard() {
         return acc;
     }, {} as Record<string, number>);
 
-    return { volumeData, popularMakes, valuerData, last30DaysVolume: last30DaysBookings.length };
+    return { popularMakes, valuerData, last30DaysVolume: last30DaysBookings.length };
 }, [bookings]);
     
   const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number | string, icon: React.ReactNode, onClick?: () => void, progress?: number, colorClass?: string }) => (
@@ -1934,29 +1927,7 @@ function AdminDashboard() {
                             value={valuations.length} 
                             icon={<TrendingUp className="h-6 w-6 text-blue-500" />} 
                         />
-                        <StatCard 
-                            title="Volume (Last 30d)" 
-                            value={analyticsData.last30DaysVolume}
-                            icon={<Activity className="h-6 w-6 text-pink-500" />} 
-                        />
                     </div>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Valuation Volume (Last 30 Days)</CardTitle>
-                        </CardHeader>
-                        <CardContent className="h-[350px]">
-                           <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-                                <LineChart data={analyticsData.volumeData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="date" />
-                                    <YAxis />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Legend />
-                                    <Line type="monotone" dataKey="valuations" stroke="var(--color-valuations)" activeDot={{ r: 8 }} />
-                                </LineChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <Card>
                             <CardHeader>
@@ -2505,3 +2476,4 @@ export default GuardedAdminDashboard;
 
 
     
+
