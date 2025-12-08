@@ -276,6 +276,20 @@ function ClientDashboardPage() {
 
   const bookingForm = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
+    defaultValues: {
+      customerName: "",
+      customerEmail: "",
+      customerPhone: "",
+      plateNumber: "",
+      policyNumber: "",
+      policyExpiryDate: "",
+      carMake: "",
+      carModel: "",
+      branch: "",
+      maxValuationDays: "",
+      authorisedBy: "",
+      comments: "",
+    },
   });
 
   const resetPasswordForm = useForm<ResetPasswordFormValues>({
@@ -470,7 +484,7 @@ function ClientDashboardPage() {
             staffForm.reset();
 
         } catch (error: any) {
-            console.error("Error adding staff:", error);
+             console.error("Error adding staff:", error);
              const errorMessage = error.code === 'auth/email-already-in-use' 
                 ? "This email is already registered."
                 : `An error occurred while adding the staff member.`;
