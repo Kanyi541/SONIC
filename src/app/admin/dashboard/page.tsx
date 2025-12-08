@@ -7,7 +7,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth, AuthGuard } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown, ShieldQuestion, TrendingUp, DollarSign, Timer, Repeat } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown, ShieldQuestion, TrendingUp, DollarSign, Timer, Repeat, Activity } from 'lucide-react';
 import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc, getDoc } from "firebase/firestore";
@@ -287,8 +287,8 @@ function AdminDashboard() {
   });
   
   const chartConfig = {
-      valuations: { label: "Valuations", color: "hsl(var(--primary))" },
-      count: { label: "Count", color: "hsl(var(--primary))" },
+      valuations: { label: "Valuations", color: "hsl(var(--chart-1))" },
+      count: { label: "Count", color: "hsl(var(--chart-1))" },
   } as const;
 
   const getInitials = (email?: string | null) => {
@@ -860,7 +860,7 @@ function AdminDashboard() {
     const repeatCustomers = Object.values(customerBookings).filter(count => count > 1).length;
     const repeatCustomerRate = totalCustomers > 0 ? (repeatCustomers / totalCustomers) * 100 : 0;
 
-    return { totalRevenue, avgTurnaroundTime, branchData, valuerData, volumeData, popularMakes, repeatCustomerRate };
+    return { totalRevenue, avgTurnaroundTime, branchData, valuerData, volumeData, popularMakes, repeatCustomerRate, last30DaysVolume: last30DaysBookings.length };
 }, [bookings, valuations]);
     
   const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number | string, icon: React.ReactNode, onClick?: () => void, progress?: number, colorClass?: string }) => (
@@ -1966,7 +1966,7 @@ function AdminDashboard() {
                         <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Analytics Dashboard</h1>
                         <p className="text-muted-foreground mt-2">Insights into your valuation operations.</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                         <StatCard 
                             title="Total Valuations" 
                             value={valuations.length} 
@@ -1987,6 +1987,11 @@ function AdminDashboard() {
                             value={`${analyticsData.repeatCustomerRate.toFixed(1)}%`}
                             icon={<Repeat className="h-6 w-6 text-purple-500" />} 
                         />
+                        <StatCard 
+                            title="Volume (Last 30d)" 
+                            value={analyticsData.last30DaysVolume}
+                            icon={<Activity className="h-6 w-6 text-pink-500" />} 
+                        />
                     </div>
                     <Card>
                         <CardHeader>
@@ -1998,7 +2003,7 @@ function AdminDashboard() {
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="date" />
                                     <YAxis />
-                                    <Tooltip content={<ChartTooltipContent />} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
                                     <Legend />
                                     <Line type="monotone" dataKey="valuations" stroke="var(--color-valuations)" activeDot={{ r: 8 }} />
                                 </LineChart>
@@ -2047,7 +2052,7 @@ function AdminDashboard() {
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis type="number" />
                                     <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
-                                    <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
+                                    <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
                                     <Bar dataKey="count" name="Valuations" fill="var(--color-count)" radius={[0, 4, 4, 0]} />
                                 </BarChart>
                             </ChartContainer>
