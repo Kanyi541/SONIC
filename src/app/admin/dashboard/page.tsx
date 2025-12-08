@@ -7,7 +7,7 @@ import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth, AuthGuard } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown, ShieldQuestion, TrendingUp, DollarSign, Timer } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, User, PlusCircle, Settings, Printer, FileText, Eye, EyeOff, UserCog, Search, Hourglass, CheckCircle, XCircle, Send, ThumbsUp, ThumbsDown, Car, Clock, ChevronDown, FolderCog, BookOpen, FileSpreadsheet, Database, ExternalLink, Bell, FileCheck, Trash2, FileClock, FileX, Building, Briefcase, Building2, FileWarning, FileSignature, ChevronLeft, ChevronRight, FileSearch, Save, Edit, Loader2, KeyRound, ShieldCheck, FileDown, ShieldQuestion, TrendingUp, DollarSign, Timer, Repeat } from 'lucide-react';
 import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc, getDoc } from "firebase/firestore";
@@ -386,7 +386,7 @@ function AdminDashboard() {
             { name: "valuations", setter: setValuations },
         ];
         allCollections.forEach(col => {
-            const q = query(collection(db, col.name), orderBy("createdAt", "desc"));
+            const q = query(collection(db, col.name));
             const unsubscribe = onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 col.setter(data);
@@ -799,11 +799,9 @@ function AdminDashboard() {
     const completedBookings = bookings.filter(b => b.status === 'Completed');
     const valuationsForCompleted = valuations.filter(v => completedBookings.some(b => b.id === v.bookingId));
     
-    // Total Revenue (Estimated) - Assuming a fixed fee per valuation
-    const estimatedFeePerValuation = 1500; // Example fee
+    const estimatedFeePerValuation = 1500;
     const totalRevenue = valuationsForCompleted.length * estimatedFeePerValuation;
 
-    // Average Turnaround Time
     let totalTurnaroundHours = 0;
     let turnaroundCount = 0;
     valuationsForCompleted.forEach(v => {
@@ -816,7 +814,6 @@ function AdminDashboard() {
     });
     const avgTurnaroundTime = turnaroundCount > 0 ? (totalTurnaroundHours / turnaroundCount).toFixed(1) : '0';
     
-    // Valuations by Branch
     const valuationsByBranch = bookings.reduce((acc, booking) => {
         if (booking.branch) {
             acc[booking.branch] = (acc[booking.branch] || 0) + 1;
@@ -825,7 +822,6 @@ function AdminDashboard() {
     }, {} as Record<string, number>);
     const branchData = Object.entries(valuationsByBranch).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count);
 
-    // Valuations by Valuer
     const valuationsByValuer = bookings.reduce((acc, booking) => {
         if (booking.assignedValuerName) {
             acc[booking.assignedValuerName] = (acc[booking.assignedValuerName] || 0) + 1;
@@ -834,7 +830,6 @@ function AdminDashboard() {
     }, {} as Record<string, number>);
     const valuerData = Object.entries(valuationsByValuer).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count);
 
-    // Valuation Volume (Last 30 days)
     const thirtyDaysAgo = subDays(new Date(), 30);
     const last30DaysBookings = bookings.filter(b => b.createdAt && b.createdAt.toDate() > thirtyDaysAgo);
     const volumeData = eachDayOfInterval({ start: thirtyDaysAgo, end: new Date() }).map(day => {
@@ -843,14 +838,25 @@ function AdminDashboard() {
         return { date: dayStr, valuations: count };
     });
 
-    // Popular Vehicle Makes
     const makeCounts = bookings.reduce((acc, booking) => {
       acc[booking.carMake] = (acc[booking.carMake] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
     const popularMakes = Object.entries(makeCounts).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count).slice(0, 10);
     
-    return { totalRevenue, avgTurnaroundTime, branchData, valuerData, volumeData, popularMakes };
+    const customerBookings = bookings.reduce((acc, booking) => {
+      const customerIdentifier = booking.customerPhone || booking.customerEmail;
+      if (customerIdentifier) {
+        acc[customerIdentifier] = (acc[customerIdentifier] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    const totalCustomers = Object.keys(customerBookings).length;
+    const repeatCustomers = Object.values(customerBookings).filter(count => count > 1).length;
+    const repeatCustomerRate = totalCustomers > 0 ? (repeatCustomers / totalCustomers) * 100 : 0;
+
+    return { totalRevenue, avgTurnaroundTime, branchData, valuerData, volumeData, popularMakes, repeatCustomerRate };
 }, [bookings, valuations]);
     
   const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number | string, icon: React.ReactNode, onClick?: () => void, progress?: number, colorClass?: string }) => (
@@ -1956,7 +1962,7 @@ function AdminDashboard() {
                         <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Analytics Dashboard</h1>
                         <p className="text-muted-foreground mt-2">Insights into your valuation operations.</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <StatCard 
                             title="Total Valuations" 
                             value={valuations.length} 
@@ -1971,6 +1977,11 @@ function AdminDashboard() {
                             title="Avg. Turnaround Time" 
                             value={`${analyticsData.avgTurnaroundTime} hrs`}
                             icon={<Timer className="h-6 w-6 text-orange-500" />} 
+                        />
+                        <StatCard 
+                            title="Repeat Customer Rate" 
+                            value={`${analyticsData.repeatCustomerRate.toFixed(1)}%`}
+                            icon={<Repeat className="h-6 w-6 text-purple-500" />} 
                         />
                     </div>
                     <Card>
@@ -1993,11 +2004,11 @@ function AdminDashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Valuations by Branch</CardTitle>
+                                <CardTitle>Top Performing Branches</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <Table>
-                                    <TableHeader><TableRow><TableHead>Branch</TableHead><TableHead className="text-right">Valuations</TableHead></TableRow></TableHeader>
+                                    <TableHeader><TableRow><TableHead>Branch</TableHead><TableHead className="text-right">Total Valuations</TableHead></TableRow></TableHeader>
                                     <TableBody>
                                         {analyticsData.branchData.map(b => (
                                             <TableRow key={b.name}><TableCell>{b.name}</TableCell><TableCell className="text-right font-mono">{b.count}</TableCell></TableRow>
@@ -2012,7 +2023,7 @@ function AdminDashboard() {
                             </CardHeader>
                             <CardContent>
                                <Table>
-                                    <TableHeader><TableRow><TableHead>Valuer</TableHead><TableHead className="text-right">Valuations</TableHead></TableRow></TableHeader>
+                                    <TableHeader><TableRow><TableHead>Valuer</TableHead><TableHead className="text-right">Total Valuations</TableHead></TableRow></TableHeader>
                                     <TableBody>
                                         {analyticsData.valuerData.map(v => (
                                             <TableRow key={v.name}><TableCell>{v.name}</TableCell><TableCell className="text-right font-mono">{v.count}</TableCell></TableRow>
@@ -2024,14 +2035,14 @@ function AdminDashboard() {
                     </div>
                     <Card>
                         <CardHeader>
-                            <CardTitle>Popular Vehicle Makes</CardTitle>
+                            <CardTitle>Most Valued Vehicle Brands</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={analyticsData.popularMakes} layout="vertical">
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis type="number" />
-                                    <YAxis type="category" dataKey="name" width={80} />
+                                    <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
                                     <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
                                     <Bar dataKey="count" name="Valuations" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                                 </BarChart>
@@ -2536,6 +2547,7 @@ export default GuardedAdminDashboard;
     
 
     
+
 
 
 
