@@ -800,23 +800,27 @@ function AdminDashboard() {
   })).filter(v => v.booking?.status === 'Completed');
 
   const analyticsData = useMemo(() => {
-    const last30DaysBookings = bookings.filter(b => b.createdAt && b.createdAt.toDate() > subDays(new Date(), 30));
-    
     const makeCounts = bookings.reduce((acc, booking) => {
-      acc[booking.carMake] = (acc[booking.carMake] || 0) + 1;
-      return acc;
+        acc[booking.carMake] = (acc[booking.carMake] || 0) + 1;
+        return acc;
     }, {} as Record<string, number>);
-    const popularMakes = Object.entries(makeCounts).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count).slice(0, 5);
-    
+    const popularMakes = Object.entries(makeCounts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
     const valuerData = bookings.reduce((acc, booking) => {
         if (booking.assignedValuerName) {
             acc[booking.assignedValuerName] = (acc[booking.assignedValuerName] || 0) + 1;
         }
         return acc;
     }, {} as Record<string, number>);
+    const topValuers = Object.entries(valuerData)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a,b) => b.count - a.count);
 
-    return { popularMakes, valuerData, last30DaysVolume: last30DaysBookings.length };
-}, [bookings]);
+    return { popularMakes, topValuers };
+  }, [bookings]);
     
   const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number | string, icon: React.ReactNode, onClick?: () => void, progress?: number, colorClass?: string }) => (
       <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
@@ -1921,11 +1925,21 @@ function AdminDashboard() {
                         <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Analytics Dashboard</h1>
                         <p className="text-muted-foreground mt-2">Insights into your valuation operations.</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <StatCard 
                             title="Total Valuations" 
                             value={valuations.length} 
                             icon={<TrendingUp className="h-6 w-6 text-blue-500" />} 
+                        />
+                        <StatCard 
+                            title="Total Institutions" 
+                            value={institutions.length} 
+                            icon={<Building2 className="h-6 w-6 text-green-500" />} 
+                        />
+                         <StatCard 
+                            title="Total Valuers" 
+                            value={valuers.length} 
+                            icon={<UserCog className="h-6 w-6 text-indigo-500" />} 
                         />
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1933,15 +1947,16 @@ function AdminDashboard() {
                             <CardHeader>
                                 <CardTitle>Valuations by Valuer</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                               <Table>
-                                    <TableHeader><TableRow><TableHead>Valuer</TableHead><TableHead className="text-right">Total Valuations</TableHead></TableRow></TableHeader>
-                                    <TableBody>
-                                        {Object.entries(analyticsData.valuerData).map(([name, count]) => (
-                                            <TableRow key={name}><TableCell>{name}</TableCell><TableCell className="text-right font-mono">{count}</TableCell></TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                            <CardContent className="h-[400px]">
+                                <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+                                    <BarChart data={analyticsData.topValuers}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="name" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60}/>
+                                        <YAxis />
+                                        <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
+                                        <Bar dataKey="count" name="Valuations" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ChartContainer>
                             </CardContent>
                         </Card>
                         <Card>
@@ -2476,4 +2491,5 @@ export default GuardedAdminDashboard;
 
 
     
+
 
