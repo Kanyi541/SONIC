@@ -3,8 +3,9 @@
 
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
+import InstallPwaPrompt from '@/components/pwa/install-prompt';
 
 function SplashScreen() {
   return (
@@ -58,6 +59,9 @@ export default function RootLayout({
       <body className="font-body antialiased">
         {loading ? <SplashScreen /> : children}
         <Toaster />
+        <Suspense fallback={null}>
+          <InstallPwaPrompt />
+        </Suspense>
       </body>
     </html>
   );
