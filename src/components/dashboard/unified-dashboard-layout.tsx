@@ -18,6 +18,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Image from 'next/image';
+import { InstallPwaButton } from '../pwa/install-prompt';
 
 interface MenuItem {
     name: string;
@@ -151,6 +152,9 @@ export default function UnifiedDashboardLayout({
                          ))}
                     </SidebarMenu>
                 </SidebarContent>
+                 <SidebarFooter>
+                    <InstallPwaButton />
+                </SidebarFooter>
             </Sidebar>
             <SidebarInset>
                 <header className="sticky top-0 z-40 w-full border-b bg-secondary shadow-sm">
