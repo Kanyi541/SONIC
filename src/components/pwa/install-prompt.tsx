@@ -29,8 +29,7 @@ export default function InstallPwaPrompt() {
       // Check if the app has been installed before
       const appInstalled = localStorage.getItem('pwa_installed');
       if (!appInstalled) {
-        // Wait a bit before showing the prompt
-        setTimeout(() => setDialogOpen(true), 3000);
+        setDialogOpen(true);
       }
     };
 
