@@ -69,6 +69,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Loading from '@/app/loading';
 import pako from 'pako';
+import { InstallPwaButton } from '@/components/pwa/install-prompt';
 
 
 interface Institution {
@@ -1668,7 +1669,7 @@ function AdminDashboard() {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          
+            <InstallPwaButton />
         </SidebarFooter>
       </Sidebar>
 
@@ -2499,31 +2500,3 @@ function AdminDashboard() {
 
 const GuardedAdminDashboard = AuthGuard(AdminDashboard);
 export default GuardedAdminDashboard;
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-    
-
-
-
-
-
-
-
-    
