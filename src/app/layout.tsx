@@ -45,6 +45,9 @@ export default function RootLayout({
         <meta name="google-site-verification" content="sQNTflIRGrcrQa1I-krENNhA3oRwYiW5ONoTFPgle6o" />
         <link rel="canonical" href="https://casadash.casamotorvaluers.co.ke/" />
         <link rel="icon" href="/logo.jpeg" type="image/jpeg" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0A2A66" />
+        <link rel="apple-touch-icon" href="/logo.jpeg" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet" />

@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ducanh2912/next-pwa": "latest",
     "@genkit-ai/googleai": "latest",
     "@genkit-ai/next": "latest",
     "@google-cloud/storage": "^7.11.0",
@@ -66,6 +67,7 @@
     "@types/node": "^20",
     "@types/pg": "^8.11.6",
     "@types/qrcode": "^1.5.5",
+    "webpack": "^5.89.0",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "genkit-cli": "latest",
