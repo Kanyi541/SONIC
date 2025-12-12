@@ -1669,7 +1669,7 @@ function AdminDashboard() {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-            <InstallPwaButton />
+          <InstallPwaButton />
         </SidebarFooter>
       </Sidebar>
 
