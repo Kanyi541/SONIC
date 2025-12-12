@@ -1,6 +1,7 @@
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
 const firebaseConfig = {
   "projectId": "sonic-motor-valuers-7762-ca361",
@@ -16,5 +17,18 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+if (typeof window !== 'undefined') {
+  try {
+    enableIndexedDbPersistence(db);
+  } catch (error) {
+    if (error.code == 'failed-precondition') {
+        console.warn('Firestore persistence failed: Multiple tabs open.');
+    } else if (error.code == 'unimplemented') {
+        console.warn('Firestore persistence failed: Browser does not support it.');
+    }
+  }
+}
+
 
 export { app, auth, db };
