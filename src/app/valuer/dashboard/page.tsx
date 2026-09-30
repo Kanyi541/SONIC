@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UnifiedDashboardLayout from '@/components/dashboard/unified-dashboard-layout';
-import { collection, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, query, where, getDoc, setDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, query, where, getDoc, setDoc, orderBy, limit } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -292,7 +292,9 @@ function ValuerDashboardPage() {
         setLoading(true);
         const bookingsQuery = query(
             collection(db, "bookings"),
-            where("assignedValuerId", "==", loggedInUser.username)
+            where("assignedValuerId", "==", loggedInUser.username),
+            orderBy("createdAt", "desc"),
+            limit(100)
         );
 
         const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
@@ -306,8 +308,8 @@ function ValuerDashboardPage() {
             toast({ variant: "destructive", title: "Error", description: "Could not fetch assigned bookings." });
             setLoading(false);
         });
-        
-        const valuationsQuery = query(collection(db, "valuations"));
+
+        const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"), limit(50));
         const valuationsUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
             const valuationsData: Valuation[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
             setValuations(valuationsData);
@@ -1044,7 +1046,7 @@ function ValuerDashboardPage() {
                                                     <Button
                                                     variant={"outline"}
                                                     className={cn(
-                                                        "w-[240px] pl-3 text-left font-normal",
+                                                        "w-full sm:w-[240px] pl-3 text-left font-normal",
                                                         !field.value && "text-muted-foreground"
                                                     )}
                                                     >

@@ -16,6 +16,12 @@ const firebaseConfig = {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
+
+// Configure auth security settings
+if (typeof window !== 'undefined') {
+  auth.languageCode = 'en';
+}
+
 const db = getFirestore(app);
 
 if (typeof window !== 'undefined') {

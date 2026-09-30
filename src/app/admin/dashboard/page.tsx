@@ -279,7 +279,6 @@ function AdminDashboard() {
   const [allCarsPage, setAllCarsPage] = useState(1);
 
   const handleViewChange = (view: string) => {
-    setLoading(true);
     setActiveView(view);
   };
 
@@ -348,21 +347,26 @@ function AdminDashboard() {
     setLoading(true);
     const subscriptions: (() => void)[] = [];
 
-    const notifQuery = query(collection(db, "bookings"), where("status", "==", "Pending Approval"));
+    // Always subscribe to notifications for pending bookings
+    const notifQuery = query(collection(db, "bookings"), where("status", "==", "Pending Approval"), limit(5));
     const notifUnsubscribe = onSnapshot(notifQuery, (snapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Booking }));
         const sortedData = data.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-        setPendingBookingsForNotif(sortedData.slice(0, 5));
+        setPendingBookingsForNotif(sortedData);
     }, (error) => {
         console.error("Error in notification listener:", error);
     });
     subscriptions.push(notifUnsubscribe);
 
     const subscribeToCollection = (
-        collectionName: string, 
-        setter: React.Dispatch<React.SetStateAction<any[]>>, 
+        collectionName: string,
+        setter: React.Dispatch<React.SetStateAction<any[]>>,
+        limitCount?: number
     ) => {
-        const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
+        let q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
+        if (limitCount) {
+            q = query(collection(db, collectionName), orderBy("createdAt", "desc"), limit(limitCount));
+        }
         const unsubscribe = onSnapshot(q, (snapshot) => {
             let data;
             if (collectionName === 'insurers') {
@@ -380,9 +384,66 @@ function AdminDashboard() {
         });
         subscriptions.push(unsubscribe);
     };
-    
-    // Subscribe to all necessary collections for analytics upfront if that view is active
-    if (activeView === 'analytics') {
+
+    // Lazy load based on active view - only load what's needed
+    if (activeView === 'dashboard') {
+      // Load limited data for dashboard
+      const bookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"), limit(50));
+      const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Booking[];
+          setBookings(data.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
+          generateChartData(data);
+          setLoading(false);
+      }, (error) => {
+          console.error("Error in bookings listener:", error);
+          setLoading(false);
+      });
+      subscriptions.push(bookingsUnsubscribe);
+
+      const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"), limit(20));
+      const valUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
+          setValuations(data);
+      });
+      subscriptions.push(valUnsubscribe);
+
+      const valuerQuery = query(collection(db, "valuers"), orderBy("createdAt", "desc"), limit(20));
+      const valuerUnsubscribe = onSnapshot(valuerQuery, (snapshot) => {
+          setValuers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuer })));
+      });
+      subscriptions.push(valuerUnsubscribe);
+    } else if (activeView === 'institutions') {
+      subscribeToCollection("insurers", setInstitutions);
+    } else if (activeView === 'valuers') {
+      subscribeToCollection("valuers", setValuers);
+    } else if (activeView === 'staff') {
+      subscribeToCollection("staff", setStaff);
+    } else if (activeView === 'branches') {
+      subscribeToCollection("branches", setBranches);
+    } else if (activeView === 'new-bookings' || activeView === 'pending-valuation' || activeView === 'valuated-bookings' || activeView === 'rejected-bookings' || activeView === 'all-cars') {
+      const bookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"), limit(100));
+      const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Booking[];
+          setBookings(data.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
+          setLoading(false);
+      }, (error) => {
+          console.error("Error in bookings listener:", error);
+          setLoading(false);
+      });
+      subscriptions.push(bookingsUnsubscribe);
+    } else if (activeView === 'valuations') {
+      const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"), limit(100));
+      const valUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
+          setValuations(data);
+          setLoading(false);
+      }, (error) => {
+          console.error("Error in valuations listener:", error);
+          setLoading(false);
+      });
+      subscriptions.push(valUnsubscribe);
+    } else if (activeView === 'analytics') {
+        // Load all collections for analytics view
         const allCollections = [
             { name: "insurers", setter: setInstitutions },
             { name: "valuers", setter: setValuers },
@@ -400,43 +461,6 @@ function AdminDashboard() {
             subscriptions.push(unsubscribe);
         });
         setLoading(false);
-    } else if (activeView === 'institutions') {
-      subscribeToCollection("insurers", setInstitutions);
-    } else if (activeView === 'valuers') {
-      subscribeToCollection("valuers", setValuers);
-    } else if (activeView === 'staff') {
-      subscribeToCollection("staff", setStaff);
-    } else if (activeView === 'branches') {
-      subscribeToCollection("branches", setBranches);
-    } else if (activeView === 'dashboard' || activeView === 'new-bookings' || activeView === 'pending-valuation' || activeView === 'valuated-bookings' || activeView === 'rejected-bookings' || activeView === 'all-cars' || activeView === 'valuations') {
-      const bookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
-      const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
-          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Booking[];
-          setBookings(data.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
-          if (activeView === 'dashboard') {
-            generateChartData(data);
-          }
-          setLoading(false);
-      }, (error) => {
-          console.error("Error in bookings listener:", error);
-      });
-      subscriptions.push(bookingsUnsubscribe);
-
-      if (['dashboard', 'valuations', 'all-cars', 'analytics'].includes(activeView)) {
-        const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"));
-        const valUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuation }));
-            setValuations(data);
-        });
-        subscriptions.push(valUnsubscribe);
-      }
-       if (activeView === 'new-bookings' || activeView === 'dashboard') {
-        const valuerQuery = query(collection(db, "valuers"), orderBy("createdAt", "desc"));
-        const valuerUnsubscribe = onSnapshot(valuerQuery, (snapshot) => {
-            setValuers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Valuer })));
-        });
-        subscriptions.push(valuerUnsubscribe);
-      }
     } else {
         setLoading(false);
     }
@@ -2493,6 +2517,12 @@ function AdminDashboard() {
                 </Tabs>
             </DialogContent>
         </Dialog>
+        <footer className="py-4 border-t bg-card/50">
+            <div className="container flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
+                <p>© {new Date().getFullYear()} Sonic Motor Valuers. All rights reserved.</p>
+                <p>Version 1.0.0</p>
+            </div>
+        </footer>
 
     </SidebarProvider>
   );

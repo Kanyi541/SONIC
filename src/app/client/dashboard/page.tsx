@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { auth, db } from "@/lib/firebase";
-import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, query, where, getDocs, doc, deleteDoc, orderBy, updateDoc, serverTimestamp, setDoc, limit } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, PlusCircle, Printer, User, UserPlus, Check, ChevronsUpDown, Save, Car, Building, Hash, Calendar, MessageSquare, UserCheck, Sheet, Pen, Search, Hourglass, CheckCircle, XCircle, UserCog, Trash2, Clock, Building2, Briefcase, FileSignature, FileWarning, FileClock, FileSpreadsheet, Folder, Users as UsersIcon, Eye, EyeOff, ChevronLeft, ChevronRight, KeyRound, Upload, File as FileIcon, X, File, FileText, Calendar as CalendarIcon, FileDown } from "lucide-react";
@@ -353,8 +353,12 @@ function ClientDashboardPage() {
   useEffect(() => {
     if (loggedInUser) {
         setLoading(true);
-
-        const bookingsQuery = query(collection(db, "bookings"), where("insurerId", "==", loggedInUser.username));
+        const bookingsQuery = query(
+            collection(db, "bookings"),
+            where("insurerId", "==", loggedInUser.username),
+            orderBy("createdAt", "desc"),
+            limit(100)
+        );
         const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
             const bookingsData: Booking[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
             const sortedBookings = bookingsData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
@@ -366,7 +370,7 @@ function ClientDashboardPage() {
             setLoading(false);
         });
 
-        const valuationsQuery = query(collection(db, "valuations"));
+        const valuationsQuery = query(collection(db, "valuations"), orderBy("valuedAt", "desc"), limit(50));
         const valuationsUnsubscribe = onSnapshot(valuationsQuery, (snapshot) => {
             const valuationsData: Valuation[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Valuation));
             setValuations(valuationsData);
@@ -376,9 +380,11 @@ function ClientDashboardPage() {
 
         setLoadingAgents(true);
         const agentsQuery = query(
-            collection(db, "insurers"), 
-            where("clientId", "==", loggedInUser.username), 
-            where("role", "==", "Agent")
+            collection(db, "insurers"),
+            where("clientId", "==", loggedInUser.username),
+            where("role", "==", "Agent"),
+            orderBy("createdAt", "desc"),
+            limit(50)
         );
         const agentsUnsubscribe = onSnapshot(agentsQuery, (snapshot) => {
             const agentsData: Agent[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Agent));
@@ -390,7 +396,12 @@ function ClientDashboardPage() {
         });
 
         setLoadingStaff(true);
-        const staffQuery = query(collection(db, "staff"), where("clientId", "==", loggedInUser.username));
+        const staffQuery = query(
+            collection(db, "staff"),
+            where("clientId", "==", loggedInUser.username),
+            orderBy("createdAt", "desc"),
+            limit(50)
+        );
         const staffUnsubscribe = onSnapshot(staffQuery, (snapshot) => {
             const staffData: Staff[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
             setStaff(staffData);
@@ -399,7 +410,7 @@ function ClientDashboardPage() {
             console.error("Error fetching staff:", error);
             setLoadingStaff(false);
         });
-        
+
 
         return () => {
             bookingsUnsubscribe();

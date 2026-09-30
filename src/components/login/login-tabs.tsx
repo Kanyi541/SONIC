@@ -194,7 +194,7 @@ const AdminLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) => 
                 )}
               />
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button type="button" variant="outline" className="w-full" onClick={() => setForgotPassword(false)}>
+                <Button type="button" variant="secondary" className="w-full" onClick={() => setForgotPassword(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" variant="accent" className="w-full" disabled={forgotPasswordForm.formState.isSubmitting}>
@@ -451,7 +451,7 @@ const ClientLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                 )}
               />
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button type="button" variant="outline" className="w-full" onClick={() => setForgotPassword(false)}>
+                <Button type="button" variant="secondary" className="w-full" onClick={() => setForgotPassword(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" variant="accent" className="w-full" disabled={forgotPasswordForm.formState.isSubmitting}>
@@ -674,7 +674,7 @@ const ValuerLoginForm = ({ setIsLoading }: { setIsLoading: (loading: boolean) =>
                 )}
               />
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button type="button" variant="outline" className="w-full" onClick={() => setForgotPassword(false)}>
+                <Button type="button" variant="secondary" className="w-full" onClick={() => setForgotPassword(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" variant="accent" className="w-full" disabled={forgotPasswordForm.formState.isSubmitting}>
