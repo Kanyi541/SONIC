@@ -128,9 +128,7 @@ class ReportToPrint extends React.Component<{ valuation: Valuation | null, booki
                     </section>
                 </main>
 
-                <footer className="text-center text-sm text-gray-500 mt-16 pt-6 border-t border-gray-300">
-                    © {new Date().getFullYear()} Sonic Motor Valuers. This is a computer-generated document and does not require a signature.
-                </footer>
+
             </div>
         );
     }

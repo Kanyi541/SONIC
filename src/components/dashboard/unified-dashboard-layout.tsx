@@ -208,11 +208,7 @@ export default function UnifiedDashboardLayout({
                     {children(activeView, setActiveView)}
                 </main>
                 <footer className="mt-auto py-2 border-t bg-card/50">
-                    <div className="flex flex-col items-center justify-center gap-0.5 text-[10px] text-muted-foreground">
-                        <p>© {new Date().getFullYear()} Sonic Motor Valuers. All rights reserved.</p>
-                        <p>Version 1.0.0</p>
-                        {footerContent}
-                    </div>
+                    {footerContent}
                 </footer>
             </SidebarInset>
         </SidebarProvider>

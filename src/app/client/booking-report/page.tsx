@@ -157,9 +157,7 @@ class ReportToPrint extends React.Component<{booking: BookingData | null}> {
               </div>
             </div>
             </main>
-             <footer className="bg-white p-2 text-black text-[10px] mt-auto border-t border-gray-300">
-                <p className="text-center text-[10px] font-bold mt-2">Email: soniemotorvaluers@gmail.com</p>
-            </footer>
+
         </div>
     );
   }
