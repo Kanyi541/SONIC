@@ -123,8 +123,14 @@ export default function UnifiedDashboardLayout({
             <Sidebar variant="inset" side="left">
                 <SidebarHeader>
                     <div className="flex items-center gap-2 p-2">
-                        <div className="bg-sidebar-primary text-sidebar-primary-foreground rounded-lg p-2 flex items-center justify-center">
-                            <Settings className="h-6 w-6" />
+                        <div className="bg-sidebar-primary text-sidebar-primary-foreground rounded-lg p-2 flex items-center justify-center w-10 h-10 overflow-hidden">
+                            <Image
+                                src="/logo.png"
+                                alt="Sonic Motor Valuers"
+                                width={32}
+                                height={32}
+                                className="object-contain"
+                            />
                         </div>
                         <h2 className="text-lg font-semibold text-sidebar-primary">{sidebarPanelTitle}</h2>
                     </div>
@@ -201,8 +207,8 @@ export default function UnifiedDashboardLayout({
                 <main className="flex-1 container py-8">
                     {children(activeView, setActiveView)}
                 </main>
-                <footer className="py-4 border-t bg-card/50">
-                    <div className="container flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
+                <footer className="mt-auto py-2 border-t bg-card/50">
+                    <div className="flex flex-col items-center justify-center gap-0.5 text-[10px] text-muted-foreground">
                         <p>© {new Date().getFullYear()} Sonic Motor Valuers. All rights reserved.</p>
                         <p>Version 1.0.0</p>
                         {footerContent}

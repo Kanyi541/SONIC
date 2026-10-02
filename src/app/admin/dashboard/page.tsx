@@ -13,6 +13,7 @@ import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, deleteDoc, getDoc } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   Table,
   TableHeader,
@@ -1674,8 +1675,14 @@ function AdminDashboard() {
       <Sidebar variant="inset" side="left">
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <div className="bg-sidebar-primary text-sidebar-primary-foreground rounded-lg p-2 flex items-center justify-center">
-              <Settings className="h-6 w-6" />
+            <div className="bg-sidebar-primary text-sidebar-primary-foreground rounded-lg p-2 flex items-center justify-center w-10 h-10 overflow-hidden">
+              <Image
+                src="/logo.png"
+                alt="Sonic Motor Valuers"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
             </div>
             <h2 className="text-lg font-semibold text-sidebar-primary">Admin Panel</h2>
           </div>
@@ -2517,8 +2524,8 @@ function AdminDashboard() {
                 </Tabs>
             </DialogContent>
         </Dialog>
-        <footer className="py-4 border-t bg-card/50">
-            <div className="container flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
+        <footer className="mt-auto py-2 border-t bg-card/50">
+            <div className="flex flex-col items-center justify-center gap-0.5 text-[10px] text-muted-foreground">
                 <p>© {new Date().getFullYear()} Sonic Motor Valuers. All rights reserved.</p>
                 <p>Version 1.0.0</p>
             </div>
