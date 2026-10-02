@@ -204,6 +204,23 @@ async function runExport() {
 }
 
 /**
+ * Export ALL current data (for testing or manual backup)
+ */
+async function exportAllData() {
+  console.log('Starting FULL export of all current data...');
+  
+  // Export all current bookings (regardless of age)
+  const allBookingsQuery = db.collection('bookings');
+  await exportToExcel(allBookingsQuery, 'bookings', 'createdAt', 0);
+  
+  // Export all current valuations (regardless of age)
+  const allValuationsQuery = db.collection('valuations');
+  await exportToExcel(allValuationsQuery, 'valuations', 'valuedAt', 0);
+  
+  console.log('Full export process finished.');
+}
+
+/**
  * Logs usage statistics
  */
 async function logUsage() {
@@ -229,7 +246,16 @@ async function logUsage() {
 }
 
 // Run the export process
-runExport().then(() => logUsage()).catch(error => {
-  console.error('Export process failed:', error);
-  process.exit(1);
-});
+const exportMode = process.env.EXPORT_MODE || 'scheduled';
+
+if (exportMode === 'full') {
+  exportAllData().then(() => logUsage()).catch(error => {
+    console.error('Full export process failed:', error);
+    process.exit(1);
+  });
+} else {
+  runExport().then(() => logUsage()).catch(error => {
+    console.error('Export process failed:', error);
+    process.exit(1);
+  });
+}

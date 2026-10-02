@@ -3,8 +3,17 @@ name: Firestore Excel Export & Usage Log
 
 on:
   schedule:
-    - cron: "0 0 * * *"  # Runs daily at midnight UTC
+    - cron: "0 0 * * *"  # Runs daily at midnight UTC (exports old data only)
   workflow_dispatch:
+    inputs:
+      export_mode:
+        description: 'Export mode'
+        required: true
+        default: 'scheduled'
+        type: choice
+        options:
+          - scheduled
+          - full
 
 jobs:
   export:
@@ -25,6 +34,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
           FIREBASE_STORAGE_BUCKET: "sonic-motor-valuers-7762-ca361.appspot.com"
+          EXPORT_MODE: ${{ github.event.inputs.export_mode || 'scheduled' }}
         run: node scripts/export-to-excel.js
 
     
