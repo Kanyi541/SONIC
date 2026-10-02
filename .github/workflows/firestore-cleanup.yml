@@ -8,7 +8,7 @@ on:
     inputs:
       export_mode:
         description: 'Export mode'
-        required: true
+        required: false
         default: 'scheduled'
         type: choice
         options:
@@ -30,10 +30,23 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Verify script exists
+        run: |
+          echo "Checking for export script..."
+          ls -la scripts/
+          if [ -f "scripts/export-to-excel.js" ]; then
+            echo "✓ export-to-excel.js found"
+          else
+            echo "✗ export-to-excel.js NOT found"
+            exit 1
+          fi
+
       - name: Run Excel export and log usage
         env:
           FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
-          FIREBASE_STORAGE_BUCKET: "sonic-motor-valuers-7762-ca361.appspot.com"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
           EXPORT_MODE: ${{ github.event.inputs.export_mode || 'scheduled' }}
         run: node scripts/export-to-excel.js
 

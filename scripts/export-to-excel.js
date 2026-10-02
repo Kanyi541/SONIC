@@ -1,16 +1,15 @@
-// This script exports old Firestore documents to Excel files and stores them in Firebase Storage
+// This script exports old Firestore documents to Excel files and stores them in GitHub Releases
 // instead of deleting them. It is designed to be run in a secure server environment (like a GitHub Action).
 
 const admin = require('firebase-admin');
 const XLSX = require('xlsx');
-const { Storage } = require('@google-cloud/storage');
+const { Octokit } = require('@octokit/rest');
 
 // Initialize Firebase Admin SDK
 try {
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET
   });
 } catch (error) {
   if (!/already exists/u.test(error.message)) {
@@ -20,8 +19,11 @@ try {
 }
 
 const db = admin.firestore();
-const storage = new Storage();
-const bucket = storage.bucket(process.env.FIREBASE_STORAGE_BUCKET);
+
+// Initialize GitHub client
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN,
+});
 
 /**
  * Converts Firestore document data to flat object for Excel export
@@ -72,39 +74,64 @@ function createExcelFile(documents, sheetName) {
 }
 
 /**
- * Uploads Excel file to Firebase Storage
+ * Uploads Excel file to GitHub Releases
  * @param {Buffer} fileBuffer The Excel file buffer
- * @param {string} fileName The name for the file in storage
- * @returns {Promise<string>} The public URL of the uploaded file
+ * @param {string} fileName The name for the file
+ * @returns {Promise<string>} The download URL of the uploaded file
  */
-async function uploadToStorage(fileBuffer, fileName) {
-  const file = bucket.file(`exports/${fileName}`);
-  const stream = file.createWriteStream({
-    metadata: {
-      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    },
-  });
+async function uploadToGitHubRelease(fileBuffer, fileName) {
+  const owner = process.env.GITHUB_REPOSITORY_OWNER || 'Kanyi541';
+  const repo = process.env.GITHUB_REPOSITORY_NAME || 'SONIC';
+  const releaseTag = `data-export-${new Date().toISOString().split('T')[0]}`;
 
-  return new Promise((resolve, reject) => {
-    stream.on('error', reject);
-    stream.on('finish', async () => {
-      try {
-        await file.makePublic();
-        const [url] = await file.getSignedUrl({
-          action: 'read',
-          expires: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
-        });
-        resolve(url);
-      } catch (error) {
-        reject(error);
-      }
+  try {
+    // Check if release exists
+    let release;
+    try {
+      release = await octokit.rest.repos.getReleaseByTag({
+        owner,
+        repo,
+        tag: releaseTag,
+      });
+      console.log(`Found existing release: ${releaseTag}`);
+    } catch (error) {
+      // Release doesn't exist, create it
+      console.log(`Creating new release: ${releaseTag}`);
+      release = await octokit.rest.repos.createRelease({
+        owner,
+        repo,
+        tag_name: releaseTag,
+        name: `Data Export - ${new Date().toISOString().split('T')[0]}`,
+        body: `Automated data export for ${new Date().toISOString().split('T')[0]}`,
+        draft: false,
+        prerelease: false,
+      });
+    }
+
+    // Upload the file as a release asset
+    console.log(`Uploading ${fileName} to GitHub Release...`);
+    const uploadResponse = await octokit.rest.repos.uploadReleaseAsset({
+      owner,
+      repo,
+      release_id: release.data.id,
+      name: fileName,
+      data: fileBuffer,
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Length': fileBuffer.length,
+      },
     });
-    stream.end(fileBuffer);
-  });
+
+    console.log(`✓ File uploaded successfully: ${uploadResponse.data.browser_download_url}`);
+    return uploadResponse.data.browser_download_url;
+  } catch (error) {
+    console.error('Error uploading to GitHub Release:', error);
+    throw error;
+  }
 }
 
 /**
- * Exports documents to Excel and uploads to storage
+ * Exports documents to Excel and uploads to GitHub Releases
  * @param {FirebaseFirestore.Query} query The Firestore query for documents to export
  * @param {string} collectionName The original collection name
  * @param {string} timestampField The field name for date-based filtering
@@ -130,8 +157,8 @@ async function exportToExcel(query, collectionName, timestampField, daysOld = 30
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const fileName = `${collectionName}_export_${timestamp}.xlsx`;
     
-    // Upload to storage
-    const fileUrl = await uploadToStorage(excelBuffer, fileName);
+    // Upload to GitHub Releases
+    const fileUrl = await uploadToGitHubRelease(excelBuffer, fileName);
     
     console.log(`Successfully exported ${snapshot.size} documents from '${collectionName}' to Excel.`);
     console.log(`File URL: ${fileUrl}`);
@@ -144,7 +171,8 @@ async function exportToExcel(query, collectionName, timestampField, daysOld = 30
       fileName,
       exportedAt: admin.firestore.FieldValue.serverTimestamp(),
       daysOld,
-      status: 'completed'
+      status: 'completed',
+      storageType: 'github-releases'
     };
     
     await db.collection('exports').add(exportRecord);
@@ -158,7 +186,8 @@ async function exportToExcel(query, collectionName, timestampField, daysOld = 30
       collectionName,
       error: error.message,
       exportedAt: admin.firestore.FieldValue.serverTimestamp(),
-      status: 'failed'
+      status: 'failed',
+      storageType: 'github-releases'
     });
   }
 }
@@ -235,14 +264,7 @@ async function logUsage() {
     console.error('Error counting Firestore documents:', error);
   }
 
-  try {
-    const [files] = await bucket.getFiles({ prefix: 'exports/' });
-    let totalSize = files.reduce((acc, file) => acc + (Number(file.metadata.size) || 0), 0);
-    console.log(`Firebase Storage - Export files count: ${files.length}`);
-    console.log(`Firebase Storage - Total export size: ${(totalSize / (1024 * 1024)).toFixed(2)} MB`);
-  } catch (error) {
-    console.error('Error calculating Firebase Storage usage:', error);
-  }
+  console.log("Excel files are stored in GitHub Releases (free storage).");
 }
 
 // Run the export process
