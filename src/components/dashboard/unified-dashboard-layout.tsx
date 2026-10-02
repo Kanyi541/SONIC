@@ -9,12 +9,12 @@ import { Button } from '@/components/ui/button';
 import { LogOut, LayoutDashboard, Settings, Users, BookCopy, ChevronDown, FolderCog, Hourglass, UserCog, PlusCircle, FileText, Clock, CheckCircle, Building2, Briefcase } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -45,7 +45,7 @@ const getIconForView = (view: string) => {
         case 'dashboard':
             return <LayoutDashboard />;
         case 'customers':
-             return <Users />;
+            return <Users />;
         case 'bookings':
             return <CheckCircle />;
         case 'valuations':
@@ -102,12 +102,12 @@ export default function UnifiedDashboardLayout({
             toast({ variant: "destructive", title: "Logout Failed", description: "An error occurred while signing out." });
         }
     };
-    
+
     const isValuerDashboard = userRole !== "Admin" && !menuItems.some(item => item.view === 'customers');
 
     const sidebarPanelTitle = userRole.includes(' - ')
-      ? userRole.split(' - ')[0] + ' Panel'
-      : `${userRole} Panel`;
+        ? userRole.split(' - ')[0] + ' Panel'
+        : `${userRole} Panel`;
 
     const handleMenuItemClick = (item: MenuItem) => {
         if (item.action) {
@@ -125,7 +125,7 @@ export default function UnifiedDashboardLayout({
                     <div className="flex items-center gap-2 p-2">
                         <div className="bg-sidebar-primary text-sidebar-primary-foreground rounded-lg p-2 flex items-center justify-center w-10 h-10 overflow-hidden">
                             <Image
-                                src="/logo.png"
+                                src="/logo.jpeg"
                                 alt="Sonic Motor Valuers"
                                 width={32}
                                 height={32}
@@ -137,11 +137,11 @@ export default function UnifiedDashboardLayout({
                 </SidebarHeader>
                 <SidebarContent>
                     <SidebarMenu>
-                         {menuItems.map(item => (
+                        {menuItems.map(item => (
                             <SidebarMenuItem key={item.view}>
-                                <SidebarMenuButton 
-                                    onClick={() => handleMenuItemClick(item)} 
-                                    isActive={activeView === item.view} 
+                                <SidebarMenuButton
+                                    onClick={() => handleMenuItemClick(item)}
+                                    isActive={activeView === item.view}
                                     tooltip={item.name}
                                     className="flex items-center justify-between"
                                 >
@@ -149,17 +149,17 @@ export default function UnifiedDashboardLayout({
                                         {getIconForView(item.view)}
                                         {item.name}
                                     </div>
-                                     {item.notificationCount && item.notificationCount > 0 && (
+                                    {item.notificationCount && item.notificationCount > 0 && (
                                         <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center">
                                             {item.notificationCount}
                                         </span>
                                     )}
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
-                         ))}
+                        ))}
                     </SidebarMenu>
                 </SidebarContent>
-                 <SidebarFooter>
+                <SidebarFooter>
                     <InstallPwaButton />
                 </SidebarFooter>
             </Sidebar>
@@ -178,27 +178,27 @@ export default function UnifiedDashboardLayout({
                                 />
                             </div>
                         </div>
-                         <DropdownMenu>
+                        <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                                <Avatar className="h-10 w-10">
-                                    <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(userEmail)}</AvatarFallback>
-                                </Avatar>
+                                    <Avatar className="h-10 w-10">
+                                        <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(userEmail)}</AvatarFallback>
+                                    </Avatar>
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56" align="end" forceMount>
                                 <DropdownMenuLabel className="font-normal">
-                                <div className="flex flex-col space-y-1">
-                                    <p className="text-sm font-medium leading-none">{userRole}</p>
-                                    <p className="text-xs leading-none text-muted-foreground">
-                                    {userEmail}
-                                    </p>
-                                </div>
+                                    <div className="flex flex-col space-y-1">
+                                        <p className="text-sm font-medium leading-none">{userRole}</p>
+                                        <p className="text-xs leading-none text-muted-foreground">
+                                            {userEmail}
+                                        </p>
+                                    </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={handleLogout}>
-                                <LogOut className="mr-2 h-4 w-4" />
-                                <span>Log out</span>
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>Log out</span>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
