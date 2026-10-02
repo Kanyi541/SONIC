@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import React, { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import { InstallPwaProvider } from '@/components/pwa/install-prompt';
+import { registerServiceWorker } from '@/lib/pwa-utils';
 
 function SplashScreen() {
   return (
@@ -35,6 +36,9 @@ export default function RootLayout({
     const timer = setTimeout(() => {
       setLoading(false);
     }, 2000); // 2 seconds
+
+    // Register service worker for PWA
+    registerServiceWorker();
 
     return () => clearTimeout(timer);
   }, []);
