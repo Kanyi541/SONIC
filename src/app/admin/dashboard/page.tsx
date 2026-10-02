@@ -71,6 +71,7 @@ import Loading from '@/app/loading';
 import pako from 'pako';
 import { InstallPwaButton } from '@/components/pwa/install-prompt';
 
+// Code by 39883909
 
 interface Institution {
   id: string;
@@ -197,7 +198,7 @@ const adminValuationSchema = z.object({
 
 type AdminValuationFormValues = z.infer<typeof adminValuationSchema>;
 
-
+// Code by 39883909
 const ConditionChecklist = ({ title, data, notes }: { title: string, data?: Record<string, 'Yes' | 'No'>, notes?: string }) => {
   if (!data) return null;
   const entries = Object.entries(data);
@@ -231,7 +232,7 @@ const ConditionChecklist = ({ title, data, notes }: { title: string, data?: Reco
   );
 };
 
-
+// Code by 39883909
 function AdminDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -278,6 +279,7 @@ function AdminDashboard() {
   const [valuatedBookingsPage, setValuatedBookingsPage] = useState(1);
   const [allCarsPage, setAllCarsPage] = useState(1);
 
+  // Code by 39883909
   const handleViewChange = (view: string) => {
     setActiveView(view);
   };
@@ -287,6 +289,7 @@ function AdminDashboard() {
     defaultValues: { assessmentValue: "", forcedValue: "", wsValue: "", rsValue: "" },
   });
 
+  // Code by 39883909
   const chartConfig = {
     valuations: { label: "Valuations", color: "hsl(var(--chart-1))" },
     count: { label: "Count", color: "hsl(var(--chart-1))" },
@@ -296,6 +299,7 @@ function AdminDashboard() {
     return email ? email.charAt(0).toUpperCase() : '?';
   };
 
+  // Code by 39883909
   const generateChartData = (bookings: Booking[]) => {
     const today = new Date();
     const firstDayOfMonth = startOfMonth(today);
@@ -324,6 +328,7 @@ function AdminDashboard() {
     setChartData(monthlyData);
   };
 
+  // Code by 39883909
   useEffect(() => {
     const fetchUserRole = async () => {
       if (user) {
@@ -343,6 +348,7 @@ function AdminDashboard() {
     fetchUserRole();
   }, [user]);
 
+  // Code by 39883909
   useEffect(() => {
     setLoading(true);
     const subscriptions: (() => void)[] = [];
@@ -468,6 +474,7 @@ function AdminDashboard() {
     return () => subscriptions.forEach(unsub => unsub());
   }, [activeView]);
 
+  // Code by 39883909
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -479,6 +486,7 @@ function AdminDashboard() {
     }
   };
 
+  // Code by 39883909
   const handleAddUser = async (event: React.FormEvent<HTMLFormElement>, userType: 'institution' | 'valuer' | 'staff') => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -552,7 +560,7 @@ function AdminDashboard() {
     }
   };
 
-
+  // Code by 39883909
   const handleAddBranch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -580,6 +588,7 @@ function AdminDashboard() {
     }
   };
 
+  // Code by 39883909
   const handleDeleteBranch = async (id: string, name: string) => {
     const docRef = doc(db, "branches", id);
     try {
@@ -591,6 +600,7 @@ function AdminDashboard() {
     }
   };
 
+  // Code by 39883909
   const toggleStatus = async (id: string, currentStatus: boolean, collectionName: string, name: string) => {
     const docRef = doc(db, collectionName, id);
     try {
@@ -602,6 +612,7 @@ function AdminDashboard() {
     }
   };
 
+  // Code by 39883909
   const handleDeleteUser = async (id: string, name: string, collectionName: string) => {
     // Note: This does not delete the user from Firebase Auth, only Firestore.
     // Deleting from Auth should be a separate, more deliberate action.
@@ -619,6 +630,7 @@ function AdminDashboard() {
     }
   };
 
+  // Code by 39883909
   const handleRoleChange = async (staffMember: Staff, newRole: 'Admin' | 'Staff') => {
     if (currentUserRole !== 'Super Admin') {
       toast({ variant: "destructive", title: "Permission Denied", description: "Only Super Admins can change roles." });
@@ -644,6 +656,7 @@ function AdminDashboard() {
     }
   };
 
+  // Code by 39883909
   const handleOpenReportInNewTab = (reportType: 'booking' | 'valuation', bookingId: string) => {
     const url = reportType === 'booking'
       ? `/client/booking-report?id=${bookingId}`
@@ -651,6 +664,7 @@ function AdminDashboard() {
     window.open(url, '_blank');
   };
 
+  // Code by 39883909
   const handleAssignmentAndApproval = async () => {
     if (!selectedBookingForAction || !selectedValuerId) {
       toast({ variant: "destructive", title: "Validation Error", description: "A valuer must be selected." });
@@ -692,6 +706,7 @@ function AdminDashboard() {
     }
   };
 
+  // Code by 39883909
   const handleBookingRejection = async () => {
     if (!selectedBookingForAction || !rejectionReason) {
       toast({ variant: "destructive", title: "Validation Error", description: "Rejection reason cannot be empty." });
@@ -712,6 +727,7 @@ function AdminDashboard() {
     }
   };
 
+  // Code by 39883909
   const handleCompleteValuation = async (data: AdminValuationFormValues) => {
     if (!selectedBookingForAction) return;
 
@@ -750,16 +766,19 @@ function AdminDashboard() {
     }
   };
 
+  // Code by 39883909
   const openAssignDialog = (booking: Booking) => {
     setSelectedBookingForAction(booking);
     setAssignDialogOpen(true);
   };
 
+  // Code by 39883909
   const openRejectDialog = () => {
     setAssignDialogOpen(false);
     setRejectDialogOpen(true);
   }
 
+  // Code by 39883909
   const openCompleteValuationDialog = async (booking: Booking) => {
     setSelectedBookingForAction(booking);
     setCompleteValuationOpen(true);
@@ -806,6 +825,7 @@ function AdminDashboard() {
     }
   };
 
+  // Code by 39883909
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "Pending": return "secondary";
@@ -819,6 +839,7 @@ function AdminDashboard() {
     }
   };
 
+  // Code by 39883909
   const stats = {
     totalCars: bookings.length,
     totalValuations: valuations.length,
@@ -832,11 +853,13 @@ function AdminDashboard() {
     valuated: bookings.filter(b => b.status === 'Valuated').length,
   };
 
+  // Code by 39883909
   const recentValuations = valuations.map(v => ({
     ...v,
     booking: bookings.find(b => b.id === v.bookingId),
   })).filter(v => v.booking?.status === 'Completed');
 
+  // Code by 39883909
   const analyticsData = useMemo(() => {
     const makeCounts = bookings.reduce((acc, booking) => {
       acc[booking.carMake] = (acc[booking.carMake] || 0) + 1;
@@ -860,6 +883,7 @@ function AdminDashboard() {
     return { popularMakes, topValuers };
   }, [bookings]);
 
+  // Code by 39883909
   const StatCard = ({ title, value, icon, onClick, progress, colorClass }: { title: string, value: number | string, icon: React.ReactNode, onClick?: () => void, progress?: number, colorClass?: string }) => (
     <Card onClick={onClick} className={`${onClick ? 'cursor-pointer hover:bg-muted' : ''} transition-colors p-4 flex flex-col justify-between`}>
       <div className="flex items-start justify-between">
@@ -877,6 +901,7 @@ function AdminDashboard() {
     </Card>
   );
 
+  // Code by 39883909
   const renderUserTable = (
     data: (Institution | Valuer | Staff)[],
     title: string,
@@ -1026,6 +1051,7 @@ function AdminDashboard() {
     )
   };
 
+  // Code by 39883909
   const renderUserDialog = (
     isOpen: boolean,
     onOpenChange: (open: boolean) => void,
@@ -1083,6 +1109,7 @@ function AdminDashboard() {
     );
   };
 
+  // Code by 39883909
   const renderValuationsTable = (
     valuationsData: Valuation[],
     title: string,
@@ -1224,6 +1251,7 @@ function AdminDashboard() {
     )
   };
 
+  // Code by 39883909
   const renderNewBookingsTable = (
     bookingsData: Booking[],
     title: string,
@@ -1328,6 +1356,7 @@ function AdminDashboard() {
     )
   };
 
+  // Code by 39883909
   const renderPendingValuationTable = (
     bookingsData: Booking[],
     title: string,
@@ -1426,6 +1455,7 @@ function AdminDashboard() {
     )
   };
 
+  // Code by 39883909
   const renderValuatedTable = (
     bookingsData: Booking[],
     title: string,
@@ -1513,6 +1543,7 @@ function AdminDashboard() {
     )
   };
 
+  // Code by 39883909
   const renderRejectedBookingsTable = (
     bookingsData: Booking[],
     title: string,
@@ -2533,6 +2564,7 @@ function AdminDashboard() {
     </SidebarProvider>
   );
 }
+// Code by 39883909
 
 const GuardedAdminDashboard = AuthGuard(AdminDashboard);
 export default GuardedAdminDashboard;

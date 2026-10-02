@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AuthGuard } from '@/hooks/use-auth';
 
+// Code by 39883909
 
 interface Valuation {
     id: string;
@@ -93,6 +94,7 @@ interface ReportState {
   isVerification: boolean;
 }
 
+// Code by 39883909
 const DetailItem = ({ label, value, className, labelSize = 'text-xs', valueSize = 'text-xs' }: { label: string; value: React.ReactNode, className?: string, labelSize?: string, valueSize?: string }) => (
     <div className={className}>
         <span className={`font-bold text-gray-700 uppercase mr-2 ${labelSize}`}>{label}</span>
@@ -100,6 +102,7 @@ const DetailItem = ({ label, value, className, labelSize = 'text-xs', valueSize 
     </div>
 );
 
+// Code by 39883909
 const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' | 'No' }) => (
     <div className="flex justify-between py-0">
         <span className="font-bold text-xs">{question}</span>
@@ -107,6 +110,7 @@ const ConditionItem = ({ question, answer }: { question: string, answer?: 'Yes' 
     </div>
 )
 
+// Code by 39883909
 const NoteItem = ({ label, value }: { label: string, value?: string }) => (
      <div className="flex items-start">
         <span className="font-bold uppercase text-gray-600 mr-2 text-xs">{label}</span>
