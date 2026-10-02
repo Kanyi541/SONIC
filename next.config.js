@@ -5,7 +5,7 @@ const cspHeader = `
     script-src 'self' 'unsafe-eval' 'unsafe-inline';
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
-    img-src 'self' https://picsum.photos https://firebasestorage.googleapis.com data:;
+    img-src 'self' https://picsum.photos https://firebasestorage.googleapis.com data: blob:;
     connect-src 'self'
       https://*.firebaseio.com
       wss://*.firebaseio.com
@@ -15,12 +15,13 @@ const cspHeader = `
       https://securetoken.googleapis.com
       https://firebaseinstallations.googleapis.com
       https://firebasestorage.googleapis.com;
-    frame-src 'self' https://www.gstatic.com https://6000-firebase-studio-1754982161283.cluster-cbeiita7rbe7iuwhvjs5zww2i4.cloudworkstations.dev;
+    frame-src 'self' https://www.gstatic.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
     block-all-mixed-content;
     upgrade-insecure-requests;
+    worker-src 'self' blob:;
 `;
 
 const withPWA = require("@ducanh2912/next-pwa").default({
@@ -28,6 +29,8 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
+  sw: 'service-worker.js',
+  scope: '/',
 });
 
 const nextConfig = {

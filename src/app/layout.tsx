@@ -42,8 +42,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <meta name="google-site-verification" content="sQNTflIRGrcrQa1I-krENNhA3oRwYiW5ONoTFPgle6o" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Sonic Valuers" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="application-name" content="Sonic Valuers" />
         <link rel="canonical" href="https://casadash.casamotorvaluers.co.ke/" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
